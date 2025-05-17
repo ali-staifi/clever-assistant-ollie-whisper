@@ -22,12 +22,15 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
   testingMic,
   volumeLevel
 }) => {
-  // List of available browser languages - incluant plus d'options françaises
+  // List of available browser languages - incluant plus d'options françaises et arabe
   const availableLanguages = [
     { value: 'fr-FR', label: 'Français (France)' },
     { value: 'fr-CA', label: 'Français (Canada)' },
     { value: 'fr-BE', label: 'Français (Belgique)' },
     { value: 'fr-CH', label: 'Français (Suisse)' },
+    { value: 'ar-SA', label: 'العربية (السعودية)' },
+    { value: 'ar-EG', label: 'العربية (مصر)' },
+    { value: 'ar-MA', label: 'العربية (المغرب)' },
     { value: 'en-US', label: 'Anglais (US)' },
     { value: 'en-GB', label: 'Anglais (GB)' },
     { value: 'es-ES', label: 'Espagnol' },
