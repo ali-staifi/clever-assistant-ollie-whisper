@@ -40,10 +40,16 @@ const ChatInterface = () => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showConnectionSetup, setShowConnectionSetup] = useState(false);
+  const [showConnectionSetup, setShowConnectionSetup] = useState(true); // Montrer par défaut
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // Vérifier la connexion au chargement
+  useEffect(() => {
+    // Vérifier automatiquement la connexion au démarrage
+    checkConnection();
+  }, []);
 
   // Convert Ollama messages to UI messages with attachments
   const [localMessages, setLocalMessages] = useState<MessageWithAttachment[]>([]);
@@ -68,8 +74,8 @@ const ChatInterface = () => {
   const toggleListening = () => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       toast({
-        title: "Speech Recognition Unavailable",
-        description: "Your browser doesn't support speech recognition.",
+        title: "Reconnaissance vocale indisponible",
+        description: "Votre navigateur ne prend pas en charge la reconnaissance vocale.",
         variant: "destructive",
       });
       return;
@@ -83,35 +89,60 @@ const ChatInterface = () => {
   };
 
   const startListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.lang = 'fr-FR';
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setInput(transcript);
-    };
-    
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error', event.error);
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript);
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        toast({
+          title: "Erreur de reconnaissance vocale",
+          description: "Un problème est survenu avec la reconnaissance vocale. Veuillez réessayer.",
+          variant: "destructive",
+        });
+        setIsListening(false);
+      };
+      
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognition.start();
+      setIsListening(true);
+      
+      toast({
+        title: "Écoute en cours...",
+        description: "Parlez maintenant, je vous écoute.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Erreur lors du démarrage de la reconnaissance vocale:", error);
+      toast({
+        title: "Erreur de microphone",
+        description: "Impossible d'accéder au microphone. Veuillez vérifier vos permissions.",
+        variant: "destructive",
+      });
       setIsListening(false);
-    };
-    
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-    
-    recognition.start();
-    setIsListening(true);
+    }
   };
 
   const stopListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.stop();
+    try {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.stop();
+    } catch (e) {
+      console.error("Erreur lors de l'arrêt de la reconnaissance vocale:", e);
+    }
     setIsListening(false);
   };
 
@@ -127,8 +158,8 @@ const ChatInterface = () => {
     
     if (!fileType) {
       toast({
-        title: "Invalid File",
-        description: "Please upload an image or video file.",
+        title: "Fichier invalide",
+        description: "Veuillez télécharger une image ou une vidéo.",
         variant: "destructive",
       });
       setIsUploading(false);
@@ -141,7 +172,7 @@ const ChatInterface = () => {
     // Create a local message with attachment
     const localMsgWithAttachment: MessageWithAttachment = {
       id: Date.now().toString(),
-      content: `Sent ${fileType}: ${file.name}`,
+      content: `Envoyé ${fileType}: ${file.name}`,
       role: 'user',
       attachment: {
         type: fileType as 'image' | 'video',
@@ -153,7 +184,7 @@ const ChatInterface = () => {
     setLocalMessages((prev) => [...prev, localMsgWithAttachment]);
     
     // Send message to Ollama with file description
-    sendMessage(`[Sent you a ${fileType} file named "${file.name}"]`);
+    sendMessage(`[Je vous ai envoyé un fichier ${fileType} nommé "${file.name}"]`);
     
     setIsUploading(false);
     
@@ -193,14 +224,14 @@ const ChatInterface = () => {
           }`}></div>
           <span className="text-sm font-medium">
             {connectionStatus === 'connected' 
-              ? `Connected to Ollama (${ollamaModel})` 
+              ? `Connecté à Ollama (${ollamaModel})` 
               : connectionStatus === 'connecting' 
-                ? 'Connecting to Ollama...' 
-                : 'Not connected to Ollama'}
+                ? 'Connexion à Ollama...' 
+                : 'Non connecté à Ollama'}
           </span>
         </div>
         <Button variant="ghost" size="sm">
-          {showConnectionSetup ? 'Hide Settings' : 'Show Settings'}
+          {showConnectionSetup ? 'Cacher les paramètres' : 'Afficher les paramètres'}
         </Button>
       </div>
 
@@ -227,9 +258,12 @@ const ChatInterface = () => {
               {connectionStatus !== 'connected' && (
                 <Button 
                   variant="outline"
-                  onClick={() => setShowConnectionSetup(true)}
+                  onClick={() => {
+                    setShowConnectionSetup(true);
+                    checkConnection();
+                  }}
                 >
-                  Connect to Ollama
+                  Connecter à Ollama
                 </Button>
               )}
             </div>
@@ -254,7 +288,7 @@ const ChatInterface = () => {
               <div className="text-sm mb-1 flex items-center justify-between">
                 <span>{message.role === 'user' ? 'Vous' : 'Assistant'}</span>
                 {message.pending && (
-                  <span className="text-xs animate-pulse">Generating...</span>
+                  <span className="text-xs animate-pulse">Génération...</span>
                 )}
               </div>
               

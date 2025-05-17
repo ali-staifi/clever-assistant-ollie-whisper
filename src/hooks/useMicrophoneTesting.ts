@@ -51,7 +51,7 @@ export const useMicrophoneTesting = () => {
       
       // Add a gain node to boost the signal
       const gainNode = context.createGain();
-      gainNode.gain.value = 1.5;  // Boost the signal
+      gainNode.gain.value = 2.0;  // Boost the signal more
       
       source.connect(gainNode);
       gainNode.connect(analyser);
@@ -74,7 +74,7 @@ export const useMicrophoneTesting = () => {
           const frequency = i * (context.sampleRate / analyser.fftSize);
           // Emphasize the speech frequency range
           if (frequency >= 200 && frequency <= 4000) {
-            sum += dataArray[i] * 1.5;  // Give more weight to speech frequencies
+            sum += dataArray[i] * 2.0;  // Give more weight to speech frequencies
             count++;
           } else {
             sum += dataArray[i];
@@ -84,7 +84,7 @@ export const useMicrophoneTesting = () => {
         
         const avg = sum / count;
         // Apply a non-linear curve to make small sounds more visible
-        const normalizedVolume = Math.min(1, Math.pow(avg / 128, 0.7));
+        const normalizedVolume = Math.min(1, Math.pow(avg / 128, 0.6)); // Réduit l'exposant pour amplifier les sons faibles
         
         setVolumeLevel(normalizedVolume * 100);
         

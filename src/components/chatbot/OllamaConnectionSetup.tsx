@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, ServerIcon, Check } from "lucide-react";
+import { AlertCircle, ServerIcon, Check, AlertTriangle, RefreshCw } from "lucide-react";
 import { OllamaConnectionStatus } from '@/hooks/useChatOllama';
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from '@/hooks/use-toast';
 
 interface OllamaConnectionSetupProps {
   ollamaUrl: string;
@@ -39,6 +40,8 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
 }) => {
   const [tempUrl, setTempUrl] = useState(ollamaUrl);
   const [initialSetupDone, setInitialSetupDone] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const { toast } = useToast();
 
   // Check connection on mount
   useEffect(() => {
@@ -47,6 +50,29 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
       setInitialSetupDone(true);
     }
   }, []);
+
+  // Fonction pour tester la connexion avec feedback
+  const handleTestConnection = async () => {
+    setIsChecking(true);
+    try {
+      const success = await onCheckConnection();
+      if (success) {
+        toast({
+          title: "Connexion réussie",
+          description: "La connexion à Ollama est établie avec succès.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Connexion échouée",
+          description: "Impossible de se connecter à Ollama. Vérifiez votre configuration.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsChecking(false);
+    }
+  };
 
   // Get displayed models - either available models or common models
   const getDisplayModels = () => {
@@ -72,7 +98,7 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
     <div className="p-4 bg-card border rounded-lg mb-4">
       <div className="flex items-center gap-2 mb-4">
         <ServerIcon className="h-5 w-5" />
-        <h2 className="text-lg font-medium">Ollama Connection</h2>
+        <h2 className="text-lg font-medium">Configuration d'Ollama</h2>
         <div className={`ml-auto flex items-center gap-2 ${
           connectionStatus === 'connected' 
             ? 'text-green-500' 
@@ -89,10 +115,10 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
           }`}></div>
           <span className="text-sm">
             {connectionStatus === 'connected' 
-              ? 'Connected' 
+              ? 'Connecté' 
               : connectionStatus === 'connecting' 
-                ? 'Connecting...' 
-                : 'Not connected'}
+                ? 'Connexion...' 
+                : 'Non connecté'}
           </span>
         </div>
       </div>
@@ -101,7 +127,7 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Input 
-              placeholder="Ollama URL (e.g. http://localhost:11434)"
+              placeholder="URL Ollama (ex: http://localhost:11434)"
               value={tempUrl}
               onChange={(e) => setTempUrl(e.target.value)}
               className="flex-1"
@@ -112,24 +138,26 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
               }}
               variant="secondary"
               size="sm"
-              disabled={connectionStatus === 'connecting' || tempUrl === ollamaUrl}
+              disabled={connectionStatus === 'connecting' || tempUrl === ollamaUrl || isChecking}
             >
-              Apply
+              Appliquer
             </Button>
             <Button
-              onClick={() => onCheckConnection()}
+              onClick={handleTestConnection}
               variant={connectionStatus === 'connected' ? "outline" : "default"}
               size="sm"
-              disabled={connectionStatus === 'connecting'}
+              disabled={connectionStatus === 'connecting' || isChecking}
+              className="flex items-center gap-1"
             >
-              {connectionStatus === 'connecting' ? 'Connecting...' : 'Test'}
+              {isChecking && <RefreshCw className="h-3 w-3 animate-spin mr-1" />}
+              {isChecking ? 'Test...' : 'Tester'}
             </Button>
           </div>
           
           {connectionStatus === 'connected' && (
             <div className="text-xs text-green-500 flex items-center gap-1">
               <Check className="h-3 w-3" />
-              Connected to Ollama server
+              Connecté au serveur Ollama
             </div>
           )}
           
@@ -137,7 +165,7 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
             <Alert variant="destructive" className="mt-2">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="ml-2 text-xs">
-                Cannot connect to Ollama. Make sure Ollama is running with CORS enabled:
+                Impossible de se connecter à Ollama. Assurez-vous qu'Ollama est en cours d'exécution avec CORS activé:
                 <code className="block mt-1 p-1 bg-black/20 rounded text-[11px]">
                   $env:OLLAMA_ORIGINS="*"; ollama serve
                 </code>
@@ -146,16 +174,29 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
           )}
         </div>
         
+        <Alert variant="default" className="bg-yellow-500/10 border border-yellow-500/30">
+          <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <AlertTitle className="text-sm">Installation requise</AlertTitle>
+          <AlertDescription className="text-xs mt-1">
+            <p>Pour utiliser cette interface, vous devez installer Ollama sur votre ordinateur:</p>
+            <ol className="list-decimal pl-5 mt-1 space-y-1">
+              <li>Téléchargez et installez Ollama depuis <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">ollama.com/download</a></li>
+              <li>Lancez Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
+              <li>Installez un modèle: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code></li>
+            </ol>
+          </AlertDescription>
+        </Alert>
+        
         {connectionStatus === 'connected' && (
           <div>
-            <label className="text-sm mb-1 block">Select Model</label>
+            <label className="text-sm mb-1 block">Sélectionner un modèle</label>
             <div className="flex items-center gap-2">
               <Select
                 value={ollamaModel}
                 onValueChange={onOllamaModelChange}
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select model" />
+                  <SelectValue placeholder="Sélectionner un modèle" />
                 </SelectTrigger>
                 <SelectContent>
                   {displayModels.map((model) => (
@@ -171,12 +212,21 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
                 size="sm"
                 onClick={onClearChat}
               >
-                Clear Chat
+                Effacer le chat
               </Button>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              Using model: {ollamaModel}
+              Modèle utilisé: {ollamaModel}
             </div>
+            
+            {availableModels.length === 0 && (
+              <Alert variant="warning" className="mt-2 p-2 bg-orange-500/10 border border-orange-500/30">
+                <AlertTriangle className="h-3 w-3 text-orange-500" />
+                <AlertDescription className="ml-1 text-xs">
+                  Aucun modèle n'a été trouvé. Installez-en un avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code>
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         )}
       </div>

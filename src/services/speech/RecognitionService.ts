@@ -4,7 +4,7 @@ import { SpeechRecognition, SpeechRecognitionErrorEvent, SpeechRecognitionEvent 
 export class RecognitionService {
   private recognition: SpeechRecognition | null = null;
   private isListening: boolean = false;
-  private lang: string = 'en-US';
+  private lang: string = 'fr-FR'; // Changé par défaut en français
   private sensitivity: number = 1.5; // Default higher sensitivity
   private retryCount: number = 0;
   private maxRetries: number = 3; // Allow automatic retries
@@ -47,17 +47,15 @@ export class RecognitionService {
     }
 
     try {
-      // If already listening, stop first to avoid errors
+      // Important: Si déjà en cours d'écoute, arrêter d'abord
       if (this.isListening) {
-        try {
-          this.stopListening();
-          // Small delay to ensure recognition is fully stopped
-          setTimeout(() => {
-            this.startListeningInternal(onInterimResult, onResult, onError);
-          }, 200);
-        } catch (e) {
-          console.error('Error restarting recognition:', e);
-        }
+        console.log("Recognition already active, stopping before restart");
+        this.stopListening();
+        
+        // Petit délai pour s'assurer que le service est complètement arrêté
+        setTimeout(() => {
+          this.startListeningInternal(onInterimResult, onResult, onError);
+        }, 300); // Augmenter le délai à 300ms
         return true;
       }
       
@@ -79,7 +77,34 @@ export class RecognitionService {
     this.retryCount = 0;
     
     if (!this.recognition) return false;
-      
+    
+    // S'assurer que les écouteurs sont correctement configurés
+    this.setupRecognitionListeners(onInterimResult, onResult, onError);
+    
+    console.log("Starting speech recognition...");
+    try {
+      this.recognition.start();
+      this.isListening = true;
+      return true;
+    } catch (error) {
+      console.error("Error starting recognition:", error);
+      return false;
+    }
+  }
+  
+  private setupRecognitionListeners(
+    onInterimResult?: (text: string) => void,
+    onResult?: (text: string) => void,
+    onError?: (error: string) => void
+  ) {
+    if (!this.recognition) return;
+    
+    // Supprimer les anciens écouteurs pour éviter les doublons
+    this.recognition.onresult = null;
+    this.recognition.onerror = null;
+    this.recognition.onend = null;
+    this.recognition.onstart = null;
+    
     this.recognition.onresult = (event: SpeechRecognitionEvent) => {
       if (event.results.length > 0) {
         const transcript = event.results[0][0].transcript;
@@ -121,13 +146,13 @@ export class RecognitionService {
           return; // Skip the error callback
         }
         
-        errorMessage = "No speech detected. Try speaking louder or moving closer to your microphone.";
+        errorMessage = "Pas de voix détectée. Essayez de parler plus fort ou rapprochez-vous du microphone.";
       } else if (event.error === 'network') {
-        errorMessage = "Network error occurred. Please check your internet connection.";
+        errorMessage = "Erreur réseau. Vérifiez votre connexion internet.";
       } else if (event.error === 'not-allowed') {
-        errorMessage = "Microphone access denied. Please allow microphone access in your browser settings.";
+        errorMessage = "Accès au microphone refusé. Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur.";
       } else if (event.error === 'audio-capture') {
-        errorMessage = "No microphone was found or microphone is not working properly.";
+        errorMessage = "Aucun microphone trouvé ou le microphone ne fonctionne pas correctement.";
       }
       
       // Only call onError if we're not going to retry
@@ -155,21 +180,12 @@ export class RecognitionService {
     // Log when recognition starts
     this.recognition.onstart = () => {
       console.log("Speech recognition started");
+      this.isListening = true;
     };
     
     // Set higher audio level for recognition
     if ((this.recognition as any).audioThreshold !== undefined) {
       (this.recognition as any).audioThreshold = 0.2;
-    }
-
-    console.log("Starting speech recognition...");
-    try {
-      this.recognition.start();
-      this.isListening = true;
-      return true;
-    } catch (error) {
-      console.error("Error starting recognition:", error);
-      return false;
     }
   }
 
@@ -180,6 +196,13 @@ export class RecognitionService {
         this.recognition.stop();
       } catch (e) {
         console.error('Error stopping recognition:', e);
+        
+        // Si l'arrêt échoue, essayer d'utiliser abort()
+        try {
+          this.recognition.abort();
+        } catch (e2) {
+          console.error('Error aborting recognition:', e2);
+        }
       }
       this.isListening = false;
     }
@@ -193,6 +216,7 @@ export class RecognitionService {
     this.lang = lang;
     if (this.recognition) {
       this.recognition.lang = lang;
+      console.log(`Speech recognition language set to: ${lang}`);
     }
   }
 }

@@ -3,8 +3,9 @@ import React, { useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MicrophoneSettingsProps {
   micSensitivity: number;
@@ -23,24 +24,38 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
 }) => {
   // List of available browser languages
   const availableLanguages = [
-    { value: 'en-US', label: 'English (US)' },
-    { value: 'fr-FR', label: 'French' },
-    { value: 'es-ES', label: 'Spanish' },
-    { value: 'de-DE', label: 'German' },
-    { value: 'it-IT', label: 'Italian' }
+    { value: 'fr-FR', label: 'Français' },
+    { value: 'en-US', label: 'Anglais (US)' },
+    { value: 'en-GB', label: 'Anglais (GB)' },
+    { value: 'es-ES', label: 'Espagnol' },
+    { value: 'de-DE', label: 'Allemand' },
+    { value: 'it-IT', label: 'Italien' }
   ];
   
-  // Get the current browser language
-  const [selectedLang, setSelectedLang] = React.useState(navigator.language || 'en-US');
+  // Get the current browser language or default to French
+  const [selectedLang, setSelectedLang] = React.useState('fr-FR');
   
-  // Apply language to SpeechRecognition on change
+  // État pour vérifier si le navigateur supporte la reconnaissance vocale
+  const [isSpeechSupported, setIsSpeechSupported] = React.useState(true);
+  
+  // Vérifier le support de la reconnaissance vocale au chargement
   useEffect(() => {
-    // This will be handled by the speech service
-    // Just UI for now
-  }, [selectedLang]);
+    setIsSpeechSupported(
+      'SpeechRecognition' in window || 'webkitSpeechRecognition' in window
+    );
+  }, []);
 
   return (
     <>
+      {!isSpeechSupported && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            Votre navigateur ne prend pas en charge la reconnaissance vocale. Essayez Chrome, Edge ou Safari.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="mic-sensitivity">Sensibilité du microphone</Label>
@@ -57,7 +72,7 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
           onValueChange={(value) => onMicSensitivityChange(value[0])}
         />
         <p className="text-xs text-muted-foreground">
-          Augmentez si J.A.R.V.I.S a du mal à vous entendre
+          Augmentez si l'assistant a du mal à vous entendre
         </p>
       </div>
       
@@ -89,6 +104,7 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
             variant={testingMic ? "destructive" : "outline"} 
             onClick={testMicrophone}
             size="sm"
+            disabled={!isSpeechSupported}
           >
             {testingMic ? "Arrêter le test" : "Démarrer le test"}
           </Button>
