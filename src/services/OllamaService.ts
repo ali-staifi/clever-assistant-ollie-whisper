@@ -21,6 +21,39 @@ export class OllamaService {
     this.model = model;
   }
 
+  async testConnection(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        return { 
+          success: false, 
+          error: `Status: ${response.status} ${response.statusText}` 
+        };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error testing Ollama connection:', error);
+      
+      // Check if the error is likely a CORS issue
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      let errorDetails = errorMsg;
+      
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
+        errorDetails = `Possible CORS issue. Make sure Ollama is running with: OLLAMA_ORIGINS="*" ollama serve`;
+      }
+      
+      return { 
+        success: false, 
+        error: errorDetails
+      };
+    }
+  }
+
   async generateResponse(
     prompt: string, 
     messages: Message[] = [],
@@ -45,7 +78,7 @@ export class OllamaService {
       });
 
       if (!response.ok || !response.body) {
-        throw new Error(`Ollama API error: ${response.status}`);
+        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
       }
 
       const reader = response.body.getReader();
@@ -77,8 +110,16 @@ export class OllamaService {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return '[Request cancelled]';
       }
+      
       console.error('Error calling Ollama:', error);
-      return `Error connecting to Ollama: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      // Check for possible CORS issues
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
+        return `Error connecting to Ollama: Possible CORS issue. Make sure Ollama is running with CORS enabled: OLLAMA_ORIGINS="*" ollama serve`;
+      }
+      
+      return `Error connecting to Ollama: ${errorMsg}`;
     }
   }
 

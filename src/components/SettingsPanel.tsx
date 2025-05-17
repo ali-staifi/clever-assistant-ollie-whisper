@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Info } from "lucide-react";
 
 interface SettingsPanelProps {
   ollamaUrl: string;
@@ -13,6 +15,7 @@ interface SettingsPanelProps {
   onClearConversation: () => void;
   onClose: () => void;
   checkConnection: () => void;
+  ollamaStatus: 'idle' | 'connecting' | 'connected' | 'error';
 }
 
 const COMMON_MODELS = [
@@ -36,7 +39,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onOllamaModelChange,
   onClearConversation,
   onClose,
-  checkConnection
+  checkConnection,
+  ollamaStatus
 }) => {
   return (
     <div className="bg-card rounded-lg p-4 mb-4 shadow-lg animate-fade-in">
@@ -52,14 +56,41 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               onChange={(e) => onOllamaUrlChange(e.target.value)}
               placeholder="http://localhost:11434"
             />
-            <Button variant="secondary" onClick={checkConnection}>
-              Test
+            <Button 
+              variant="secondary" 
+              onClick={checkConnection}
+              className={`${ollamaStatus === 'connecting' ? 'opacity-70' : ''}`}
+              disabled={ollamaStatus === 'connecting'}
+            >
+              {ollamaStatus === 'connecting' ? 'Connecting...' : 'Test'}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             The URL where your Ollama server is running
           </p>
         </div>
+        
+        {ollamaStatus === 'error' && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              Cannot connect to Ollama. Make sure Ollama is running and CORS is properly configured.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Alert className="bg-muted/50 border border-muted">
+          <Info className="h-4 w-4 mr-2" />
+          <AlertDescription className="text-xs">
+            <strong>Configure Ollama CORS in PowerShell:</strong>
+            <ol className="list-decimal pl-5 mt-1 space-y-1">
+              <li>Open PowerShell as administrator</li>
+              <li>Run: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
+              <li>Or for a specific origin: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="https://yourdomain.com"; ollama serve</code></li>
+            </ol>
+            <p className="mt-1">For persistent configuration, set the environment variable system-wide.</p>
+          </AlertDescription>
+        </Alert>
         
         <div className="space-y-2">
           <Label htmlFor="ollama-model">Ollama Model</Label>
