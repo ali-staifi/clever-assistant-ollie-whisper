@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Home, MessageSquare, Settings, Api } from "lucide-react";
+import { Home, MessageSquare, Settings, ServerIcon } from "lucide-react";
 
 const Navigation = () => {
   const location = useLocation();
@@ -46,7 +45,7 @@ const Navigation = () => {
               asChild
             >
               <Link to="/api" className="flex items-center">
-                <Api className="h-4 w-4 mr-2" />
+                <ServerIcon className="h-4 w-4 mr-2" />
                 <span>API</span>
               </Link>
             </Button>
@@ -85,7 +84,7 @@ const Navigation = () => {
               asChild
             >
               <Link to="/api">
-                <Api className="h-5 w-5" />
+                <ServerIcon className="h-5 w-5" />
               </Link>
             </Button>
           </div>

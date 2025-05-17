@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, VolumeUp, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, Volume2 } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
 import { Slider } from "@/components/ui/slider";
 
@@ -39,7 +38,7 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
         <div className="absolute -top-10 left-0 right-0 flex items-center justify-center">
           {isListening && (
             <div className="flex items-center gap-2 bg-gray-800/70 px-3 py-1 rounded-full">
-              <VolumeUp className="h-4 w-4 text-jarvis-blue" />
+              <Volume className="h-4 w-4 text-jarvis-blue" />
               <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-jarvis-blue transition-all duration-100"

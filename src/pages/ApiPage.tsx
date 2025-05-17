@@ -1,17 +1,16 @@
-
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, Api, Key } from "lucide-react";
+import { ArrowRight, ServerIcon, Key } from "lucide-react";
 
 const ApiPage = () => {
   return (
     <div className="container py-8 mx-auto">
       <div className="flex items-center mb-6">
-        <Api className="mr-2 h-6 w-6 text-jarvis-blue" />
+        <ServerIcon className="mr-2 h-6 w-6 text-jarvis-blue" />
         <h1 className="text-2xl font-bold">API Configuration</h1>
       </div>
 
