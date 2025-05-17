@@ -1,5 +1,4 @@
-
-import { Message } from '@/services/OllamaService';
+import { Message } from '@/services/ollama/types';
 
 export type OllamaStatus = 'idle' | 'connecting' | 'connected' | 'error';
 

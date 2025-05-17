@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { Message } from '@/services/OllamaService';
+import { Message } from '@/services/ollama/types';
 
 export const useConversation = () => {
   const [messages, setMessages] = useState<Message[]>([]);

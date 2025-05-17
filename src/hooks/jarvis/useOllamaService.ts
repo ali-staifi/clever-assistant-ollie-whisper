@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { OllamaService } from '@/services/ollama/OllamaService';
 import { OllamaStatus } from './types';
 import { useToast } from '@/hooks/use-toast';

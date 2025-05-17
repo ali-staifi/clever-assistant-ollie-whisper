@@ -1,6 +1,5 @@
-
 import React, { useRef, useEffect } from 'react';
-import { Message } from '@/services/OllamaService';
+import { Message } from '@/services/ollama/types';
 
 interface ConversationViewProps {
   messages: Message[];

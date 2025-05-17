@@ -1,5 +1,4 @@
-
-import { Message } from '@/services/OllamaService';
+import { Message } from './types';
 
 /**
  * Formats chat messages into a prompt string for models that need it
