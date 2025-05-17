@@ -28,7 +28,8 @@ export const useMicrophoneTesting = () => {
         audio: { 
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true  // Enable auto gain to boost quiet voices
+          autoGainControl: true,  // Enable auto gain to boost quiet voices
+          channelCount: 1  // Mono channel for voice
         } 
       });
       
@@ -49,9 +50,9 @@ export const useMicrophoneTesting = () => {
       // Connect microphone to analyzer
       const source = context.createMediaStreamSource(stream);
       
-      // Add a gain node to boost the signal
+      // Add a gain node to boost the signal even more
       const gainNode = context.createGain();
-      gainNode.gain.value = 2.0;  // Boost the signal more
+      gainNode.gain.value = 3.0;  // Boost the signal significantly more
       
       source.connect(gainNode);
       gainNode.connect(analyser);
@@ -74,7 +75,7 @@ export const useMicrophoneTesting = () => {
           const frequency = i * (context.sampleRate / analyser.fftSize);
           // Emphasize the speech frequency range
           if (frequency >= 200 && frequency <= 4000) {
-            sum += dataArray[i] * 2.0;  // Give more weight to speech frequencies
+            sum += dataArray[i] * 2.5;  // Give more weight to speech frequencies
             count++;
           } else {
             sum += dataArray[i];
@@ -84,7 +85,8 @@ export const useMicrophoneTesting = () => {
         
         const avg = sum / count;
         // Apply a non-linear curve to make small sounds more visible
-        const normalizedVolume = Math.min(1, Math.pow(avg / 128, 0.6)); // Réduit l'exposant pour amplifier les sons faibles
+        // Reduce the exponent to amplify weak sounds even more
+        const normalizedVolume = Math.min(1, Math.pow(avg / 128, 0.4)); 
         
         setVolumeLevel(normalizedVolume * 100);
         

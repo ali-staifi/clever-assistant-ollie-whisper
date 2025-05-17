@@ -55,7 +55,7 @@ export class RecognitionService {
         // Petit délai pour s'assurer que le service est complètement arrêté
         setTimeout(() => {
           this.startListeningInternal(onInterimResult, onResult, onError);
-        }, 300); // Augmenter le délai à 300ms
+        }, 500); // Augmenter le délai à 500ms pour s'assurer que le recognition est bien arrêté
         return true;
       }
       
@@ -83,11 +83,52 @@ export class RecognitionService {
     
     console.log("Starting speech recognition...");
     try {
-      this.recognition.start();
-      this.isListening = true;
-      return true;
+      // Vérifier si l'état actuel permet de démarrer
+      // Cette vérification supplémentaire aide à éviter l'erreur "recognition has already started"
+      if (this.recognition.state === 'active') {
+        console.log("Recognition is already active, trying to stop it first");
+        try {
+          this.recognition.stop();
+          // Petit délai avant de redémarrer
+          setTimeout(() => {
+            try {
+              this.recognition?.start();
+              this.isListening = true;
+            } catch (e) {
+              console.error("Error restarting recognition after stop:", e);
+              return false;
+            }
+          }, 300);
+          return true;
+        } catch (e) {
+          console.error("Error stopping active recognition:", e);
+          return false;
+        }
+      } else {
+        this.recognition.start();
+        this.isListening = true;
+        return true;
+      }
     } catch (error) {
       console.error("Error starting recognition:", error);
+      // Si l'erreur est "recognition has already started", essayons de l'arrêter puis de le redémarrer
+      if (error instanceof DOMException && error.message.includes("recognition has already started")) {
+        console.log("Caught 'already started' error, trying to stop and restart");
+        try {
+          this.recognition.stop();
+          setTimeout(() => {
+            try {
+              this.recognition?.start();
+              this.isListening = true;
+            } catch (e) {
+              console.error("Failed during restart attempt:", e);
+            }
+          }, 500);
+          return true;
+        } catch (e) {
+          console.error("Error during stop-restart cycle:", e);
+        }
+      }
       return false;
     }
   }
@@ -153,6 +194,13 @@ export class RecognitionService {
         errorMessage = "Accès au microphone refusé. Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur.";
       } else if (event.error === 'audio-capture') {
         errorMessage = "Aucun microphone trouvé ou le microphone ne fonctionne pas correctement.";
+      } else if (event.error === 'aborted') {
+        // Ne pas signaler les erreurs d'abandon lors des redémarrages intentionnels
+        if (this.isListening) {
+          errorMessage = "La reconnaissance vocale a été interrompue.";
+        } else {
+          return; // Skip error callback for intentional aborts
+        }
       }
       
       // Only call onError if we're not going to retry
@@ -167,7 +215,9 @@ export class RecognitionService {
       if (this.isListening && this.retryCount < this.maxRetries) {
         console.log("Restarting speech recognition...");
         try {
-          this.recognition?.start();
+          setTimeout(() => {
+            this.recognition?.start();
+          }, 300); // Petit délai avant de redémarrer pour éviter les conflits d'état
         } catch (e) {
           console.error('Error restarting recognition:', e);
           this.isListening = false;

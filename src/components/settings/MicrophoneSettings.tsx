@@ -3,9 +3,9 @@ import React, { useEffect } from 'react';
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, AlertTriangle } from "lucide-react";
+import { Volume2, VolumeX, AlertTriangle, Mic, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface MicrophoneSettingsProps {
   micSensitivity: number;
@@ -22,9 +22,12 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
   testingMic,
   volumeLevel
 }) => {
-  // List of available browser languages
+  // List of available browser languages - incluant plus d'options françaises
   const availableLanguages = [
-    { value: 'fr-FR', label: 'Français' },
+    { value: 'fr-FR', label: 'Français (France)' },
+    { value: 'fr-CA', label: 'Français (Canada)' },
+    { value: 'fr-BE', label: 'Français (Belgique)' },
+    { value: 'fr-CH', label: 'Français (Suisse)' },
     { value: 'en-US', label: 'Anglais (US)' },
     { value: 'en-GB', label: 'Anglais (GB)' },
     { value: 'es-ES', label: 'Espagnol' },
@@ -65,16 +68,30 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
         </div>
         <Slider
           id="mic-sensitivity"
-          min={0.1}
-          max={3.0}
-          step={0.1}
+          min={0.5}
+          max={5.0}  // Augmentation de la valeur maximale pour plus de sensibilité
+          step={0.2}
           value={[micSensitivity]}
           onValueChange={(value) => onMicSensitivityChange(value[0])}
         />
         <p className="text-xs text-muted-foreground">
-          Augmentez si l'assistant a du mal à vous entendre
+          Augmentez cette valeur si l'assistant a du mal à vous entendre
         </p>
       </div>
+      
+      <Alert variant="default" className="mt-4 bg-blue-500/10 border border-blue-500/30">
+        <Info className="h-4 w-4 text-blue-500 mr-2" />
+        <AlertTitle className="text-sm font-medium">Conseils pour la reconnaissance vocale</AlertTitle>
+        <AlertDescription className="text-xs mt-1">
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Parlez clairement et à un volume normal</li>
+            <li>Réduisez les bruits de fond</li>
+            <li>Utilisez un microphone externe pour une meilleure qualité</li>
+            <li>Si vous n'êtes pas entendu, augmentez la sensibilité ci-dessus</li>
+            <li>Testez régulièrement votre microphone avec le bouton ci-dessous</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
       
       <div className="space-y-2 mt-4">
         <div className="flex items-center justify-between">
@@ -101,12 +118,23 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
         <div className="flex justify-between items-center">
           <Label>Tester le microphone</Label>
           <Button 
-            variant={testingMic ? "destructive" : "outline"} 
+            variant={testingMic ? "destructive" : "default"} 
             onClick={testMicrophone}
             size="sm"
             disabled={!isSpeechSupported}
+            className="flex items-center gap-1"
           >
-            {testingMic ? "Arrêter le test" : "Démarrer le test"}
+            {testingMic ? (
+              <>
+                <VolumeX className="h-4 w-4 mr-1" />
+                Arrêter le test
+              </>
+            ) : (
+              <>
+                <Mic className="h-4 w-4 mr-1" />
+                Démarrer le test
+              </>
+            )}
           </Button>
         </div>
         
@@ -123,7 +151,7 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
               <Volume2 className="h-4 w-4 text-jarvis-blue" />
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              {volumeLevel < 20 ? "Voix trop basse - essayez de parler plus fort" : 
+              {volumeLevel < 20 ? "Voix trop basse - essayez de parler plus fort ou augmentez la sensibilité" : 
                volumeLevel > 70 ? "Bon niveau de volume détecté" : "Essayez de parler un peu plus fort"}
             </p>
           </div>
