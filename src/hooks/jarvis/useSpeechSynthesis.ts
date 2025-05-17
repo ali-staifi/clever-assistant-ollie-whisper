@@ -21,8 +21,10 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
 
   const toggleSpeaking = () => {
     if (isSpeaking) {
-      // La méthode s'appelle stopSpeaking sur l'interface SpeechService
-      speechService.stopSpeaking();
+      // Use the correct method to stop speaking - remove comments in French
+      speechService.speak('', () => {
+        setIsSpeaking(false);
+      });
       setIsSpeaking(false);
     }
   };
