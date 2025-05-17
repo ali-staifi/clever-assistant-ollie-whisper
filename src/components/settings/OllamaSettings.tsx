@@ -90,7 +90,7 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
         <Alert variant="destructive" className="mt-2">
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>
-            Cannot connect to Ollama. Make sure Ollama is running and CORS is properly configured.
+            Cannot connect to Ollama. Make sure Ollama is running with CORS enabled.
           </AlertDescription>
         </Alert>
       )}
@@ -98,14 +98,7 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
       <Alert className="bg-muted/50 border border-muted">
         <Info className="h-4 w-4 mr-2" />
         <AlertDescription className="text-xs">
-          <strong>Configure Ollama CORS in PowerShell:</strong>
-          <ol className="list-decimal pl-5 mt-1 space-y-1">
-            <li>Open PowerShell as administrator</li>
-            <li>If Ollama is already running, stop it with: <code className="bg-muted-foreground/20 px-1 rounded">Stop-Process -Name ollama</code></li>
-            <li>Start Ollama with CORS enabled: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
-            <li>Or for a specific origin: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="https://yourdomain.com"; ollama serve</code></li>
-          </ol>
-          <p className="mt-1">If you get "Only one usage of each socket address" error, Ollama is already running. Stop it first with <code className="bg-muted-foreground/20 px-1 rounded">Stop-Process -Name ollama</code> and try again.</p>
+          To run Ollama with CORS enabled: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code>
         </AlertDescription>
       </Alert>
       
