@@ -76,6 +76,13 @@ export class ChatOllamaService {
       this.abortRequest();
       this.controller = new AbortController();
 
+      console.log(`Sending chat request to: ${this.baseUrl}/api/chat with model ${this.model}`);
+      console.log('Request payload:', JSON.stringify({
+        model: this.model,
+        messages: [...messages, { role: 'user', content: prompt }],
+        stream: true,
+      }));
+
       const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
         headers: {
@@ -109,11 +116,15 @@ export class ChatOllamaService {
       const decoder = new TextDecoder();
       let fullResponse = '';
 
+      console.log('Starting to process streamed response');
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value);
+        console.log('Received chunk:', chunk);
+        
         const lines = chunk.split('\n').filter(line => line.trim() !== '');
         
         for (const line of lines) {
@@ -128,7 +139,7 @@ export class ChatOllamaService {
               }
             }
           } catch (e) {
-            console.error('Failed to parse Ollama response line:', e);
+            console.error('Failed to parse Ollama response line:', line, e);
           }
         }
       }

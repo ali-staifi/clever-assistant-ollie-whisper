@@ -26,7 +26,9 @@ export const useSpeechService = () => {
     startListening: startSpeechRecognition,
     stopListening,
     testMicrophone: testSpeechRecognition,
-    checkSpeechRecognition
+    checkSpeechRecognition,
+    noMicrophoneMode,
+    toggleNoMicrophoneMode
   } = useSpeechRecognition(speechService, micSensitivity);
   
   // Setup speech synthesis
@@ -39,7 +41,7 @@ export const useSpeechService = () => {
   
   // Apply sensitivity changes to speech service
   useEffect(() => {
-    if (speechService.setSensitivity && typeof speechService.setSensitivity === 'function') {
+    if (typeof speechService.setSensitivity === 'function') {
       speechService.setSensitivity(micSensitivity);
     }
   }, [micSensitivity, speechService]);
@@ -73,5 +75,7 @@ export const useSpeechService = () => {
     speak,
     toggleSpeaking,
     testMicrophone,
+    noMicrophoneMode,
+    toggleNoMicrophoneMode
   };
 };

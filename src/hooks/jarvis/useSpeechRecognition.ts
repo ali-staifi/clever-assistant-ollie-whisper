@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SpeechService } from '@/services/SpeechService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,19 +9,33 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
   const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const { toast } = useToast();
+  const [noMicrophoneMode, setNoMicrophoneMode] = useState(false);
   
   // Check if speech recognition is available
   const checkSpeechRecognition = () => {
-    setSpeechRecognitionAvailable(speechService.isRecognitionSupported());
-    if (!speechService.isRecognitionSupported()) {
-      setErrorMessage('Speech recognition is not supported in your browser. Please try using Chrome, Edge, or Safari.');
+    const isSupported = speechService.isRecognitionSupported();
+    setSpeechRecognitionAvailable(isSupported);
+    
+    if (!isSupported) {
+      setErrorMessage('La reconnaissance vocale n\'est pas prise en charge dans votre navigateur ou aucun microphone n\'est détecté. Vous pouvez utiliser le mode sans microphone ou essayer avec Chrome, Edge ou Safari.');
+      setNoMicrophoneMode(true);
+      
+      // Auto-enable no-microphone mode
+      if (typeof speechService.enableNoMicrophoneMode === 'function') {
+        speechService.enableNoMicrophoneMode(true);
+      }
     }
     
     // Apply saved sensitivity to speech service
-    if (speechService.setSensitivity && typeof speechService.setSensitivity === 'function') {
+    if (typeof speechService.setSensitivity === 'function') {
       speechService.setSensitivity(micSensitivity);
     }
   };
+
+  // Run check on mount
+  useEffect(() => {
+    checkSpeechRecognition();
+  }, []);
 
   const stopListening = () => {
     speechService.stopListening();
@@ -36,8 +50,10 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
     // Clear any previous error
     setErrorMessage('');
     
-    // Start audio monitoring
-    setupAudioMonitoring();
+    // Start audio monitoring if not in no-microphone mode
+    if (!noMicrophoneMode) {
+      setupAudioMonitoring();
+    }
     
     const success = speechService.startListening(
       onInterimResult,
@@ -47,11 +63,23 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
       },
       (error) => {
         console.error('Speech recognition error:', error);
+        
+        // Don't show error toast for no-speech as we handle it in RecognitionService
+        if (error.includes("no-speech")) {
+          return;
+        }
+        
         setIsListening(false);
-        setErrorMessage(`Microphone error: ${error}`);
+        
+        // Set a more user-friendly error message
+        const friendlyError = error.includes("microphone") || error.includes("permission")
+          ? `Impossible d'accéder au microphone. Veuillez vérifier les permissions de votre navigateur.`
+          : `Erreur de reconnaissance vocale: ${error}`;
+          
+        setErrorMessage(friendlyError);
         toast({
-          title: "Speech Recognition Error",
-          description: error,
+          title: "Erreur de reconnaissance vocale",
+          description: friendlyError,
           variant: "destructive",
         });
       }
@@ -60,17 +88,25 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
     if (success) {
       setIsListening(true);
       
-      // Notification to encourage the user to speak louder
-      toast({
-        title: "Listening...",
-        description: "Speak clearly and a bit louder than normal conversation.",
-        variant: "default",
-      });
+      if (!noMicrophoneMode) {
+        // Notification to encourage the user to speak louder
+        toast({
+          title: "Écoute en cours...",
+          description: "Parlez clairement et un peu plus fort qu'une conversation normale.",
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Mode sans microphone activé",
+          description: "Utilisez le clavier pour saisir vos messages.",
+          variant: "default",
+        });
+      }
     } else {
-      const micError = "Could not access the microphone. Please check your browser permissions.";
-      setErrorMessage(`Microphone error: ${micError}`);
+      const micError = "Impossible d'accéder au microphone. Veuillez vérifier les permissions de votre navigateur.";
+      setErrorMessage(`Erreur de microphone: ${micError}`);
       toast({
-        title: "Microphone Error",
+        title: "Erreur de microphone",
         description: micError,
         variant: "destructive",
       });
@@ -83,9 +119,19 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
     // Clear any previous error
     setErrorMessage('');
 
+    // If in no-microphone mode, show appropriate message
+    if (noMicrophoneMode) {
+      toast({
+        title: "Mode sans microphone activé",
+        description: "Le test du microphone n'est pas disponible en mode sans microphone. Utilisez le clavier pour saisir vos messages.",
+        variant: "default",
+      });
+      return;
+    }
+
     toast({
-      title: "Testing Microphone",
-      description: "Please speak after clicking OK. This will check if your microphone is working.",
+      title: "Test du microphone",
+      description: "Veuillez parler après avoir cliqué sur OK. Cela vérifiera si votre microphone fonctionne.",
     });
 
     // Start audio monitoring
@@ -98,8 +144,8 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
           // We got some speech! Microphone is working
           speechService.stopListening();
           toast({
-            title: "Microphone Test Successful",
-            description: "Your microphone is working! Voice detected.",
+            title: "Test du microphone réussi",
+            description: "Votre microphone fonctionne ! Voix détectée.",
           });
         }
       },
@@ -107,18 +153,28 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
         // Successfully got final text
         speechService.stopListening();
         toast({
-          title: "Microphone Test Successful",
-          description: "Your microphone is working properly.",
+          title: "Test du microphone réussi",
+          description: "Votre microphone fonctionne correctement.",
         });
       },
       (error) => {
-        console.error('Microphone test error:', error);
-        setErrorMessage(`Microphone test failed: ${error}`);
-        toast({
-          title: "Microphone Test Failed",
-          description: error,
-          variant: "destructive",
-        });
+        console.error('Test du microphone échoué:', error);
+        
+        // Different handling for no-speech error
+        if (error.includes('no-speech')) {
+          toast({
+            title: "Aucune voix détectée",
+            description: "Veuillez parler plus fort ou vérifier que votre microphone est activé.",
+            variant: "default",
+          });
+        } else {
+          setErrorMessage(`Test du microphone échoué: ${error}`);
+          toast({
+            title: "Test du microphone échoué",
+            description: error,
+            variant: "destructive",
+          });
+        }
       }
     );
 
@@ -130,12 +186,36 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
         }
       }, 5000);
     } else {
-      const micError = "Could not access the microphone. Please check your browser permissions.";
-      setErrorMessage(`Microphone error: ${micError}`);
+      const micError = "Impossible d'accéder au microphone. Veuillez vérifier les permissions de votre navigateur.";
+      setErrorMessage(`Erreur de microphone: ${micError}`);
       toast({
-        title: "Microphone Test Failed",
+        title: "Test du microphone échoué",
         description: micError,
         variant: "destructive",
+      });
+    }
+  };
+
+  // Add method to toggle no-microphone mode
+  const toggleNoMicrophoneMode = (enable?: boolean) => {
+    const newMode = enable !== undefined ? enable : !noMicrophoneMode;
+    setNoMicrophoneMode(newMode);
+    
+    if (typeof speechService.enableNoMicrophoneMode === 'function') {
+      speechService.enableNoMicrophoneMode(newMode);
+    }
+    
+    if (newMode) {
+      toast({
+        title: "Mode sans microphone activé",
+        description: "Vous pouvez utiliser le clavier pour saisir vos messages.",
+        variant: "default",
+      });
+    } else {
+      toast({
+        title: "Mode sans microphone désactivé",
+        description: "La reconnaissance vocale est maintenant active.",
+        variant: "default",
       });
     }
   };
@@ -150,6 +230,8 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
     startListening,
     stopListening,
     testMicrophone,
-    checkSpeechRecognition
+    checkSpeechRecognition,
+    noMicrophoneMode,
+    toggleNoMicrophoneMode
   };
 };

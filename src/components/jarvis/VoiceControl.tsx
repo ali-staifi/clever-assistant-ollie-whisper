@@ -1,8 +1,11 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, Volume2, Keyboard, KeyboardX } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface VoiceControlProps {
   isListening: boolean;
@@ -16,6 +19,8 @@ interface VoiceControlProps {
   micVolume?: number;
   micSensitivity?: number;
   onSensitivityChange?: (value: number) => void;
+  noMicrophoneMode?: boolean;
+  toggleNoMicrophoneMode?: (enable?: boolean) => void;
 }
 
 const VoiceControl: React.FC<VoiceControlProps> = ({
@@ -29,14 +34,31 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
   onTestMicrophone,
   micVolume = 0,
   micSensitivity = 1.0,
-  onSensitivityChange
+  onSensitivityChange,
+  noMicrophoneMode = false,
+  toggleNoMicrophoneMode
 }) => {
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="relative w-64 h-64 md:w-80 md:h-80">
+        {/* Mode sans microphone switch */}
+        {toggleNoMicrophoneMode && (
+          <div className="absolute -top-16 left-0 right-0 flex items-center justify-center">
+            <div className="flex items-center gap-2 bg-gray-800/70 px-3 py-2 rounded-md">
+              <Switch 
+                checked={noMicrophoneMode} 
+                onCheckedChange={toggleNoMicrophoneMode}
+                id="no-mic-mode"
+              />
+              <Label htmlFor="no-mic-mode" className="text-xs">Mode sans microphone</Label>
+              {noMicrophoneMode ? <Keyboard className="h-4 w-4 text-green-400" /> : <Mic className="h-4 w-4 text-jarvis-blue" />}
+            </div>
+          </div>
+        )}
+      
         {/* Volume Indicator */}
         <div className="absolute -top-10 left-0 right-0 flex items-center justify-center">
-          {isListening && (
+          {isListening && !noMicrophoneMode && (
             <div className="flex items-center gap-2 bg-gray-800/70 px-3 py-1 rounded-full">
               <Volume className="h-4 w-4 text-jarvis-blue" />
               <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -49,15 +71,15 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
           )}
         </div>
         
-        {/* Sensitivity Slider */}
-        {onSensitivityChange && (
+        {/* Sensitivity Slider - Only show in microphone mode */}
+        {onSensitivityChange && !noMicrophoneMode && (
           <div className="absolute -bottom-12 left-0 right-0 flex items-center px-6">
             <Volume2 className="h-4 w-4 text-gray-400 mr-2" />
             <Slider
               value={[micSensitivity]}
               min={0.5}
-              max={2.0}
-              step={0.1}
+              max={5.0}
+              step={0.2}
               onValueChange={(values) => onSensitivityChange(values[0])}
               className="flex-1"
             />
@@ -84,18 +106,23 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
         {/* Control Buttons */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex gap-4">
-            {/* Mic Button */}
-            {speechRecognitionAvailable ? (
+            {/* Mic/Keyboard Button */}
+            {speechRecognitionAvailable || noMicrophoneMode ? (
               <Button 
                 className={`rounded-full w-16 h-16 transition-all ${
-                  isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
+                  isListening ? 'bg-red-600 hover:bg-red-700' : 
+                  noMicrophoneMode ? 'bg-green-600 hover:bg-green-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
                 }`}
                 onClick={toggleListening}
                 disabled={isProcessing || ollamaStatus === 'error'}
-                title={ollamaStatus === 'error' ? "Cannot connect to Ollama" : isListening ? "Stop listening" : "Start listening"}
+                title={ollamaStatus === 'error' ? "Impossible de se connecter à Ollama" : 
+                       noMicrophoneMode ? "Entrer un message texte" :
+                       isListening ? "Arrêter l'écoute" : "Commencer l'écoute"}
               >
                 {isListening ? (
                   <MicOff className="h-8 w-8" />
+                ) : noMicrophoneMode ? (
+                  <Keyboard className="h-8 w-8" />
                 ) : (
                   <Mic className="h-8 w-8" />
                 )}
@@ -104,7 +131,7 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
               <Button 
                 className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 cursor-not-allowed"
                 disabled={true}
-                title="Speech recognition not available in this browser"
+                title="La reconnaissance vocale n'est pas disponible dans ce navigateur"
               >
                 <AlertTriangle className="h-8 w-8" />
               </Button>
@@ -124,12 +151,12 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
               </Button>
             )}
 
-            {/* Test Mic Button - Only visible when not listening */}
-            {!isListening && onTestMicrophone && (
+            {/* Test Mic Button - Only visible when not listening and not in no-mic mode */}
+            {!isListening && !noMicrophoneMode && onTestMicrophone && (
               <Button 
                 className="rounded-full w-12 h-12 bg-jarvis-blue/60 hover:bg-jarvis-blue/80"
                 onClick={onTestMicrophone}
-                title="Test microphone"
+                title="Tester le microphone"
               >
                 <Settings className="h-6 w-6" />
               </Button>
@@ -139,11 +166,12 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
         
         {/* Status Text */}
         <div className="absolute -bottom-10 left-0 right-0 text-center text-sm text-jarvis-blue">
-          {!speechRecognitionAvailable ? 'Speech recognition not supported in this browser' :
-           isListening ? 'Listening...' : 
-           isProcessing ? 'Processing...' : 
-           isSpeaking ? 'Speaking...' : 
-           'Ready'}
+          {!speechRecognitionAvailable && !noMicrophoneMode ? 'Reconnaissance vocale non prise en charge dans ce navigateur' :
+           noMicrophoneMode ? 'Mode sans microphone activé' :
+           isListening ? 'Écoute en cours...' : 
+           isProcessing ? 'Traitement...' : 
+           isSpeaking ? 'Parle...' : 
+           'Prêt'}
         </div>
       </div>
     </div>

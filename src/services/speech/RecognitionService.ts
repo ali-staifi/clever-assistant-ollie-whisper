@@ -6,6 +6,7 @@ export class RecognitionService {
   private isListening: boolean = false;
   private language: string = 'en-US';
   private sensitivity: number = 1.0;
+  private noMicrophoneMode: boolean = false;
 
   constructor() {
     this.setupRecognition();
@@ -21,6 +22,7 @@ export class RecognitionService {
       this.recognition = new SpeechRecognition();
     } else {
       console.warn("Speech recognition not supported in this browser");
+      this.noMicrophoneMode = true;
       return false;
     }
 
@@ -42,6 +44,17 @@ export class RecognitionService {
     onResult?: (text: string) => void,
     onError?: (error: string) => void
   ): boolean {
+    // In no-microphone mode, we'll simulate speech input
+    if (this.noMicrophoneMode) {
+      console.log("Running in no-microphone mode");
+      if (onResult) {
+        setTimeout(() => {
+          onResult("Simulation mode activated. Please type your message instead.");
+        }, 1000);
+      }
+      return true;
+    }
+    
     // Check if recognition is available
     if (!this.recognition) {
       if (!this.setupRecognition()) {
@@ -73,12 +86,36 @@ export class RecognitionService {
 
       this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error("Speech recognition error:", event.error);
-        if (onError) onError(`Recognition error: ${event.error}`);
+        
+        // Custom handling for no-speech error - don't treat it as critical
+        if (event.error === 'no-speech') {
+          console.log("No speech detected, continuing to listen");
+          // Try to restart recognition after a short delay
+          setTimeout(() => {
+            if (this.isListening) {
+              try {
+                this.recognition.stop();
+                setTimeout(() => {
+                  if (this.isListening) {
+                    this.recognition.start();
+                  }
+                }, 100);
+              } catch (e) {
+                console.error("Error restarting recognition:", e);
+              }
+            }
+          }, 1000);
+        } else {
+          if (onError) onError(`Recognition error: ${event.error}`);
+        }
       };
 
       this.recognition.onend = () => {
-        this.isListening = false;
-        // Don't automatically restart to avoid infinite loops
+        // Only set isListening to false if we're not trying to restart
+        // due to a no-speech error
+        if (this.isListening) {
+          console.log("Recognition ended");
+        }
       };
 
       // Start recognition
@@ -104,7 +141,7 @@ export class RecognitionService {
   }
 
   isRecognitionSupported(): boolean {
-    return ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+    return !this.noMicrophoneMode && (('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window));
   }
 
   setLanguage(lang: string) {
@@ -117,5 +154,10 @@ export class RecognitionService {
   setSensitivity(value: number) {
     this.sensitivity = value;
     console.log("Speech recognition sensitivity set to:", value);
+  }
+  
+  // Add a method to enable simulation mode for testing without a microphone
+  enableNoMicrophoneMode(enable: boolean = true) {
+    this.noMicrophoneMode = enable;
   }
 }

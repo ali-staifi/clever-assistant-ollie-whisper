@@ -33,7 +33,9 @@ export const useJarvisServices = () => {
     stopListening,
     speak,
     toggleSpeaking,
-    testMicrophone
+    testMicrophone,
+    noMicrophoneMode,
+    toggleNoMicrophoneMode
   } = useSpeechService();
 
   const {
@@ -53,9 +55,20 @@ export const useJarvisServices = () => {
       return;
     }
     
+    // If we're in no-microphone mode, just add a text input field or trigger a dialog
+    if (noMicrophoneMode) {
+      const userMessage = prompt("Entrez votre message:");
+      if (userMessage && userMessage.trim() !== '') {
+        setTranscript(userMessage);
+        addUserMessage(userMessage);
+        processOllamaResponse(userMessage);
+      }
+      return;
+    }
+    
     // Check for connection before starting listening
     if (ollamaStatus === 'error') {
-      setErrorMessage("Cannot connect to Ollama. Please check settings and try again.");
+      setErrorMessage("Impossible de se connecter à Ollama. Veuillez vérifier les paramètres et réessayer.");
       return;
     }
 
@@ -99,9 +112,10 @@ export const useJarvisServices = () => {
     } catch (error) {
       console.error('Error processing with Ollama:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
-      setResponse(`Sorry, I encountered an error while processing your request: ${errorMsg}`);
       
-      setErrorMessage(`Processing error: ${errorMsg}`);
+      setResponse(`Désolé, j'ai rencontré une erreur lors du traitement de votre demande: ${errorMsg}`);
+      
+      setErrorMessage(`Erreur de traitement: ${errorMsg}`);
     } finally {
       setIsProcessing(false);
     }
@@ -137,5 +151,7 @@ export const useJarvisServices = () => {
     checkOllamaConnection,
     dismissError,
     testMicrophone,
+    noMicrophoneMode,
+    toggleNoMicrophoneMode
   };
 };

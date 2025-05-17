@@ -34,6 +34,8 @@ const JarvisInterface = () => {
     checkOllamaConnection,
     dismissError,
     testMicrophone,
+    noMicrophoneMode,
+    toggleNoMicrophoneMode
   } = useJarvisServices();
   
   // Listen for settings toggle events from Navigation
@@ -76,6 +78,8 @@ const JarvisInterface = () => {
           checkConnection={checkOllamaConnection}
           ollamaStatus={ollamaStatus}
           availableModels={availableModels}
+          noMicrophoneMode={noMicrophoneMode}
+          toggleNoMicrophoneMode={toggleNoMicrophoneMode}
         />
       )}
       
@@ -94,6 +98,8 @@ const JarvisInterface = () => {
           micVolume={micVolume}
           micSensitivity={micSensitivity}
           onSensitivityChange={setMicSensitivity}
+          noMicrophoneMode={noMicrophoneMode}
+          toggleNoMicrophoneMode={toggleNoMicrophoneMode}
         />
         
         {/* Conversation Section */}

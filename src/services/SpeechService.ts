@@ -46,8 +46,15 @@ export class SpeechService {
   
   // Add sensitivity method
   setSensitivity(value: number) {
-    if (this.recognitionService.setSensitivity) {
+    if (typeof this.recognitionService.setSensitivity === 'function') {
       this.recognitionService.setSensitivity(value);
+    }
+  }
+  
+  // Add method to enable no-microphone mode
+  enableNoMicrophoneMode(enable: boolean = true) {
+    if (typeof this.recognitionService.enableNoMicrophoneMode === 'function') {
+      this.recognitionService.enableNoMicrophoneMode(enable);
     }
   }
 }
