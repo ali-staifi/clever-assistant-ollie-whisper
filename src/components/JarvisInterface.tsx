@@ -1,0 +1,242 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Mic, MicOff, Settings } from 'lucide-react';
+import { OllamaService, Message } from '@/services/OllamaService';
+import { SpeechService } from '@/services/SpeechService';
+import AudioVisualizer from './AudioVisualizer';
+import SettingsPanel from './SettingsPanel';
+
+const JarvisInterface = () => {
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [response, setResponse] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
+  const [ollamaModel, setOllamaModel] = useState('llama3');
+  
+  const ollamaService = useRef(new OllamaService(ollamaUrl, ollamaModel)).current;
+  const speechService = useRef(new SpeechService()).current;
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      speechService.stopListening();
+      setIsListening(false);
+      return;
+    }
+    
+    const success = speechService.startListening(
+      (interimText) => {
+        setTranscript(interimText);
+      },
+      async (finalText) => {
+        setIsListening(false);
+        setTranscript(finalText);
+        
+        // Add user message to chat
+        const userMessage = { role: 'user' as const, content: finalText };
+        setMessages(prev => [...prev, userMessage]);
+        
+        // Process with Ollama
+        await processOllamaResponse(finalText);
+      },
+      (error) => {
+        console.error('Speech recognition error:', error);
+        setIsListening(false);
+      }
+    );
+    
+    if (success) {
+      setIsListening(true);
+    }
+  };
+  
+  const processOllamaResponse = async (text: string) => {
+    setIsProcessing(true);
+    setResponse('');
+    
+    try {
+      await ollamaService.generateResponse(
+        text,
+        messages,
+        (progressText) => {
+          setResponse(progressText);
+        }
+      );
+      
+      // Save assistant response to messages
+      const assistantMessage = { role: 'assistant' as const, content: response };
+      setMessages(prev => [...prev, assistantMessage]);
+      
+      // Speak the response
+      setIsSpeaking(true);
+      speechService.speak(response, () => {
+        setIsSpeaking(false);
+      });
+    } catch (error) {
+      console.error('Error processing with Ollama:', error);
+      setResponse('Sorry, I encountered an error while processing your request.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleOllamaUrlChange = (url: string) => {
+    setOllamaUrl(url);
+    ollamaService.setBaseUrl(url);
+  };
+
+  const handleOllamaModelChange = (model: string) => {
+    setOllamaModel(model);
+    ollamaService.setModel(model);
+  };
+
+  const clearConversation = () => {
+    setMessages([]);
+    setTranscript('');
+    setResponse('');
+  };
+
+  return (
+    <div className="flex flex-col h-screen bg-jarvis-darkBlue text-white p-4 overflow-hidden">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-4xl font-bold text-jarvis-blue text-shadow-glow">J.A.R.V.I.S</h1>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setShowSettings(!showSettings)}
+          className="text-jarvis-blue hover:bg-jarvis-darkBlue/30"
+        >
+          <Settings className="h-6 w-6" />
+        </Button>
+      </div>
+      
+      {/* Settings Panel */}
+      {showSettings && (
+        <SettingsPanel
+          ollamaUrl={ollamaUrl}
+          ollamaModel={ollamaModel}
+          onOllamaUrlChange={handleOllamaUrlChange}
+          onOllamaModelChange={handleOllamaModelChange}
+          onClearConversation={clearConversation}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+      
+      {/* Main Interface */}
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
+        {/* Visualizer Section */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="relative w-64 h-64 md:w-80 md:h-80">
+            {/* Pulse Ring */}
+            <div className={`absolute inset-0 rounded-full border-2 border-jarvis-blue/30 animate-pulse-ring ${isListening || isProcessing || isSpeaking ? 'opacity-100' : 'opacity-0'}`}></div>
+            
+            {/* Rotating Ring */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-[110%] h-[110%] border border-jarvis-blue/20 rounded-full animate-rotate-circle"></div>
+              <div className="absolute w-[95%] h-[95%] border border-jarvis-blue/30 rounded-full animate-rotate-circle-slow"></div>
+            </div>
+            
+            {/* Core Visualizer */}
+            <div className="absolute inset-0">
+              <AudioVisualizer 
+                isListening={isListening} 
+                isPulsing={isProcessing || isSpeaking} 
+              />
+            </div>
+            
+            {/* Mic Button */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Button 
+                className={`rounded-full w-16 h-16 transition-all ${
+                  isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
+                }`}
+                onClick={toggleListening}
+                disabled={isProcessing}
+              >
+                {isListening ? (
+                  <MicOff className="h-8 w-8" />
+                ) : (
+                  <Mic className="h-8 w-8" />
+                )}
+              </Button>
+            </div>
+            
+            {/* Status Text */}
+            <div className="absolute -bottom-10 left-0 right-0 text-center text-sm text-jarvis-blue">
+              {isListening ? 'Listening...' : 
+               isProcessing ? 'Processing...' : 
+               isSpeaking ? 'Speaking...' : 
+               'Ready'}
+            </div>
+          </div>
+        </div>
+        
+        {/* Conversation Section */}
+        <div className="flex-1 bg-jarvis-darkBlue/50 rounded-lg p-4 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-gray-400 mt-10">
+                <p>Say "Hello" to start a conversation</p>
+              </div>
+            )}
+            
+            {messages.map((msg, index) => (
+              <div 
+                key={index}
+                className={`p-3 rounded-lg max-w-[85%] animate-fade-in ${
+                  msg.role === 'user' 
+                    ? 'bg-jarvis-blue/30 ml-auto' 
+                    : 'bg-muted text-white/90 mr-auto'
+                }`}
+              >
+                <div className="text-xs text-gray-400 mb-1">
+                  {msg.role === 'user' ? 'You' : 'J.A.R.V.I.S'}
+                </div>
+                <div className="whitespace-pre-wrap">
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+            
+            {/* Current processing message */}
+            {isProcessing && response && (
+              <div className="bg-muted text-white/90 p-3 rounded-lg max-w-[85%] mr-auto animate-fade-in">
+                <div className="text-xs text-gray-400 mb-1">
+                  J.A.R.V.I.S
+                </div>
+                <div className="whitespace-pre-wrap">
+                  {response}
+                </div>
+              </div>
+            )}
+            
+            {/* Current transcript */}
+            {isListening && transcript && (
+              <div className="bg-jarvis-blue/30 p-3 rounded-lg max-w-[85%] ml-auto animate-fade-in">
+                <div className="text-xs text-gray-400 mb-1">
+                  You (listening...)
+                </div>
+                <div>{transcript}</div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default JarvisInterface;
