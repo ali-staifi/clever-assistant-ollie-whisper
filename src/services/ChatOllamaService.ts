@@ -86,9 +86,10 @@ export class ChatOllamaService {
       const isQwenModel = this.model.toLowerCase().includes('qwen');
       const endpoint = isQwenModel ? '/api/generate' : '/api/chat';
       
+      console.log(`Using ${endpoint} API for ${isQwenModel ? 'Qwen' : 'standard'} model`);
+      
       // Prepare request payload based on model type
       let requestPayload;
-      let requestBody;
       
       if (isQwenModel) {
         // Format for Qwen models with the generate API
@@ -97,9 +98,6 @@ export class ChatOllamaService {
           prompt: this.formatMessagesToPrompt(messages, prompt),
           stream: true,
         };
-        
-        console.log('Using generate API for Qwen model');
-        requestBody = JSON.stringify(requestPayload);
       } else {
         // Standard format for chat API
         requestPayload = {
@@ -107,12 +105,9 @@ export class ChatOllamaService {
           messages: [...messages, { role: 'user', content: prompt }],
           stream: true,
         };
-        
-        console.log('Using chat API for standard model');
-        requestBody = JSON.stringify(requestPayload);
       }
       
-      console.log(`Request endpoint: ${this.baseUrl}${endpoint}`);
+      const requestBody = JSON.stringify(requestPayload);
       console.log('Request payload:', requestBody.substring(0, 200) + (requestBody.length > 200 ? '...' : ''));
 
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -163,10 +158,12 @@ export class ChatOllamaService {
             let responseText;
             if (isQwenModel) {
               // For generate API
-              responseText = parsedLine.response;
+              responseText = parsedLine.response || '';
+              console.log('Qwen response text:', responseText.substring(0, 50) + (responseText.length > 50 ? '...' : ''));
             } else {
               // For chat API
-              responseText = parsedLine.message?.content || parsedLine.response;
+              responseText = parsedLine.message?.content || parsedLine.response || '';
+              console.log('Standard response text:', responseText.substring(0, 50) + (responseText.length > 50 ? '...' : ''));
             }
             
             // Make sure we have valid text before adding it
@@ -184,6 +181,7 @@ export class ChatOllamaService {
       }
 
       this.controller = null;
+      console.log('Final response length:', fullResponse.length);
       return fullResponse.trim();
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {

@@ -1,5 +1,6 @@
 
 import { RecognitionCallbacks, RecognitionProvider } from '../types/recognition';
+import { SpeechRecognition, SpeechRecognitionEvent, SpeechRecognitionErrorEvent } from '../types';
 
 export class SpeechRecognitionProvider implements RecognitionProvider {
   private recognition: SpeechRecognition | null = null;
