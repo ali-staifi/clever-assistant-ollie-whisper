@@ -23,6 +23,9 @@ const JarvisInterface = () => {
     availableModels,
     errorMessage,
     speechRecognitionAvailable,
+    micVolume,
+    micSensitivity,
+    setMicSensitivity,
     toggleListening,
     toggleSpeaking,
     handleOllamaUrlChange,
@@ -75,6 +78,9 @@ const JarvisInterface = () => {
           ollamaStatus={ollamaStatus}
           speechRecognitionAvailable={speechRecognitionAvailable}
           onTestMicrophone={testMicrophone}
+          micVolume={micVolume}
+          micSensitivity={micSensitivity}
+          onSensitivityChange={setMicSensitivity}
         />
         
         {/* Conversation Section */}

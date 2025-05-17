@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings } from 'lucide-react';
+import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, VolumeUp, Volume2 } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
+import { Slider } from "@/components/ui/slider";
 
 interface VoiceControlProps {
   isListening: boolean;
@@ -13,6 +14,9 @@ interface VoiceControlProps {
   ollamaStatus: 'idle' | 'connecting' | 'connected' | 'error';
   speechRecognitionAvailable?: boolean;
   onTestMicrophone?: () => void;
+  micVolume?: number;
+  micSensitivity?: number;
+  onSensitivityChange?: (value: number) => void;
 }
 
 const VoiceControl: React.FC<VoiceControlProps> = ({
@@ -23,11 +27,44 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
   toggleSpeaking,
   ollamaStatus,
   speechRecognitionAvailable = true,
-  onTestMicrophone
+  onTestMicrophone,
+  micVolume = 0,
+  micSensitivity = 1.0,
+  onSensitivityChange
 }) => {
   return (
     <div className="flex-1 flex items-center justify-center">
       <div className="relative w-64 h-64 md:w-80 md:h-80">
+        {/* Volume Indicator */}
+        <div className="absolute -top-10 left-0 right-0 flex items-center justify-center">
+          {isListening && (
+            <div className="flex items-center gap-2 bg-gray-800/70 px-3 py-1 rounded-full">
+              <VolumeUp className="h-4 w-4 text-jarvis-blue" />
+              <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-jarvis-blue transition-all duration-100"
+                  style={{ width: `${micVolume}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Sensitivity Slider */}
+        {onSensitivityChange && (
+          <div className="absolute -bottom-12 left-0 right-0 flex items-center px-6">
+            <Volume2 className="h-4 w-4 text-gray-400 mr-2" />
+            <Slider
+              value={[micSensitivity]}
+              min={0.5}
+              max={2.0}
+              step={0.1}
+              onValueChange={(values) => onSensitivityChange(values[0])}
+              className="flex-1"
+            />
+          </div>
+        )}
+        
         {/* Pulse Ring */}
         <div className={`absolute inset-0 rounded-full border-2 border-jarvis-blue/30 animate-pulse-ring ${isListening || isProcessing || isSpeaking ? 'opacity-100' : 'opacity-0'}`}></div>
         

@@ -9,9 +9,14 @@ export const useSpeechService = () => {
   const [transcript, setTranscript] = useState('');
   const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [micVolume, setMicVolume] = useState(0);
+  const [micSensitivity, setMicSensitivity] = useState(1.0); // Default sensitivity
   
   const speechService = useRef(new SpeechService()).current;
   const { toast } = useToast();
+  const audioContext = useRef<AudioContext | null>(null);
+  const analyser = useRef<AnalyserNode | null>(null);
+  const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
   
   // Check if speech recognition is available on mount
   useEffect(() => {
@@ -21,9 +26,75 @@ export const useSpeechService = () => {
     }
   }, []);
 
+  // Clean up audio resources on unmount
+  useEffect(() => {
+    return () => {
+      if (microphone.current) {
+        microphone.current.disconnect();
+      }
+      if (audioContext.current) {
+        audioContext.current.close();
+      }
+    };
+  }, []);
+
+  // Setup audio visualization and volume monitoring
+  const setupAudioMonitoring = async () => {
+    try {
+      if (!audioContext.current) {
+        audioContext.current = new AudioContext();
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Create analyzer
+      if (!analyser.current) {
+        analyser.current = audioContext.current.createAnalyser();
+        analyser.current.fftSize = 256;
+      }
+      
+      // Connect microphone to analyzer
+      if (!microphone.current) {
+        microphone.current = audioContext.current.createMediaStreamSource(stream);
+        microphone.current.connect(analyser.current);
+      }
+      
+      // Start monitoring volume
+      const bufferLength = analyser.current.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      const checkVolume = () => {
+        if (!analyser.current) return;
+        
+        analyser.current.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        
+        // Calculate average volume (0-100)
+        const avgVolume = (sum / bufferLength) * micSensitivity;
+        setMicVolume(Math.min(100, avgVolume));
+        
+        if (isListening) {
+          requestAnimationFrame(checkVolume);
+        } else {
+          setMicVolume(0);
+        }
+      };
+      
+      checkVolume();
+      return true;
+    } catch (error) {
+      console.error('Failed to access microphone for volume monitoring:', error);
+      return false;
+    }
+  };
+
   const stopListening = () => {
     speechService.stopListening();
     setIsListening(false);
+    setMicVolume(0);
   };
 
   const startListening = (
@@ -33,15 +104,20 @@ export const useSpeechService = () => {
     // Clear any previous error
     setErrorMessage('');
     
+    // Start audio monitoring
+    setupAudioMonitoring();
+    
     const success = speechService.startListening(
       onInterimResult,
       (finalText) => {
         setIsListening(false);
+        setMicVolume(0);
         onFinalResult(finalText);
       },
       (error) => {
         console.error('Speech recognition error:', error);
         setIsListening(false);
+        setMicVolume(0);
         setErrorMessage(`Microphone error: ${error}`);
         toast({
           title: "Speech Recognition Error",
@@ -88,6 +164,9 @@ export const useSpeechService = () => {
       title: "Testing Microphone",
       description: "Please speak after clicking OK. This will check if your microphone is working.",
     });
+
+    // Start audio monitoring
+    setupAudioMonitoring();
 
     // Short listening test
     const success = speechService.startListening(
@@ -146,6 +225,9 @@ export const useSpeechService = () => {
     speechRecognitionAvailable,
     errorMessage,
     setErrorMessage,
+    micVolume,
+    micSensitivity,
+    setMicSensitivity,
     startListening,
     stopListening,
     speak,
