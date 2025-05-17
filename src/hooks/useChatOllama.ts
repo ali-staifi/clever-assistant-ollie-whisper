@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { ChatOllamaService } from '@/services/ChatOllamaService';
+import { ChatOllamaService } from '@/services/ollama/ChatOllamaService';
 import { Message } from '@/services/OllamaService';
 import { useToast } from '@/hooks/use-toast';
 

@@ -1,8 +1,8 @@
 
 import { Message } from '@/services/OllamaService';
-import { formatMessagesToPrompt } from './ollama/formatUtils';
-import { parseStreamedResponse } from './ollama/responseParser';
-import { testOllamaConnection, getAvailableModels } from './ollama/connectionUtils';
+import { formatMessagesToPrompt } from './formatUtils';
+import { parseStreamedResponse } from './responseParser';
+import { testOllamaConnection, getAvailableModels } from './connectionUtils';
 
 export class ChatOllamaService {
   private baseUrl: string;
