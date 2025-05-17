@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { OllamaService, Message } from '@/services/OllamaService';
 import { SpeechService } from '@/services/SpeechService';
@@ -16,11 +15,20 @@ export const useJarvisServices = () => {
   const [ollamaModel, setOllamaModel] = useState('llama3');
   const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(true);
   
   const ollamaService = useRef(new OllamaService(ollamaUrl, ollamaModel)).current;
   const speechService = useRef(new SpeechService()).current;
   const { toast } = useToast();
   
+  // Check if speech recognition is available
+  useEffect(() => {
+    setSpeechRecognitionAvailable(speechService.isRecognitionSupported());
+    if (!speechService.isRecognitionSupported()) {
+      setErrorMessage('Speech recognition is not supported in your browser. Please try using Chrome, Edge, or Safari.');
+    }
+  }, []);
+
   // Check Ollama connection on startup and when URL/model changes
   useEffect(() => {
     checkOllamaConnection();
@@ -70,6 +78,9 @@ export const useJarvisServices = () => {
       });
       return;
     }
+
+    // Clear any previous error
+    setErrorMessage('');
     
     const success = speechService.startListening(
       (interimText) => {
@@ -89,6 +100,7 @@ export const useJarvisServices = () => {
       (error) => {
         console.error('Speech recognition error:', error);
         setIsListening(false);
+        setErrorMessage(`Microphone error: ${error}`);
         toast({
           title: "Speech Recognition Error",
           description: error,
@@ -100,9 +112,11 @@ export const useJarvisServices = () => {
     if (success) {
       setIsListening(true);
     } else {
+      const micError = "Could not access the microphone. Please check your browser permissions.";
+      setErrorMessage(`Microphone error: ${micError}`);
       toast({
         title: "Microphone Error",
-        description: "Could not access the microphone. Please check your browser permissions.",
+        description: micError,
         variant: "destructive",
       });
     }
@@ -168,6 +182,10 @@ export const useJarvisServices = () => {
     }
   };
 
+  const dismissError = () => {
+    setErrorMessage('');
+  };
+
   return {
     isListening,
     isProcessing,
@@ -181,11 +199,13 @@ export const useJarvisServices = () => {
     ollamaModel,
     ollamaStatus,
     errorMessage,
+    speechRecognitionAvailable,
     toggleListening,
     toggleSpeaking,
     handleOllamaUrlChange,
     handleOllamaModelChange,
     clearConversation,
     checkOllamaConnection,
+    dismissError,
   };
 };

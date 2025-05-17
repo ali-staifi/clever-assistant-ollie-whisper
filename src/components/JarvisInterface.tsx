@@ -21,12 +21,14 @@ const JarvisInterface = () => {
     ollamaModel,
     ollamaStatus,
     errorMessage,
+    speechRecognitionAvailable,
     toggleListening,
     toggleSpeaking,
     handleOllamaUrlChange,
     handleOllamaModelChange,
     clearConversation,
     checkOllamaConnection,
+    dismissError,
   } = useJarvisServices();
 
   return (
@@ -38,7 +40,10 @@ const JarvisInterface = () => {
       />
       
       {/* Error Message */}
-      <ErrorDisplay errorMessage={errorMessage} />
+      <ErrorDisplay 
+        errorMessage={errorMessage} 
+        onDismiss={dismissError}
+      />
       
       {/* Settings Panel */}
       {showSettings && (
@@ -64,6 +69,7 @@ const JarvisInterface = () => {
           toggleListening={toggleListening}
           toggleSpeaking={toggleSpeaking}
           ollamaStatus={ollamaStatus}
+          speechRecognitionAvailable={speechRecognitionAvailable}
         />
         
         {/* Conversation Section */}

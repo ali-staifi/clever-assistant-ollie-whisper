@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume, VolumeX } from 'lucide-react';
+import { Mic, MicOff, Volume, VolumeX, AlertTriangle } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
 
 interface VoiceControlProps {
@@ -11,6 +11,7 @@ interface VoiceControlProps {
   toggleListening: () => void;
   toggleSpeaking: () => void;
   ollamaStatus: 'idle' | 'connecting' | 'connected' | 'error';
+  speechRecognitionAvailable?: boolean;
 }
 
 const VoiceControl: React.FC<VoiceControlProps> = ({
@@ -19,7 +20,8 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
   isSpeaking,
   toggleListening,
   toggleSpeaking,
-  ollamaStatus
+  ollamaStatus,
+  speechRecognitionAvailable = true
 }) => {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -45,19 +47,30 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex gap-4">
             {/* Mic Button */}
-            <Button 
-              className={`rounded-full w-16 h-16 transition-all ${
-                isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
-              }`}
-              onClick={toggleListening}
-              disabled={isProcessing || ollamaStatus === 'error'}
-            >
-              {isListening ? (
-                <MicOff className="h-8 w-8" />
-              ) : (
-                <Mic className="h-8 w-8" />
-              )}
-            </Button>
+            {speechRecognitionAvailable ? (
+              <Button 
+                className={`rounded-full w-16 h-16 transition-all ${
+                  isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
+                }`}
+                onClick={toggleListening}
+                disabled={isProcessing || ollamaStatus === 'error'}
+                title={ollamaStatus === 'error' ? "Cannot connect to Ollama" : isListening ? "Stop listening" : "Start listening"}
+              >
+                {isListening ? (
+                  <MicOff className="h-8 w-8" />
+                ) : (
+                  <Mic className="h-8 w-8" />
+                )}
+              </Button>
+            ) : (
+              <Button 
+                className="rounded-full w-16 h-16 bg-red-500 hover:bg-red-600 cursor-not-allowed"
+                disabled={true}
+                title="Speech recognition not available in this browser"
+              >
+                <AlertTriangle className="h-8 w-8" />
+              </Button>
+            )}
             
             {/* Speaker Button - Only visible when speaking */}
             {isSpeaking && (
@@ -77,7 +90,8 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
         
         {/* Status Text */}
         <div className="absolute -bottom-10 left-0 right-0 text-center text-sm text-jarvis-blue">
-          {isListening ? 'Listening...' : 
+          {!speechRecognitionAvailable ? 'Speech recognition not supported in this browser' :
+           isListening ? 'Listening...' : 
            isProcessing ? 'Processing...' : 
            isSpeaking ? 'Speaking...' : 
            'Ready'}
