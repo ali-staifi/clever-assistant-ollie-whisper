@@ -116,4 +116,10 @@ export class SpeechService {
   setVolume(volume: number) {
     this.synthesisService.setVolume(volume);
   }
+  
+  setRoboticEffect(effect: number) {
+    if (typeof this.synthesisService.setRoboticEffect === 'function') {
+      this.synthesisService.setRoboticEffect(effect);
+    }
+  }
 }

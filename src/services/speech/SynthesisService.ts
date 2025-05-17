@@ -84,4 +84,10 @@ export class SynthesisService {
   setVolume(volume: number) {
     this.browserSynthesis.setVolume(volume);
   }
+  
+  setRoboticEffect(effect: number) {
+    if (typeof this.browserSynthesis.setRoboticEffect === 'function') {
+      this.browserSynthesis.setRoboticEffect(effect);
+    }
+  }
 }

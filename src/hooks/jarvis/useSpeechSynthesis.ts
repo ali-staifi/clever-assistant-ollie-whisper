@@ -7,6 +7,7 @@ interface VoiceSettings {
   rate?: number;
   pitch?: number;
   volume?: number;
+  roboticEffect?: number;
 }
 
 export const useSpeechSynthesis = (speechService: SpeechService) => {
@@ -48,6 +49,10 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
     
     if (settings.volume !== undefined) {
       speechService.setVolume(settings.volume);
+    }
+    
+    if (settings.roboticEffect !== undefined) {
+      speechService.setRoboticEffect(settings.roboticEffect);
     }
   };
   

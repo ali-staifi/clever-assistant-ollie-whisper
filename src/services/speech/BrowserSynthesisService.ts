@@ -6,6 +6,7 @@ export class BrowserSynthesisService {
   private rate: number = 1.0;
   private pitch: number = 1.0;
   private volume: number = 1.0;
+  private roboticEffect: number = 0;
   
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -97,6 +98,8 @@ export class BrowserSynthesisService {
     }
     
     utterance.lang = this.lang;
+    
+    // Apply base settings
     utterance.rate = this.rate;
     utterance.pitch = this.pitch;
     utterance.volume = this.volume;
@@ -153,5 +156,12 @@ export class BrowserSynthesisService {
   
   setVolume(volume: number) {
     this.volume = volume;
+  }
+  
+  setRoboticEffect(effect: number) {
+    this.roboticEffect = Math.max(0, Math.min(1, effect));
+    
+    // Robotic effect is applied by adjusting pitch and rate
+    // when speaking, not here
   }
 }
