@@ -1,4 +1,3 @@
-
 import { RecognitionService } from './speech/RecognitionService';
 import { SynthesisService } from './speech/SynthesisService';
 
@@ -16,7 +15,14 @@ export class SpeechService {
     onResult?: (text: string) => void,
     onError?: (error: string) => void
   ): boolean {
-    return this.recognitionService.startListening(onInterimResult, onResult, onError);
+    return this.recognitionService.startListening(
+      onInterimResult, 
+      onResult, 
+      (errorMsg) => {
+        console.warn("Speech recognition error:", errorMsg);
+        if (onError) onError(errorMsg);
+      }
+    );
   }
 
   stopListening() {

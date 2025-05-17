@@ -1,4 +1,3 @@
-
 import { SpeechRecognitionErrorEvent } from './types';
 
 export class RecognitionService {
@@ -9,7 +8,7 @@ export class RecognitionService {
   private noMicrophoneMode: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 3;
-  private confidenceThreshold: number = 0.1; // Réduire encore plus le seuil de confiance
+  private confidenceThreshold: number = 0.01; // Drastically reduce confidence threshold to capture more speech
 
   constructor() {
     this.setupRecognition();
@@ -81,10 +80,13 @@ export class RecognitionService {
         console.log(`Transcript reçu: "${transcript}" avec confiance: ${confidence}`);
         
         if (event.results[resultIndex].isFinal) {
-          if (confidence > this.confidenceThreshold) { // Utiliser un seuil plus bas
+          // Accept ANY speech with clear text, even with zero confidence
+          // Only discard if the text itself is empty or very short
+          if (transcript.trim().length > 1) {
             if (onResult) onResult(transcript);
+            console.log("Accepted transcript with text:", transcript);
           } else {
-            console.log("Discarded low confidence result:", transcript, confidence);
+            console.log("Discarded empty or too short result:", transcript);
             if (onError) onError("Could not understand audio clearly. Please try again.");
           }
         } else {
@@ -204,8 +206,9 @@ export class RecognitionService {
 
   setSensitivity(value: number) {
     this.sensitivity = value;
-    // Ajuster aussi le seuil de confiance inversement proportionnel
-    this.confidenceThreshold = Math.max(0.05, 0.3 / value);
+    // Adjust the confidence threshold inversely to sensitivity
+    // But keep it very low to accept almost any speech
+    this.confidenceThreshold = Math.max(0.01, 0.1 / value);
     console.log("Sensibilité de reconnaissance vocale définie sur:", value);
     console.log("Seuil de confiance ajusté à:", this.confidenceThreshold);
   }
