@@ -1,37 +1,40 @@
 
-import { SpeechRecognition, SpeechRecognitionErrorEvent, SpeechRecognitionEvent } from './types';
+import { SpeechRecognitionErrorEvent } from './types';
 
 export class RecognitionService {
-  private recognition: SpeechRecognition | null = null;
+  private recognition: any; // Using any temporarily to handle browser differences
   private isListening: boolean = false;
-  private lang: string = 'fr-FR'; // Changé par défaut en français
-  private sensitivity: number = 1.5; // Default higher sensitivity
-  private retryCount: number = 0;
-  private maxRetries: number = 3; // Allow automatic retries
+  private language: string = 'en-US';
+  private sensitivity: number = 1.0;
 
   constructor() {
-    // Initialize speech recognition if available
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      this.recognition = new SpeechRecognition();
-      this.recognition.continuous = true; // Set to true to keep listening even after silence
-      this.recognition.interimResults = true; // Set to true to get interim results
-      this.recognition.lang = this.lang;
-      
-      // Set longer speech timeout (in milliseconds)
-      if ((this.recognition as any).speechTimeout !== undefined) {
-        (this.recognition as any).speechTimeout = 5000; // 5 seconds
-      }
-      
-      console.log("Speech recognition initialized successfully");
-    } else {
-      console.warn("Speech recognition not supported in this browser");
-    }
+    this.setupRecognition();
   }
 
-  setSensitivity(value: number): void {
-    this.sensitivity = value;
-    console.log("Speech recognition sensitivity set to:", value);
+  setupRecognition() {
+    // Check if browser supports SpeechRecognition
+    if ('webkitSpeechRecognition' in window) {
+      const WebkitSpeechRecognition = window.webkitSpeechRecognition;
+      this.recognition = new WebkitSpeechRecognition();
+    } else if ('SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition;
+      this.recognition = new SpeechRecognition();
+    } else {
+      console.warn("Speech recognition not supported in this browser");
+      return false;
+    }
+
+    // Configure recognition settings
+    if (this.recognition) {
+      this.recognition.continuous = false;
+      this.recognition.interimResults = true;
+      this.recognition.lang = this.language;
+      
+      console.log("Speech recognition initialized successfully");
+      return true;
+    }
+    
+    return false;
   }
 
   startListening(
@@ -39,234 +42,80 @@ export class RecognitionService {
     onResult?: (text: string) => void,
     onError?: (error: string) => void
   ): boolean {
+    // Check if recognition is available
     if (!this.recognition) {
-      const errorMsg = 'Speech recognition is not supported in this browser';
-      console.error(errorMsg);
-      if (onError) onError(errorMsg);
-      return false;
+      if (!this.setupRecognition()) {
+        if (onError) onError("Speech recognition not supported in your browser");
+        return false;
+      }
     }
 
     try {
-      // Important: Si déjà en cours d'écoute, arrêter d'abord
-      if (this.isListening) {
-        console.log("Recognition already active, stopping before restart");
-        this.stopListening();
+      // Setup event handlers
+      this.recognition.onresult = (event: any) => {
+        const resultIndex = event.resultIndex;
+        const transcript = event.results[resultIndex][0].transcript;
         
-        // Petit délai pour s'assurer que le service est complètement arrêté
-        setTimeout(() => {
-          this.startListeningInternal(onInterimResult, onResult, onError);
-        }, 500); // Augmenter le délai à 500ms pour s'assurer que le recognition est bien arrêté
-        return true;
-      }
-      
-      return this.startListeningInternal(onInterimResult, onResult, onError);
-    } catch (error) {
-      const errorMsg = `Failed to start speech recognition: ${error}`;
-      console.error(errorMsg);
-      if (onError) onError(errorMsg);
-      return false;
-    }
-  }
-  
-  private startListeningInternal(
-    onInterimResult?: (text: string) => void,
-    onResult?: (text: string) => void,
-    onError?: (error: string) => void
-  ): boolean {
-    // Reset retry counter on each new start
-    this.retryCount = 0;
-    
-    if (!this.recognition) return false;
-    
-    // S'assurer que les écouteurs sont correctement configurés
-    this.setupRecognitionListeners(onInterimResult, onResult, onError);
-    
-    console.log("Starting speech recognition...");
-    try {
-      // Vérifier si l'état actuel permet de démarrer
-      // Cette vérification supplémentaire aide à éviter l'erreur "recognition has already started"
-      if (this.recognition.state === 'active') {
-        console.log("Recognition is already active, trying to stop it first");
-        try {
-          this.recognition.stop();
-          // Petit délai avant de redémarrer
-          setTimeout(() => {
-            try {
-              this.recognition?.start();
-              this.isListening = true;
-            } catch (e) {
-              console.error("Error restarting recognition after stop:", e);
-              return false;
-            }
-          }, 300);
-          return true;
-        } catch (e) {
-          console.error("Error stopping active recognition:", e);
-          return false;
-        }
-      } else {
-        this.recognition.start();
-        this.isListening = true;
-        return true;
-      }
-    } catch (error) {
-      console.error("Error starting recognition:", error);
-      // Si l'erreur est "recognition has already started", essayons de l'arrêter puis de le redémarrer
-      if (error instanceof DOMException && error.message.includes("recognition has already started")) {
-        console.log("Caught 'already started' error, trying to stop and restart");
-        try {
-          this.recognition.stop();
-          setTimeout(() => {
-            try {
-              this.recognition?.start();
-              this.isListening = true;
-            } catch (e) {
-              console.error("Failed during restart attempt:", e);
-            }
-          }, 500);
-          return true;
-        } catch (e) {
-          console.error("Error during stop-restart cycle:", e);
-        }
-      }
-      return false;
-    }
-  }
-  
-  private setupRecognitionListeners(
-    onInterimResult?: (text: string) => void,
-    onResult?: (text: string) => void,
-    onError?: (error: string) => void
-  ) {
-    if (!this.recognition) return;
-    
-    // Supprimer les anciens écouteurs pour éviter les doublons
-    this.recognition.onresult = null;
-    this.recognition.onerror = null;
-    this.recognition.onend = null;
-    this.recognition.onstart = null;
-    
-    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
-      if (event.results.length > 0) {
-        const transcript = event.results[0][0].transcript;
-        if (event.results[0].isFinal && onResult) {
-          console.log("Final transcript:", transcript);
-          onResult(transcript);
-        } else if (onInterimResult) {
-          console.log("Interim transcript:", transcript);
-          onInterimResult(transcript);
-        }
-      }
-    };
-
-    this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
-      
-      let errorMessage = `Speech recognition error: ${event.error}`;
-      // Provide more helpful messages for common errors
-      if (event.error === 'no-speech') {
-        // Auto-retry for no-speech errors
-        if (this.retryCount < this.maxRetries) {
-          console.log(`No speech detected, retrying (${this.retryCount + 1}/${this.maxRetries})...`);
-          this.retryCount++;
-          
-          // Don't report the error, just restart recognition
-          setTimeout(() => {
-            if (this.isListening) {
-              try {
-                this.recognition?.abort();
-                setTimeout(() => {
-                  this.recognition?.start();
-                }, 500);
-              } catch (e) {
-                console.error('Error restarting recognition:', e);
-              }
-            }
-          }, 1000);
-          
-          return; // Skip the error callback
-        }
+        // Apply sensitivity boost to the confidence
+        const confidence = Math.min(1, event.results[resultIndex][0].confidence * this.sensitivity);
         
-        errorMessage = "Pas de voix détectée. Essayez de parler plus fort ou rapprochez-vous du microphone.";
-      } else if (event.error === 'network') {
-        errorMessage = "Erreur réseau. Vérifiez votre connexion internet.";
-      } else if (event.error === 'not-allowed') {
-        errorMessage = "Accès au microphone refusé. Veuillez autoriser l'accès au microphone dans les paramètres de votre navigateur.";
-      } else if (event.error === 'audio-capture') {
-        errorMessage = "Aucun microphone trouvé ou le microphone ne fonctionne pas correctement.";
-      } else if (event.error === 'aborted') {
-        // Ne pas signaler les erreurs d'abandon lors des redémarrages intentionnels
-        if (this.isListening) {
-          errorMessage = "La reconnaissance vocale a été interrompue.";
+        if (event.results[resultIndex].isFinal) {
+          if (confidence > 0.3) { // Apply confidence threshold
+            if (onResult) onResult(transcript);
+          } else {
+            console.log("Discarded low confidence result:", transcript, confidence);
+            if (onError) onError("Could not understand audio clearly. Please try again.");
+          }
         } else {
-          return; // Skip error callback for intentional aborts
+          if (onInterimResult) onInterimResult(transcript);
         }
-      }
-      
-      // Only call onError if we're not going to retry
-      if (onError) onError(errorMessage);
-    };
+      };
 
-    this.recognition.onend = () => {
-      console.log("Speech recognition ended");
-      
-      // Restart recognition if it's still supposed to be listening
-      // and we haven't exceeded retry attempts
-      if (this.isListening && this.retryCount < this.maxRetries) {
-        console.log("Restarting speech recognition...");
-        try {
-          setTimeout(() => {
-            this.recognition?.start();
-          }, 300); // Petit délai avant de redémarrer pour éviter les conflits d'état
-        } catch (e) {
-          console.error('Error restarting recognition:', e);
-          this.isListening = false;
-        }
-      } else {
+      this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error("Speech recognition error:", event.error);
+        if (onError) onError(`Recognition error: ${event.error}`);
+      };
+
+      this.recognition.onend = () => {
         this.isListening = false;
-      }
-    };
-    
-    // Log when recognition starts
-    this.recognition.onstart = () => {
-      console.log("Speech recognition started");
+        // Don't automatically restart to avoid infinite loops
+      };
+
+      // Start recognition
+      this.recognition.start();
       this.isListening = true;
-    };
-    
-    // Set higher audio level for recognition
-    if ((this.recognition as any).audioThreshold !== undefined) {
-      (this.recognition as any).audioThreshold = 0.2;
+      return true;
+    } catch (err) {
+      console.error("Error starting speech recognition:", err);
+      if (onError) onError(`Failed to start speech recognition: ${err}`);
+      return false;
     }
   }
 
   stopListening() {
     if (this.recognition && this.isListening) {
-      console.log("Stopping speech recognition");
       try {
         this.recognition.stop();
-      } catch (e) {
-        console.error('Error stopping recognition:', e);
-        
-        // Si l'arrêt échoue, essayer d'utiliser abort()
-        try {
-          this.recognition.abort();
-        } catch (e2) {
-          console.error('Error aborting recognition:', e2);
-        }
+      } catch (err) {
+        console.error("Error stopping recognition:", err);
       }
       this.isListening = false;
     }
   }
 
   isRecognitionSupported(): boolean {
-    return this.recognition !== null;
+    return ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
   }
 
   setLanguage(lang: string) {
-    this.lang = lang;
+    this.language = lang;
     if (this.recognition) {
       this.recognition.lang = lang;
-      console.log(`Speech recognition language set to: ${lang}`);
     }
+  }
+
+  setSensitivity(value: number) {
+    this.sensitivity = value;
+    console.log("Speech recognition sensitivity set to:", value);
   }
 }

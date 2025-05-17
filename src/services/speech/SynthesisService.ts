@@ -3,6 +3,9 @@ export class SynthesisService {
   private synthesis: SpeechSynthesis;
   private voice: SpeechSynthesisVoice | null = null;
   private lang: string = 'en-US';
+  private useMaryTTS: boolean = false;
+  private maryTTSServerUrl: string = '';
+  private maryTTSVoice: string = '';
   
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -54,7 +57,50 @@ export class SynthesisService {
     }
   }
 
-  speak(text: string, onEnd?: () => void): boolean {
+  async speak(text: string, onEnd?: () => void): Promise<boolean> {
+    if (this.useMaryTTS && this.maryTTSServerUrl) {
+      try {
+        // Utiliser MaryTTS si configuré
+        const url = new URL(`${this.maryTTSServerUrl}/process`);
+        url.searchParams.append('INPUT_TYPE', 'TEXT');
+        url.searchParams.append('OUTPUT_TYPE', 'AUDIO');
+        url.searchParams.append('AUDIO', 'WAVE');
+        url.searchParams.append('LOCALE', this.lang.replace('-', '_'));
+        url.searchParams.append('VOICE', this.maryTTSVoice);
+        url.searchParams.append('INPUT_TEXT', text);
+        
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error(`MaryTTS server error: ${response.status}`);
+        }
+        
+        const audioContext = new AudioContext();
+        const audioData = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(audioData);
+        
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        
+        source.onended = () => {
+          if (onEnd) onEnd();
+          audioContext.close();
+        };
+        
+        source.start();
+        return true;
+      } catch (error) {
+        console.error('MaryTTS error:', error);
+        // Fallback to browser TTS on error
+        return this.speakWithBrowser(text, onEnd);
+      }
+    } else {
+      // Utiliser la synthèse vocale du navigateur
+      return this.speakWithBrowser(text, onEnd);
+    }
+  }
+  
+  speakWithBrowser(text: string, onEnd?: () => void): boolean {
     if (!this.synthesis) return false;
 
     // Clear any ongoing speech
@@ -91,5 +137,12 @@ export class SynthesisService {
     this.lang = lang;
     // Refresh voice selection for the new language
     this.setupVoice();
+  }
+  
+  // Configuration pour MaryTTS
+  configureMaryTTS(useIt: boolean, serverUrl: string = '', voice: string = '') {
+    this.useMaryTTS = useIt;
+    this.maryTTSServerUrl = serverUrl;
+    this.maryTTSVoice = voice;
   }
 }
