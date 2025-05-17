@@ -23,6 +23,11 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Sanitize text to remove undefined values
+  const sanitizeText = (text: string): string => {
+    return typeof text === 'string' ? text.replace(/undefined/g, '').trim() : '';
+  };
+
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -52,7 +57,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
               {msg.role === 'user' ? 'You' : 'J.A.R.V.I.S'}
             </div>
             <div className="whitespace-pre-wrap">
-              {msg.content}
+              {sanitizeText(msg.content)}
             </div>
           </div>
         ))}
@@ -64,7 +69,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
               J.A.R.V.I.S
             </div>
             <div className="whitespace-pre-wrap">
-              {response}
+              {sanitizeText(response)}
             </div>
           </div>
         )}
@@ -75,7 +80,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
             <div className="text-xs text-gray-400 mb-1">
               You (listening...)
             </div>
-            <div>{transcript}</div>
+            <div>{sanitizeText(transcript)}</div>
           </div>
         )}
         

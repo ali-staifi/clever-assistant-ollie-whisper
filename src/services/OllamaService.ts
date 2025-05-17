@@ -1,4 +1,3 @@
-
 interface OllamaResponse {
   model: string;
   created_at: string;
@@ -124,9 +123,14 @@ Try these steps:
         for (const line of lines) {
           try {
             const parsedLine = JSON.parse(line) as OllamaResponse;
-            const responseText = parsedLine.response;
-            fullResponse += responseText;
-            onProgress?.(fullResponse);
+            // Make sure we have valid text before adding it
+            if (parsedLine.response && typeof parsedLine.response === 'string') {
+              fullResponse += parsedLine.response;
+              // Only call onProgress if fullResponse is valid
+              if (onProgress && fullResponse.trim() !== '') {
+                onProgress(fullResponse);
+              }
+            }
           } catch (e) {
             console.error('Failed to parse Ollama response line:', e);
           }
@@ -134,7 +138,8 @@ Try these steps:
       }
 
       this.controller = null;
-      return fullResponse;
+      // Final sanitization to ensure no "undefined" text
+      return fullResponse.replace(/undefined/g, '').trim();
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return '[Request cancelled]';

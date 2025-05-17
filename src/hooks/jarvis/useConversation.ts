@@ -4,7 +4,7 @@ import { Message } from '@/services/OllamaService';
 
 export const useConversation = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [response, setResponse] = useState('');
+  const [response, setResponse] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const addUserMessage = (content: string) => {
@@ -14,7 +14,12 @@ export const useConversation = () => {
   };
 
   const addAssistantMessage = (content: string) => {
-    const assistantMessage = { role: 'assistant' as const, content };
+    // Sanitize the content to remove undefined values
+    const sanitizedContent = typeof content === 'string' 
+      ? content.replace(/undefined/g, '').trim() 
+      : 'Sorry, I encountered an error processing your request.';
+      
+    const assistantMessage = { role: 'assistant' as const, content: sanitizedContent };
     setMessages(prev => [...prev, assistantMessage]);
     return assistantMessage;
   };
@@ -27,7 +32,13 @@ export const useConversation = () => {
   return {
     messages,
     response,
-    setResponse,
+    setResponse: (text: string) => {
+      // Sanitize the response before setting it
+      const sanitized = typeof text === 'string' 
+        ? text.replace(/undefined/g, '').trim() 
+        : 'Processing...';
+      setResponse(sanitized);
+    },
     isProcessing,
     setIsProcessing,
     addUserMessage,
