@@ -5,6 +5,7 @@ export const useMicrophoneTesting = () => {
   const [testingMic, setTestingMic] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
   
   // Clean up audio context on unmount
   useEffect(() => {
@@ -12,33 +13,48 @@ export const useMicrophoneTesting = () => {
       if (audioContext) {
         audioContext.close();
       }
+      if (micStream) {
+        micStream.getTracks().forEach(track => track.stop());
+      }
     };
-  }, [audioContext]);
+  }, [audioContext, micStream]);
 
   const startMicTest = async () => {
     try {
       setTestingMic(true);
       
-      // Request microphone access
+      // Request microphone access with optimal settings for voice
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: false
+          autoGainControl: true  // Enable auto gain to boost quiet voices
         } 
       });
       
+      setMicStream(stream);
+      
       // Create audio context
-      const context = new AudioContext();
+      const context = new AudioContext({
+        latencyHint: 'interactive',
+        sampleRate: 48000  // Higher sample rate for better audio quality
+      });
       setAudioContext(context);
       
-      // Create analyzer
+      // Create analyzer with more detailed FFT
       const analyser = context.createAnalyser();
-      analyser.fftSize = 256;
+      analyser.fftSize = 1024;  // More detailed frequency analysis
+      analyser.smoothingTimeConstant = 0.5;  // Smoother visualization
       
       // Connect microphone to analyzer
       const source = context.createMediaStreamSource(stream);
-      source.connect(analyser);
+      
+      // Add a gain node to boost the signal
+      const gainNode = context.createGain();
+      gainNode.gain.value = 1.5;  // Boost the signal
+      
+      source.connect(gainNode);
+      gainNode.connect(analyser);
       
       // Function to update volume level
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -48,15 +64,29 @@ export const useMicrophoneTesting = () => {
         
         analyser.getByteFrequencyData(dataArray);
         
-        // Calculate average volume
+        // Calculate average volume with emphasis on speech frequencies
+        // Human speech is typically between 300-3000 Hz
         let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          sum += dataArray[i];
-        }
-        const avg = sum / dataArray.length;
-        const normalizedVolume = Math.min(1, avg / 128);
+        let count = 0;
         
-        setVolumeLevel(normalizedVolume);
+        // More weight to frequencies in the speech range
+        for (let i = 0; i < dataArray.length; i++) {
+          const frequency = i * (context.sampleRate / analyser.fftSize);
+          // Emphasize the speech frequency range
+          if (frequency >= 200 && frequency <= 4000) {
+            sum += dataArray[i] * 1.5;  // Give more weight to speech frequencies
+            count++;
+          } else {
+            sum += dataArray[i];
+            count++;
+          }
+        }
+        
+        const avg = sum / count;
+        // Apply a non-linear curve to make small sounds more visible
+        const normalizedVolume = Math.min(1, Math.pow(avg / 128, 0.7));
+        
+        setVolumeLevel(normalizedVolume * 100);
         
         if (testingMic) {
           requestAnimationFrame(updateVolume);
@@ -78,6 +108,10 @@ export const useMicrophoneTesting = () => {
     if (audioContext) {
       audioContext.close();
       setAudioContext(null);
+    }
+    if (micStream) {
+      micStream.getTracks().forEach(track => track.stop());
+      setMicStream(null);
     }
   };
 

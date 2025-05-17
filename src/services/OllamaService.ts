@@ -23,18 +23,21 @@ export class OllamaService {
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
+      console.log(`Testing connection to Ollama at ${this.baseUrl}`);
       const response = await fetch(`${this.baseUrl}/api/tags`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
       
       if (!response.ok) {
+        console.error(`Ollama connection failed with status: ${response.status}`);
         return { 
           success: false, 
           error: `Status: ${response.status} ${response.statusText}` 
         };
       }
       
+      console.log("Ollama connection successful");
       return { success: true };
     } catch (error) {
       console.error('Error testing Ollama connection:', error);
@@ -50,7 +53,8 @@ Note: If you get "Only one usage of each socket address" error, Ollama is alread
 Try these steps:
 1. Check if Ollama is running with: Get-Process -Name ollama
 2. Stop the existing process: Stop-Process -Name ollama
-3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve`;
+3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve
+4. Or for Mac/Linux: OLLAMA_ORIGINS="*" ollama serve`;
       }
       
       return { 
@@ -62,6 +66,7 @@ Try these steps:
 
   async listAvailableModels(): Promise<string[]> {
     try {
+      console.log(`Fetching available models from Ollama at ${this.baseUrl}`);
       const response = await fetch(`${this.baseUrl}/api/tags`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
@@ -74,6 +79,7 @@ Try these steps:
       const data = await response.json();
       // Extract model names from the response
       if (data && data.models) {
+        console.log(`Found ${data.models.length} models`);
         return data.models.map((model: any) => model.name);
       }
       return [];
@@ -92,6 +98,9 @@ Try these steps:
       // Cancel any ongoing request
       this.abortRequest();
       this.controller = new AbortController();
+      
+      console.log(`Generating response using model ${this.model} at ${this.baseUrl}`);
+      console.log(`Prompt: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`);
 
       const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
@@ -151,6 +160,7 @@ Try these steps:
       }
 
       this.controller = null;
+      console.log("Response generation complete");
       // Final sanitization to ensure no "undefined" text
       return fullResponse.replace(/undefined/g, '').trim();
     } catch (error) {
@@ -168,7 +178,8 @@ Try these steps:
 If you get "Only one usage of each socket address" error, this means Ollama is already running. In PowerShell:
 1. Check if Ollama is running: Get-Process -Name ollama
 2. Stop the existing process: Stop-Process -Name ollama
-3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve`;
+3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve
+4. For Mac/Linux: OLLAMA_ORIGINS="*" ollama serve`;
       }
       
       if (errorMsg.includes("not installed") || errorMsg.includes("not found, try pulling it first")) {
@@ -189,10 +200,12 @@ ollama pull ${this.model}`;
   }
 
   setModel(model: string) {
+    console.log(`Setting Ollama model to: ${model}`);
     this.model = model;
   }
 
   setBaseUrl(url: string) {
+    console.log(`Setting Ollama base URL to: ${url}`);
     this.baseUrl = url;
   }
 }
