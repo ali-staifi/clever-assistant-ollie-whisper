@@ -35,7 +35,9 @@ export const useJarvisServices = () => {
     toggleSpeaking,
     testMicrophone,
     noMicrophoneMode,
-    toggleNoMicrophoneMode
+    toggleNoMicrophoneMode,
+    configureMaryTTS,
+    testMaryTTSConnection
   } = useSpeechService();
 
   const {
@@ -152,6 +154,8 @@ export const useJarvisServices = () => {
     dismissError,
     testMicrophone,
     noMicrophoneMode,
-    toggleNoMicrophoneMode
+    toggleNoMicrophoneMode,
+    configureMaryTTS,
+    testMaryTTSConnection
   };
 };

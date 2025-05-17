@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, CheckCircle, AlertTriangle } from "lucide-react";
 
 interface MaryTTSConfigDialogProps {
   open: boolean;
@@ -29,10 +29,11 @@ const MaryTTSConfigDialog: React.FC<MaryTTSConfigDialogProps> = ({
   serverUrl: initialServerUrl,
   currentVoice: initialVoice
 }) => {
-  const [serverUrl, setServerUrl] = useState(initialServerUrl);
-  const [voice, setVoice] = useState(initialVoice);
+  const [serverUrl, setServerUrl] = useState(initialServerUrl || 'http://localhost:59125');
+  const [voice, setVoice] = useState(initialVoice || 'upmc-pierre-hsmm');
   const [locale, setLocale] = useState('fr_FR');
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [availableVoices, setAvailableVoices] = useState<string[]>([]);
 
   // Langues disponibles
   const availableLocales = [
@@ -43,14 +44,48 @@ const MaryTTSConfigDialog: React.FC<MaryTTSConfigDialogProps> = ({
     { value: 'es_ES', label: 'Español' }
   ];
 
-  // Reset state when dialog opens
+  // Voix françaises communes pour MaryTTS
+  const commonFrenchVoices = [
+    { value: 'upmc-pierre-hsmm', label: 'Pierre (UPMC)' },
+    { value: 'upmc-jessica-hsmm', label: 'Jessica (UPMC)' },
+    { value: 'enst-dennys-hsmm', label: 'Dennys (ENST)' },
+    { value: 'marylux-laurent-hsmm', label: 'Laurent (MaryLux)' }
+  ];
+
+  // Reset state when dialog opens and fetch available voices
   useEffect(() => {
     if (open) {
-      setServerUrl(initialServerUrl);
-      setVoice(initialVoice);
+      setServerUrl(initialServerUrl || 'http://localhost:59125');
+      setVoice(initialVoice || 'upmc-pierre-hsmm');
       setTestStatus('idle');
+      fetchAvailableVoices();
     }
   }, [open, initialServerUrl, initialVoice]);
+
+  // Récupérer les voix disponibles sur le serveur MaryTTS
+  const fetchAvailableVoices = async () => {
+    if (!serverUrl) return;
+    
+    try {
+      setTestStatus('testing');
+      const response = await fetch(`${serverUrl}/voices`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data?.voices) {
+          setAvailableVoices(data.voices);
+        }
+        setTestStatus('success');
+      } else {
+        setTestStatus('error');
+        setAvailableVoices([]);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des voix MaryTTS:', error);
+      setTestStatus('error');
+      setAvailableVoices([]);
+    }
+  };
 
   // Test connection to MaryTTS server
   const testConnection = async () => {
@@ -59,18 +94,24 @@ const MaryTTSConfigDialog: React.FC<MaryTTSConfigDialogProps> = ({
       const response = await fetch(`${serverUrl}/version`);
       if (response.ok) {
         setTestStatus('success');
+        // If connection is successful, also try to get available voices
+        fetchAvailableVoices();
       } else {
         setTestStatus('error');
       }
     } catch (error) {
-      console.error('Error testing MaryTTS connection:', error);
+      console.error('Erreur lors du test de connexion MaryTTS:', error);
       setTestStatus('error');
     }
   };
 
   // Apply configuration
   const handleSave = () => {
-    onConfigure({ serverUrl, voice, locale });
+    onConfigure({ 
+      serverUrl: serverUrl.trim() || 'http://localhost:59125',
+      voice: voice.trim() || 'upmc-pierre-hsmm', 
+      locale 
+    });
     onOpenChange(false);
   };
 
@@ -124,16 +165,38 @@ const MaryTTSConfigDialog: React.FC<MaryTTSConfigDialogProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="voice">Voix</Label>
-            <Input
-              id="voice"
-              value={voice}
-              onChange={(e) => setVoice(e.target.value)}
-              placeholder="cmu-slt-hsmm"
-              className="w-full"
-            />
-            <p className="text-xs text-muted-foreground">
-              Voix françaises: upmc-pierre-hsmm, upmc-jessica-hsmm, enst-dennys-hsmm
-            </p>
+            {availableVoices.length > 0 ? (
+              <Select value={voice} onValueChange={setVoice}>
+                <SelectTrigger id="voice">
+                  <SelectValue placeholder="Sélectionnez une voix" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableVoices.map((v) => (
+                    <SelectItem key={v} value={v}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="voice"
+                value={voice}
+                onChange={(e) => setVoice(e.target.value)}
+                placeholder="upmc-pierre-hsmm"
+                className="w-full"
+              />
+            )}
+            <div className="text-xs text-muted-foreground">
+              <p>Voix françaises disponibles courantes:</p>
+              <ul className="list-disc pl-5 mt-1">
+                {commonFrenchVoices.map((v) => (
+                  <li key={v.value} className="cursor-pointer hover:text-blue-500" onClick={() => setVoice(v.value)}>
+                    {v.label} ({v.value})
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
           
           <Button 
@@ -144,9 +207,27 @@ const MaryTTSConfigDialog: React.FC<MaryTTSConfigDialogProps> = ({
           >
             {testStatus === 'idle' ? 'Tester la connexion' : 
              testStatus === 'testing' ? 'Test en cours...' : 
-             testStatus === 'success' ? '✓ Connexion réussie' : 
-             '✗ Échec de la connexion'}
+             testStatus === 'success' ? (
+               <div className="flex items-center">
+                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+                 Connexion réussie
+               </div>
+             ) : (
+               <div className="flex items-center">
+                 <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                 Échec de la connexion
+               </div>
+             )}
           </Button>
+          
+          {testStatus === 'error' && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              <AlertDescription className="text-xs">
+                Impossible de se connecter au serveur MaryTTS. Vérifiez que l'URL est correcte et que le serveur est en cours d'exécution.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
         
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
@@ -159,7 +240,7 @@ const MaryTTSConfigDialog: React.FC<MaryTTSConfigDialogProps> = ({
           </Button>
           <Button 
             onClick={handleSave}
-            className="sm:flex-1"
+            className={`sm:flex-1 ${testStatus === 'success' ? 'bg-green-600 hover:bg-green-700' : ''}`}
           >
             Appliquer
           </Button>

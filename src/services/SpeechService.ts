@@ -58,10 +58,28 @@ export class SpeechService {
     }
   }
   
-  // Ajouter la configuration MaryTTS
-  configureMaryTTS(useIt: boolean, serverUrl?: string, voice?: string) {
+  // Configuration MaryTTS avec plus d'options
+  configureMaryTTS(useIt: boolean, serverUrl?: string, voice?: string, locale?: string) {
     if (typeof this.synthesisService.configureMaryTTS === 'function') {
       this.synthesisService.configureMaryTTS(useIt, serverUrl, voice);
+      
+      // Si une locale est fournie, configurer également la langue
+      if (locale) {
+        this.synthesisService.setLanguage(locale);
+      }
+      
+      console.log(`MaryTTS configuré : utilisation=${useIt}, serveur=${serverUrl}, voix=${voice}, locale=${locale}`);
+    }
+  }
+  
+  // Tester une connexion MaryTTS
+  async testMaryTTSConnection(serverUrl: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${serverUrl}/version`);
+      return response.ok;
+    } catch (error) {
+      console.error('Erreur de connexion à MaryTTS:', error);
+      return false;
     }
   }
 }

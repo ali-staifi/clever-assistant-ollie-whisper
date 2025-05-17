@@ -34,7 +34,9 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
   const { 
     configureTTS, 
     serverUrl, 
-    currentVoice, 
+    currentVoice,
+    locale,
+    testConnection,
     speak, 
     isSpeaking, 
     stopSpeaking 
@@ -117,8 +119,9 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
                 </Button>
                 
                 <div className="text-xs text-muted-foreground">
-                  <p>Serveur actuel: {serverUrl}</p>
-                  <p>Voix actuelle: {currentVoice}</p>
+                  <p>Serveur actuel: {serverUrl || 'Non configuré'}</p>
+                  <p>Voix actuelle: {currentVoice || 'Non configurée'}</p>
+                  <p>Langue: {locale || 'fr_FR'}</p>
                 </div>
               </div>
             </TabsContent>

@@ -60,10 +60,18 @@ export const useSpeechService = () => {
   };
 
   // Configure MaryTTS
-  const configureMaryTTS = (useIt: boolean, serverUrl?: string, voice?: string) => {
+  const configureMaryTTS = (useIt: boolean, serverUrl?: string, voice?: string, locale?: string) => {
     if (typeof speechService.configureMaryTTS === 'function') {
-      speechService.configureMaryTTS(useIt, serverUrl, voice);
+      speechService.configureMaryTTS(useIt, serverUrl, voice, locale);
     }
+  };
+  
+  // Test MaryTTS connection
+  const testMaryTTSConnection = async (serverUrl: string): Promise<boolean> => {
+    if (typeof speechService.testMaryTTSConnection === 'function') {
+      return await speechService.testMaryTTSConnection(serverUrl);
+    }
+    return false;
   };
 
   return {
@@ -84,6 +92,7 @@ export const useSpeechService = () => {
     testMicrophone,
     noMicrophoneMode,
     toggleNoMicrophoneMode,
-    configureMaryTTS
+    configureMaryTTS,
+    testMaryTTSConnection
   };
 };
