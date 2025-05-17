@@ -1,7 +1,8 @@
+
 import { Message, ChatOllamaResponse } from './types';
-import { formatMessages } from './formatUtils';
-import { parseResponse } from './responseParser';
-import { testConnection } from './connectionUtils';
+import { formatMessagesToPrompt } from './formatUtils';
+import { parseStreamedResponse } from './responseParser';
+import { testOllamaConnection } from './connectionUtils';
 
 export class ChatOllamaService {
   private baseUrl: string;
@@ -22,7 +23,7 @@ export class ChatOllamaService {
 
   // Test the connection to the Ollama server
   async testConnection(): Promise<{ success: boolean; error?: string }> {
-    return testConnection(this.baseUrl);
+    return testOllamaConnection(this.baseUrl);
   }
 
   // List available models on the Ollama server
@@ -57,7 +58,11 @@ export class ChatOllamaService {
     onProgress: (token: string) => void
   ): Promise<void> {
     try {
-      const formattedMessages = formatMessages(messages);
+      // Format messages to the format expected by the API
+      const formattedMessages = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
       const response = await fetch(`${this.baseUrl}/api/chat`, {
         method: 'POST',
@@ -90,11 +95,20 @@ export class ChatOllamaService {
           break;
         }
 
-        partialResponse += decoder.decode(value);
-        const chunk = parseResponse(partialResponse);
-
-        if (chunk) {
-          onProgress(chunk);
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const parsedToken = parseStreamedResponse(line, this.model.includes('qwen'));
+              if (parsedToken) {
+                onProgress(parsedToken);
+              }
+            } catch (e) {
+              console.error('Error parsing response line:', e);
+            }
+          }
         }
       }
     } catch (error) {
