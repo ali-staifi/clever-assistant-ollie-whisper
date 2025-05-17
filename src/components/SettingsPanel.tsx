@@ -85,10 +85,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <strong>Configure Ollama CORS in PowerShell:</strong>
             <ol className="list-decimal pl-5 mt-1 space-y-1">
               <li>Open PowerShell as administrator</li>
-              <li>Run: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
+              <li>If Ollama is already running, stop it with: <code className="bg-muted-foreground/20 px-1 rounded">Stop-Process -Name ollama</code></li>
+              <li>Start Ollama with CORS enabled: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
               <li>Or for a specific origin: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="https://yourdomain.com"; ollama serve</code></li>
             </ol>
-            <p className="mt-1">For persistent configuration, set the environment variable system-wide.</p>
+            <p className="mt-1">If you get "Only one usage of each socket address" error, Ollama is already running. Stop it first with <code className="bg-muted-foreground/20 px-1 rounded">Stop-Process -Name ollama</code> and try again.</p>
           </AlertDescription>
         </Alert>
         

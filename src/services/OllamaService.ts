@@ -39,18 +39,47 @@ export class OllamaService {
     } catch (error) {
       console.error('Error testing Ollama connection:', error);
       
-      // Check if the error is likely a CORS issue
+      // Check for specific error types
       const errorMsg = error instanceof Error ? error.message : String(error);
       let errorDetails = errorMsg;
       
       if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
-        errorDetails = `Possible CORS issue. Make sure Ollama is running with: OLLAMA_ORIGINS="*" ollama serve`;
+        errorDetails = `Possible CORS issue. Make sure Ollama is running with: OLLAMA_ORIGINS="*" ollama serve
+        
+Note: If you get "Only one usage of each socket address" error, Ollama is already running. 
+Try these steps:
+1. Check if Ollama is running with: Get-Process -Name ollama
+2. Stop the existing process: Stop-Process -Name ollama
+3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve`;
       }
       
       return { 
         success: false, 
         error: errorDetails
       };
+    }
+  }
+
+  async listAvailableModels(): Promise<string[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      // Extract model names from the response
+      if (data && data.models) {
+        return data.models.map((model: any) => model.name);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching Ollama models:', error);
+      return [];
     }
   }
 
@@ -114,9 +143,14 @@ export class OllamaService {
       console.error('Error calling Ollama:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
       
-      // Check for possible CORS issues
+      // Enhanced error messaging
       if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
-        return `Error connecting to Ollama: Possible CORS issue. Make sure Ollama is running with CORS enabled: OLLAMA_ORIGINS="*" ollama serve`;
+        return `Error connecting to Ollama: Possible CORS issue. Make sure Ollama is running with CORS enabled: OLLAMA_ORIGINS="*" ollama serve
+        
+If you get "Only one usage of each socket address" error, this means Ollama is already running. In PowerShell:
+1. Check if Ollama is running: Get-Process -Name ollama
+2. Stop the existing process: Stop-Process -Name ollama
+3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve`;
       }
       
       return `Error connecting to Ollama: ${errorMsg}`;
