@@ -11,6 +11,7 @@ export const useOllamaService = (
   const [ollamaUrl, setOllamaUrl] = useState(initialUrl);
   const [ollamaModel, setOllamaModel] = useState(initialModel);
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>('idle');
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
   const ollamaService = useRef(new OllamaService(ollamaUrl, ollamaModel)).current;
   const { toast } = useToast();
   
@@ -23,15 +24,31 @@ export const useOllamaService = (
     setOllamaStatus('connecting');
     try {
       // Simple test request
-      await fetch(`${ollamaUrl}/api/tags`, { 
+      const response = await fetch(`${ollamaUrl}/api/tags`, { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
-      }).then(res => {
-        if (!res.ok) {
-          throw new Error(`Status: ${res.status}`);
-        }
-        return res.json();
       });
+      
+      if (!response.ok) {
+        throw new Error(`Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Extract available model names
+      if (data && data.models) {
+        const modelNames = data.models.map((model: any) => model.name);
+        setAvailableModels(modelNames);
+        
+        // Check if currently selected model exists
+        if (!modelNames.includes(ollamaModel)) {
+          toast({
+            title: "Model Not Available",
+            description: `Model "${ollamaModel}" is not available on your Ollama instance. Using default model instead.`,
+            variant: "warning",
+          });
+        }
+      }
       
       setOllamaStatus('connected');
       return true;
@@ -61,6 +78,7 @@ export const useOllamaService = (
     ollamaUrl,
     ollamaModel,
     ollamaStatus,
+    availableModels,
     ollamaService,
     handleOllamaUrlChange,
     handleOllamaModelChange,

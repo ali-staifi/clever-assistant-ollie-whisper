@@ -1,3 +1,4 @@
+
 interface OllamaResponse {
   model: string;
   created_at: string;
@@ -105,8 +106,20 @@ Try these steps:
         signal: this.controller.signal
       });
 
-      if (!response.ok || !response.body) {
+      if (!response.ok) {
+        // Handle specific error cases
+        if (response.status === 404) {
+          const errorData = await response.json();
+          if (errorData.error && errorData.error.includes("not found, try pulling it first")) {
+            throw new Error(`Model "${this.model}" is not installed on your Ollama server. Please install it using: ollama pull ${this.model}`);
+          }
+        }
+        
         throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      }
+
+      if (!response.body) {
+        throw new Error("Response body is empty");
       }
 
       const reader = response.body.getReader();
@@ -156,6 +169,12 @@ If you get "Only one usage of each socket address" error, this means Ollama is a
 1. Check if Ollama is running: Get-Process -Name ollama
 2. Stop the existing process: Stop-Process -Name ollama
 3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve`;
+      }
+      
+      if (errorMsg.includes("not installed") || errorMsg.includes("not found, try pulling it first")) {
+        return `Model Error: The model "${this.model}" is not installed on your Ollama server. Please install it first with this command:
+        
+ollama pull ${this.model}`;
       }
       
       return `Error connecting to Ollama: ${errorMsg}`;

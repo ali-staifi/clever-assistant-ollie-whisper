@@ -20,6 +20,7 @@ const JarvisInterface = () => {
     ollamaUrl,
     ollamaModel,
     ollamaStatus,
+    availableModels,
     errorMessage,
     speechRecognitionAvailable,
     toggleListening,
@@ -58,6 +59,7 @@ const JarvisInterface = () => {
           onClose={() => setShowSettings(false)}
           checkConnection={checkOllamaConnection}
           ollamaStatus={ollamaStatus}
+          availableModels={availableModels}
         />
       )}
       
