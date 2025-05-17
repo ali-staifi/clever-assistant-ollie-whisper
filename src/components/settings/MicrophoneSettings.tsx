@@ -1,43 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import OllamaSettings from "@/components/settings/OllamaSettings";
-import MicrophoneSettings from "@/components/settings/MicrophoneSettings";
 
-interface SettingsPanelProps {
-  ollamaUrl: string;
-  ollamaModel: string;
-  onOllamaUrlChange: (url: string) => void;
-  onOllamaModelChange: (model: string) => void;
-  onClearConversation: () => void;
-  onClose: () => void;
-  checkConnection: () => void;
-  ollamaStatus: 'idle' | 'connecting' | 'connected' | 'error';
-  availableModels?: string[];
+import React, { useState, useEffect } from 'react';
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Volume2, VolumeX } from "lucide-react";
+
+interface MicrophoneSettingsProps {
+  micSensitivity: number;
+  onMicSensitivityChange: (value: number) => void;
+  testMicrophone: () => void;
 }
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({
-  ollamaUrl,
-  ollamaModel,
-  onOllamaUrlChange,
-  onOllamaModelChange,
-  onClearConversation,
-  onClose,
-  checkConnection,
-  ollamaStatus,
-  availableModels = []
+const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
+  micSensitivity,
+  onMicSensitivityChange,
+  testMicrophone
 }) => {
-  const [micSensitivity, setMicSensitivity] = useState(() => {
-    // Try to get saved sensitivity from localStorage or use default
-    const savedSensitivity = localStorage.getItem('jarvis-mic-sensitivity');
-    return savedSensitivity ? parseFloat(savedSensitivity) : 1.5; // Increased default sensitivity
-  });
-  
   const [testingMic, setTestingMic] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   
   // Initialize microphone testing
-  const testMicrophone = async () => {
+  const handleTestMicrophone = async () => {
     if (testingMic) {
       // Stop testing
       setTestingMic(false);
@@ -121,40 +105,60 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   }, [audioContext]);
 
   return (
-    <div className="bg-card rounded-lg p-4 mb-4 shadow-lg animate-fade-in">
-      <h2 className="text-xl font-semibold mb-4 text-jarvis-blue">Settings</h2>
-      
-      <div className="grid gap-4">
-        {/* Ollama Settings Section */}
-        <OllamaSettings
-          ollamaUrl={ollamaUrl}
-          ollamaModel={ollamaModel}
-          onOllamaUrlChange={onOllamaUrlChange}
-          onOllamaModelChange={onOllamaModelChange}
-          checkConnection={checkConnection}
-          ollamaStatus={ollamaStatus}
-          availableModels={availableModels}
-        />
-        
-        {/* Microphone Settings Section */}
-        <MicrophoneSettings
-          micSensitivity={micSensitivity}
-          onMicSensitivityChange={setMicSensitivity}
-          testMicrophone={testMicrophone}
-          testingMic={testingMic}
-          volumeLevel={volumeLevel}
-        />
-        
-        {/* Footer Actions */}
-        <div className="flex justify-between pt-2">
-          <Button variant="outline" onClick={onClearConversation}>
-            Clear Conversation
-          </Button>
-          <Button onClick={onClose}>Close Settings</Button>
+    <>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="mic-sensitivity">Microphone Sensitivity</Label>
+          <span className="text-xs text-muted-foreground">
+            {Math.round(micSensitivity * 100)}%
+          </span>
         </div>
+        <Slider
+          id="mic-sensitivity"
+          min={0.1}
+          max={3.0}
+          step={0.1}
+          value={[micSensitivity]}
+          onValueChange={(value) => onMicSensitivityChange(value[0])}
+        />
+        <p className="text-xs text-muted-foreground">
+          Increase if J.A.R.V.I.S has trouble hearing you
+        </p>
       </div>
-    </div>
+      
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label>Test Microphone</Label>
+          <Button 
+            variant={testingMic ? "destructive" : "outline"} 
+            onClick={handleTestMicrophone}
+            size="sm"
+          >
+            {testingMic ? "Stop Testing" : "Start Test"}
+          </Button>
+        </div>
+        
+        {testingMic && (
+          <div className="mt-2">
+            <div className="flex items-center gap-2 mb-1">
+              <VolumeX className="h-4 w-4 text-muted-foreground" />
+              <div className="bg-muted h-2 flex-1 rounded-full overflow-hidden">
+                <div 
+                  className="bg-jarvis-blue h-full transition-all duration-100"
+                  style={{ width: `${volumeLevel * 100}%` }}
+                ></div>
+              </div>
+              <Volume2 className="h-4 w-4 text-jarvis-blue" />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              {volumeLevel < 0.2 ? "Speech too quiet - try speaking louder" : 
+               volumeLevel > 0.7 ? "Good volume detected" : "Try speaking a bit louder"}
+            </p>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
-export default SettingsPanel;
+export default MicrophoneSettings;
