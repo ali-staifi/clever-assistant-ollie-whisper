@@ -12,4 +12,5 @@ export interface ChatOllamaResponse {
 }
 
 // Re-export Message type from OllamaService
-export { Message } from '@/services/OllamaService';
+// Using 'export type' instead of just 'export' to fix the isolatedModules error
+export type { Message } from '@/services/OllamaService';
