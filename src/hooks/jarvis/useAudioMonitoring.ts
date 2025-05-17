@@ -6,6 +6,7 @@ export const useAudioMonitoring = (isListening: boolean, sensitivity: number) =>
   const audioContext = useRef<AudioContext | null>(null);
   const analyser = useRef<AnalyserNode | null>(null);
   const microphone = useRef<MediaStreamAudioSourceNode | null>(null);
+  const gainNode = useRef<GainNode | null>(null);
 
   // Clean up audio resources on unmount
   useEffect(() => {
@@ -23,28 +24,39 @@ export const useAudioMonitoring = (isListening: boolean, sensitivity: number) =>
   const setupAudioMonitoring = async (): Promise<boolean> => {
     try {
       if (!audioContext.current) {
-        audioContext.current = new AudioContext();
+        audioContext.current = new AudioContext({
+          latencyHint: 'interactive',
+          sampleRate: 48000  // Higher sample rate for better audio quality
+        });
       }
       
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: { 
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true // Enable auto gain to help with quiet microphones
+          autoGainControl: true, // Enable auto gain to help with quiet microphones
+          channelCount: 1  // Mono channel for voice
         } 
       });
       
       // Create analyzer
       if (!analyser.current) {
         analyser.current = audioContext.current.createAnalyser();
-        analyser.current.fftSize = 256;
-        analyser.current.smoothingTimeConstant = 0.8; // Add smoothing for more stable visualization
+        analyser.current.fftSize = 1024;  // More detailed frequency analysis
+        analyser.current.smoothingTimeConstant = 0.5; // Add smoothing for more stable visualization
       }
       
-      // Connect microphone to analyzer
+      // Create gain node for boosting signal
+      if (!gainNode.current) {
+        gainNode.current = audioContext.current.createGain();
+        gainNode.current.gain.value = 2.5; // Boost the signal significantly
+      }
+      
+      // Connect microphone through gain to analyzer
       if (!microphone.current) {
         microphone.current = audioContext.current.createMediaStreamSource(stream);
-        microphone.current.connect(analyser.current);
+        microphone.current.connect(gainNode.current);
+        gainNode.current.connect(analyser.current);
       }
       
       // Start monitoring volume
@@ -55,14 +67,31 @@ export const useAudioMonitoring = (isListening: boolean, sensitivity: number) =>
         if (!analyser.current) return;
         
         analyser.current.getByteFrequencyData(dataArray);
+        
+        // Calculate average volume with emphasis on speech frequencies
+        // Human speech is typically between 300-3000 Hz
         let sum = 0;
+        let count = 0;
+        
         for (let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
+          const frequency = i * (audioContext.current?.sampleRate || 44100) / analyser.current.fftSize;
+          // Emphasize the speech frequency range
+          if (frequency >= 200 && frequency <= 4000) {
+            sum += dataArray[i] * 2.5;  // Give more weight to speech frequencies
+            count++;
+          } else {
+            sum += dataArray[i];
+            count++;
+          }
         }
         
-        // Calculate average volume (0-100) with sensitivity applied
-        const avgVolume = (sum / bufferLength) * sensitivity;
-        setMicVolume(Math.min(100, avgVolume));
+        const avgVolume = count > 0 ? (sum / count) * sensitivity : 0;
+        
+        // Apply a non-linear curve to make small sounds more visible
+        // Reduce the exponent to amplify weak sounds even more
+        const normalizedVolume = Math.min(100, Math.pow(avgVolume / 128, 0.4) * 100);
+        
+        setMicVolume(normalizedVolume);
         
         if (isListening) {
           requestAnimationFrame(checkVolume);

@@ -9,6 +9,7 @@ export class RecognitionService {
   private noMicrophoneMode: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 3;
+  private confidenceThreshold: number = 0.1; // Réduire encore plus le seuil de confiance
 
   constructor() {
     this.setupRecognition();
@@ -80,11 +81,11 @@ export class RecognitionService {
         console.log(`Transcript reçu: "${transcript}" avec confiance: ${confidence}`);
         
         if (event.results[resultIndex].isFinal) {
-          if (confidence > 0.2) { // Réduire le seuil de confiance pour plus de sensibilité
+          if (confidence > this.confidenceThreshold) { // Utiliser un seuil plus bas
             if (onResult) onResult(transcript);
           } else {
-            console.log("Résultat de faible confiance ignoré:", transcript, confidence);
-            if (onError) onError("La voix n'a pas été clairement comprise. Veuillez parler plus fort ou approcher le microphone.");
+            console.log("Discarded low confidence result:", transcript, confidence);
+            if (onError) onError("Could not understand audio clearly. Please try again.");
           }
         } else {
           if (onInterimResult) onInterimResult(transcript);
@@ -115,7 +116,14 @@ export class RecognitionService {
                 if (onError) onError(`Erreur de reconnexion: ${e}`);
               }
             } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-              if (onError) onError("Plusieurs tentatives d'écoute sans parole détectée. Vérifiez que votre microphone fonctionne.");
+              if (onError) onError("Plusieurs tentatives d'écoute sans parole détectée. Vérifiez que votre microphone fonctionne correctement.");
+              
+              // Vérification supplémentaire du microphone
+              this.checkMicrophoneAccess().then(isWorking => {
+                if (!isWorking && onError) {
+                  onError("Problème détecté avec votre microphone. Veuillez vérifier qu'il est correctement connecté et autorisé.");
+                }
+              });
             }
           }, 1000);
         } else if (event.error === 'audio-capture') {
@@ -128,6 +136,7 @@ export class RecognitionService {
       };
 
       this.recognition.onend = () => {
+        console.log("Recognition ended");
         // Only set isListening to false if we're not trying to restart
         if (this.isListening && this.reconnectAttempts >= this.maxReconnectAttempts) {
           console.log("Reconnaissance terminée après plusieurs tentatives");
@@ -160,6 +169,27 @@ export class RecognitionService {
     }
   }
 
+  // Vérifier l'accès au microphone
+  async checkMicrophoneAccess(): Promise<boolean> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
+      // Si la requête réussit, le microphone fonctionne
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop()); // Nettoyer après le test
+      return true;
+    } catch (error) {
+      console.error("Erreur d'accès au microphone:", error);
+      return false;
+    }
+  }
+
   isRecognitionSupported(): boolean {
     return !this.noMicrophoneMode && (('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window));
   }
@@ -174,7 +204,10 @@ export class RecognitionService {
 
   setSensitivity(value: number) {
     this.sensitivity = value;
+    // Ajuster aussi le seuil de confiance inversement proportionnel
+    this.confidenceThreshold = Math.max(0.05, 0.3 / value);
     console.log("Sensibilité de reconnaissance vocale définie sur:", value);
+    console.log("Seuil de confiance ajusté à:", this.confidenceThreshold);
   }
   
   // Add a method to enable simulation mode for testing without a microphone
