@@ -1,15 +1,8 @@
-import { Message } from '@/services/OllamaService';
 
-interface ChatOllamaResponse {
-  model: string;
-  created_at: string;
-  response: string;
-  done: boolean;
-  message?: {
-    role: string;
-    content: string;
-  };
-}
+import { Message } from '@/services/OllamaService';
+import { formatMessagesToPrompt } from './ollama/formatUtils';
+import { parseStreamedResponse } from './ollama/responseParser';
+import { testOllamaConnection, getAvailableModels } from './ollama/connectionUtils';
 
 export class ChatOllamaService {
   private baseUrl: string;
@@ -23,51 +16,11 @@ export class ChatOllamaService {
   }
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/tags`, { 
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        return { 
-          success: false, 
-          error: `Status: ${response.status} ${response.statusText}` 
-        };
-      }
-      
-      return { success: true };
-    } catch (error) {
-      console.error('Error testing Ollama connection:', error);
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      return { 
-        success: false, 
-        error: errorMsg
-      };
-    }
+    return testOllamaConnection(this.baseUrl);
   }
 
   async listAvailableModels(): Promise<string[]> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/tags`, { 
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      // Extract model names from the response
-      if (data && data.models) {
-        return data.models.map((model: any) => model.name);
-      }
-      return [];
-    } catch (error) {
-      console.error('Error fetching Ollama models:', error);
-      return [];
-    }
+    return getAvailableModels(this.baseUrl);
   }
 
   async generateChatResponse(
@@ -99,7 +52,7 @@ export class ChatOllamaService {
         // Format for Qwen models with the generate API
         requestPayload = {
           model: this.model,
-          prompt: this.formatMessagesToPrompt(messages, enhancedPrompt, true),
+          prompt: formatMessagesToPrompt(messages, enhancedPrompt, true, this.language),
           stream: true,
         };
       } else {
@@ -160,31 +113,15 @@ export class ChatOllamaService {
         const lines = chunk.split('\n').filter(line => line.trim() !== '');
         
         for (const line of lines) {
-          try {
-            const parsedLine = JSON.parse(line);
-            
-            // Handle response based on API endpoint
-            let responseText;
-            if (isQwenModel) {
-              // For generate API
-              responseText = parsedLine.response || '';
-              console.log('Qwen response text:', responseText.substring(0, 50) + (responseText.length > 50 ? '...' : ''));
-            } else {
-              // For chat API
-              responseText = parsedLine.message?.content || parsedLine.response || '';
-              console.log('Standard response text:', responseText.substring(0, 50) + (responseText.length > 50 ? '...' : ''));
+          const responseText = parseStreamedResponse(line, isQwenModel);
+          
+          // Make sure we have valid text before adding it
+          if (responseText && typeof responseText === 'string') {
+            fullResponse += responseText;
+            // Only call onProgress if fullResponse is valid
+            if (onProgress && fullResponse.trim() !== '') {
+              onProgress(fullResponse);
             }
-            
-            // Make sure we have valid text before adding it
-            if (responseText && typeof responseText === 'string') {
-              fullResponse += responseText;
-              // Only call onProgress if fullResponse is valid
-              if (onProgress && fullResponse.trim() !== '') {
-                onProgress(fullResponse);
-              }
-            }
-          } catch (e) {
-            console.error('Failed to parse Ollama response line:', line, e);
           }
         }
       }
@@ -212,34 +149,6 @@ export class ChatOllamaService {
     }
   }
   
-  // Helper method to format chat messages into a prompt string for models that need it
-  private formatMessagesToPrompt(
-    messages: Message[], 
-    currentPrompt: string, 
-    includeLanguageInstruction: boolean = false
-  ): string {
-    let formattedPrompt = '';
-    
-    // Add language instruction at the beginning if requested
-    if (includeLanguageInstruction) {
-      formattedPrompt += `System: Réponds uniquement en français, quelle que soit la langue de la question.\n\n`;
-    }
-    
-    // Add previous messages
-    for (const msg of messages) {
-      if (msg.role === 'user') {
-        formattedPrompt += `Human: ${msg.content}\n\n`;
-      } else {
-        formattedPrompt += `Assistant: ${msg.content}\n\n`;
-      }
-    }
-    
-    // Add current prompt
-    formattedPrompt += `Human: ${currentPrompt}\n\nAssistant:`;
-    
-    return formattedPrompt;
-  }
-
   abortRequest() {
     if (this.controller) {
       this.controller.abort();
@@ -255,7 +164,7 @@ export class ChatOllamaService {
     this.baseUrl = url;
   }
   
-  // Nouvelle méthode pour définir la langue
+  // Méthode pour définir la langue
   setLanguage(language: string) {
     this.language = language;
   }
