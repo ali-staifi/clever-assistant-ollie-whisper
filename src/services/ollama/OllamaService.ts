@@ -1,14 +1,8 @@
-interface OllamaResponse {
-  model: string;
-  created_at: string;
-  response: string;
-  done: boolean;
-}
 
-export interface Message {
-  role: 'user' | 'assistant' | 'system';  // Ajout de 'system' comme type possible
-  content: string;
-}
+import { Message } from './types';
+import { formatMessagesToPrompt } from './formatUtils';
+import { parseStreamedResponse } from './responseParser';
+import { testOllamaConnection, getAvailableModels } from './connectionUtils';
 
 export class OllamaService {
   private baseUrl: string;
@@ -22,71 +16,11 @@ export class OllamaService {
   }
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
-    try {
-      console.log(`Testing connection to Ollama at ${this.baseUrl}`);
-      const response = await fetch(`${this.baseUrl}/api/tags`, { 
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        console.error(`Ollama connection failed with status: ${response.status}`);
-        return { 
-          success: false, 
-          error: `Status: ${response.status} ${response.statusText}` 
-        };
-      }
-      
-      console.log("Ollama connection successful");
-      return { success: true };
-    } catch (error) {
-      console.error('Error testing Ollama connection:', error);
-      
-      // Check for specific error types
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      let errorDetails = errorMsg;
-      
-      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
-        errorDetails = `Possible CORS issue. Make sure Ollama is running with: OLLAMA_ORIGINS="*" ollama serve
-        
-Note: If you get "Only one usage of each socket address" error, Ollama is already running. 
-Try these steps:
-1. Check if Ollama is running with: Get-Process -Name ollama
-2. Stop the existing process: Stop-Process -Name ollama
-3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve
-4. Or for Mac/Linux: OLLAMA_ORIGINS="*" ollama serve`;
-      }
-      
-      return { 
-        success: false, 
-        error: errorDetails
-      };
-    }
+    return testOllamaConnection(this.baseUrl);
   }
 
   async listAvailableModels(): Promise<string[]> {
-    try {
-      console.log(`Fetching available models from Ollama at ${this.baseUrl}`);
-      const response = await fetch(`${this.baseUrl}/api/tags`, { 
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      // Extract model names from the response
-      if (data && data.models) {
-        console.log(`Found ${data.models.length} models`);
-        return data.models.map((model: any) => model.name);
-      }
-      return [];
-    } catch (error) {
-      console.error('Error fetching Ollama models:', error);
-      return [];
-    }
+    return getAvailableModels(this.baseUrl);
   }
 
   async generateResponse(
@@ -117,7 +51,7 @@ Try these steps:
         // Format for Qwen models with the generate API
         requestPayload = {
           model: this.model,
-          prompt: this.formatMessagesToPrompt(messages, enhancedPrompt, true),
+          prompt: formatMessagesToPrompt(messages, enhancedPrompt, true, this.language),
           stream: true,
         };
       } else {
@@ -222,35 +156,6 @@ ollama pull ${this.model}`;
       return `Error connecting to Ollama: ${errorMsg}`;
     }
   }
-  
-  // Helper method to format chat messages into a prompt string for models that need it
-  private formatMessagesToPrompt(
-    messages: Message[], 
-    currentPrompt: string,
-    includeLanguageInstruction: boolean = false
-  ): string {
-    let formattedPrompt = '';
-    
-    // Add language instruction at the beginning if requested
-    if (includeLanguageInstruction) {
-      formattedPrompt += `System: Réponds uniquement en français, quelle que soit la langue de la question.\n\n`;
-    }
-    
-    // Add previous messages
-    for (const msg of messages) {
-      if (msg.role === 'user') {
-        formattedPrompt += `Human: ${msg.content}\n\n`;
-      } else if (msg.role === 'assistant') {
-        formattedPrompt += `Assistant: ${msg.content}\n\n`;
-      }
-      // Ignorer les messages système car ils sont déjà ajoutés au début
-    }
-    
-    // Add current prompt
-    formattedPrompt += `Human: ${currentPrompt}\n\nAssistant:`;
-    
-    return formattedPrompt;
-  }
 
   abortRequest() {
     if (this.controller) {
@@ -269,7 +174,7 @@ ollama pull ${this.model}`;
     this.baseUrl = url;
   }
   
-  // Nouvelle méthode pour définir la langue
+  // Méthode pour définir la langue
   setLanguage(language: string) {
     this.language = language;
   }

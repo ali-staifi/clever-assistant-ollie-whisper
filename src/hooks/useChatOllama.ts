@@ -1,7 +1,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChatOllamaService } from '@/services/ollama/ChatOllamaService';
-import { Message } from '@/services/OllamaService';
+import { Message } from '@/services/ollama/types';
 import { useToast } from '@/hooks/use-toast';
 
 export type OllamaConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error';
