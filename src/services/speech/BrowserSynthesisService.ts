@@ -1,4 +1,3 @@
-
 export class BrowserSynthesisService {
   private synthesis: SpeechSynthesis;
   private voice: SpeechSynthesisVoice | null = null;
@@ -34,41 +33,29 @@ export class BrowserSynthesisService {
       const requestedVoice = voices.find(v => v.name === voiceName);
       if (requestedVoice) {
         this.voice = requestedVoice;
-        console.log(`Voix sélectionnée: ${requestedVoice.name}`);
+        // Update language to match the selected voice's language
+        this.lang = requestedVoice.lang;
+        console.log(`Voix sélectionnée: ${requestedVoice.name} avec langue ${requestedVoice.lang}`);
         return;
       } else {
         console.log(`Voix demandée "${voiceName}" non trouvée, utilisation de la voix par défaut`);
       }
     }
     
-    // Prefer French voices first, then fallback to others
-    const preferredVoices = [
-      // French premium voices
-      "Google français", 
-      "Microsoft Denise - French (France)",
-      "Microsoft Eloise Online (Natural) - French (France)",
-      // Fallback to any voice that matches our language
-      ...voices.filter(voice => voice.lang.startsWith(this.lang.split('-')[0]))
-    ];
+    // Prefer voices for the current language first, then fallback
+    const matchingVoices = voices.filter(voice => voice.lang.startsWith(this.lang.split('-')[0]));
     
-    for (const preferred of preferredVoices) {
-      const match = voices.find(v => v.name === preferred);
-      if (match) {
-        this.voice = match;
-        console.log(`Utilisation de la voix: ${match.name}`);
-        return;
-      }
+    if (matchingVoices.length > 0) {
+      // Use the first matching voice
+      this.voice = matchingVoices[0];
+      console.log(`Utilisation de la voix: ${matchingVoices[0].name} pour la langue ${this.lang}`);
+      return;
     }
     
-    // Fallback to any French voice
-    const anyFrenchVoice = voices.find(v => v.lang.startsWith('fr'));
-    if (anyFrenchVoice) {
-      this.voice = anyFrenchVoice;
-      console.log(`Utilisation de la voix de secours: ${anyFrenchVoice.name}`);
-    } else {
-      // Final fallback to any available voice
+    // If no matching voices, use any available voice
+    if (voices.length > 0) {
       this.voice = voices[0];
-      console.log(`Aucune voix française trouvée, utilisation de: ${voices[0]?.name}`);
+      console.log(`Aucune voix trouvée pour ${this.lang}, utilisation de: ${voices[0]?.name}`);
     }
   }
 
@@ -92,12 +79,13 @@ export class BrowserSynthesisService {
     
     if (this.voice) {
       utterance.voice = this.voice;
-      console.log(`Utilisation de la voix: ${this.voice.name}`);
+      // Use the language of the selected voice, not the system language
+      utterance.lang = this.voice.lang;
+      console.log(`Utilisation de la voix: ${this.voice.name} avec langue ${this.voice.lang}`);
     } else {
+      utterance.lang = this.lang;
       console.log("Aucune voix spécifique sélectionnée pour la synthèse");
     }
-    
-    utterance.lang = this.lang;
     
     // Apply base settings
     utterance.rate = this.rate;
@@ -138,8 +126,7 @@ export class BrowserSynthesisService {
   setLanguage(lang: string) {
     this.lang = lang;
     console.log("Langue de synthèse définie sur:", lang);
-    // Refresh voice selection for the new language
-    this.setupVoice();
+    // Don't auto-refresh voice selection to prevent overriding voice choice
   }
   
   setVoice(voiceName: string) {

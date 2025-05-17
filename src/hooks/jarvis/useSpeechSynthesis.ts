@@ -22,10 +22,8 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
 
   const toggleSpeaking = () => {
     if (isSpeaking) {
-      // Use the correct method to stop speaking - remove comments in French
-      speechService.speak('', () => {
-        setIsSpeaking(false);
-      });
+      // Stop speaking with empty text
+      speechService.stopSpeaking();
       setIsSpeaking(false);
     }
   };
@@ -59,11 +57,17 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
   const getAvailableVoices = () => {
     return speechService.getAvailableVoices();
   };
+  
+  const stopSpeaking = () => {
+    speechService.stopSpeaking();
+    setIsSpeaking(false);
+  };
 
   return {
     isSpeaking,
     speak,
     toggleSpeaking,
+    stopSpeaking,
     setVoice,
     setVoiceSettings,
     getAvailableVoices

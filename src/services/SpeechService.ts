@@ -1,4 +1,3 @@
-
 import { RecognitionService } from './speech/RecognitionService';
 import { SynthesisService } from './speech/SynthesisService';
 
@@ -81,6 +80,7 @@ export class SpeechService {
     // Handle locale separately if provided
     if (locale) {
       this.synthesisService.setLanguage(locale);
+      
       // Synchronize recognition language with synthesis language
       if (locale.length >= 5) {
         this.recognitionService.setLanguage(locale.substring(0, 2) + '-' + locale.substring(3, 5));
@@ -121,5 +121,10 @@ export class SpeechService {
     if (typeof this.synthesisService.setRoboticEffect === 'function') {
       this.synthesisService.setRoboticEffect(effect);
     }
+  }
+  
+  // Add method to explicitly stop speech
+  stopSpeaking() {
+    this.synthesisService.stopSpeaking();
   }
 }
