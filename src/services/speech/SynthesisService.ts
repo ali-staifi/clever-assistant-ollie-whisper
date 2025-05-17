@@ -210,7 +210,7 @@ export class SynthesisService {
     this.setupVoice();
   }
   
-  // Configuration pour MaryTTS
+  // Configuration pour MaryTTS with corrected parameter list
   configureMaryTTS(useIt: boolean, serverUrl: string = '', voice: string = '') {
     this.useMaryTTS = useIt;
     this.maryTTSServerUrl = serverUrl || 'http://localhost:59125';

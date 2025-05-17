@@ -66,16 +66,19 @@ export class SpeechService {
     }
   }
   
-  // Configuration MaryTTS avec plus d'options
+  // Configuration MaryTTS with corrected parameter handling
   configureMaryTTS(useIt: boolean, serverUrl?: string, voice?: string, locale?: string) {
     if (typeof this.synthesisService.configureMaryTTS === 'function') {
-      this.synthesisService.configureMaryTTS(useIt, serverUrl, voice, locale);
+      // Fix: Pass only the supported parameters (up to 3 arguments instead of 4)
+      this.synthesisService.configureMaryTTS(useIt, serverUrl, voice);
       
-      // Si une locale est fournie, configurer également la langue
+      // Handle locale separately if provided
       if (locale) {
         this.synthesisService.setLanguage(locale);
-        // Synchroniser la langue de reconnaissance avec celle de la synthèse
-        this.recognitionService.setLanguage(locale.substring(0, 2) + '-' + locale.substring(3, 5));
+        // Synchronize recognition language with synthesis language
+        if (locale.length >= 5) {
+          this.recognitionService.setLanguage(locale.substring(0, 2) + '-' + locale.substring(3, 5));
+        }
       }
       
       console.log(`MaryTTS configuré : utilisation=${useIt}, serveur=${serverUrl}, voix=${voice}, locale=${locale}`);
@@ -100,9 +103,24 @@ export class SpeechService {
   
   // Obtenir les voix disponibles de MaryTTS
   async getMaryTTSVoices(serverUrl: string): Promise<string[]> {
-    if (typeof this.synthesisService.getMaryTTSVoices === 'function') {
-      return await this.synthesisService.getMaryTTSVoices(serverUrl);
+    try {
+      // Implement direct fetch to get MaryTTS voices since the method doesn't exist in SynthesisService
+      const response = await fetch(`${serverUrl}/voices`, {
+        mode: 'cors', 
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`MaryTTS server error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.voices || [];
+    } catch (error) {
+      console.error('Error fetching MaryTTS voices:', error);
+      return [];
     }
-    return [];
   }
 }
