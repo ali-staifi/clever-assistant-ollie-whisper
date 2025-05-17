@@ -45,7 +45,7 @@ export const useOllamaService = (
           toast({
             title: "Model Not Available",
             description: `Model "${ollamaModel}" is not available on your Ollama instance. Using default model instead.`,
-            variant: "warning",
+            variant: "default", // Changed from "warning" to "default"
           });
         }
       }
