@@ -3,6 +3,9 @@ export class BrowserSynthesisService {
   private synthesis: SpeechSynthesis;
   private voice: SpeechSynthesisVoice | null = null;
   private lang: string = 'fr-FR';
+  private rate: number = 1.0;
+  private pitch: number = 1.0;
+  private volume: number = 1.0;
   
   constructor() {
     this.synthesis = window.speechSynthesis;
@@ -22,8 +25,20 @@ export class BrowserSynthesisService {
     }
   }
 
-  selectVoice() {
+  selectVoice(voiceName?: string) {
     const voices = this.synthesis.getVoices();
+    
+    if (voiceName) {
+      // Try to find the requested voice by name
+      const requestedVoice = voices.find(v => v.name === voiceName);
+      if (requestedVoice) {
+        this.voice = requestedVoice;
+        console.log(`Voix sélectionnée: ${requestedVoice.name}`);
+        return;
+      } else {
+        console.log(`Voix demandée "${voiceName}" non trouvée, utilisation de la voix par défaut`);
+      }
+    }
     
     // Prefer French voices first, then fallback to others
     const preferredVoices = [
@@ -82,9 +97,9 @@ export class BrowserSynthesisService {
     }
     
     utterance.lang = this.lang;
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    utterance.rate = this.rate;
+    utterance.pitch = this.pitch;
+    utterance.volume = this.volume;
     
     if (onEnd) {
       utterance.onend = () => {
@@ -122,5 +137,21 @@ export class BrowserSynthesisService {
     console.log("Langue de synthèse définie sur:", lang);
     // Refresh voice selection for the new language
     this.setupVoice();
+  }
+  
+  setVoice(voiceName: string) {
+    this.selectVoice(voiceName);
+  }
+  
+  setRate(rate: number) {
+    this.rate = rate;
+  }
+  
+  setPitch(pitch: number) {
+    this.pitch = pitch;
+  }
+  
+  setVolume(volume: number) {
+    this.volume = volume;
   }
 }

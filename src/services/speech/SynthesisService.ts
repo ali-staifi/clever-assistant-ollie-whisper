@@ -67,4 +67,21 @@ export class SynthesisService {
   async getMaryTTSVoices(serverUrl: string): Promise<string[]> {
     return await this.maryTTS.getAvailableVoices(serverUrl);
   }
+  
+  // Ajouter les nouveaux paramètres pour la voix
+  setVoice(voiceName: string) {
+    this.browserSynthesis.setVoice(voiceName);
+  }
+  
+  setRate(rate: number) {
+    this.browserSynthesis.setRate(rate);
+  }
+  
+  setPitch(pitch: number) {
+    this.browserSynthesis.setPitch(pitch);
+  }
+  
+  setVolume(volume: number) {
+    this.browserSynthesis.setVolume(volume);
+  }
 }

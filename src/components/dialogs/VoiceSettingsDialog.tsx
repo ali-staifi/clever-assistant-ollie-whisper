@@ -14,6 +14,7 @@ import { useMicrophoneTesting } from "@/hooks/useMicrophoneTesting";
 import { useMicSensitivity } from "@/hooks/jarvis/useMicSensitivity";
 import { useMaryTTS } from "@/hooks/jarvis/useMaryTTS";
 import MaryTTSConfigDialog from "@/components/dialogs/MaryTTSConfigDialog";
+import VoiceSelectionDialog from "@/components/dialogs/VoiceSelectionDialog";
 
 interface VoiceSettingsDialogProps {
   open: boolean;
@@ -44,6 +45,9 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
   
   // State for MaryTTS config dialog
   const [maryConfigOpen, setMaryConfigOpen] = useState(false);
+  
+  // State for voice selection dialog
+  const [voiceSelectionOpen, setVoiceSelectionOpen] = useState(false);
   
   // Handle microphone test button click
   const handleTestMicrophone = async () => {
@@ -96,6 +100,22 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
+                    <h3 className="text-sm font-medium">Voix du navigateur</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Configurer la voix de synthèse vocale
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setVoiceSelectionOpen(true)}
+                  >
+                    Choisir une voix
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
                     <h3 className="text-sm font-medium">MaryTTS</h3>
                     <p className="text-xs text-muted-foreground">
                       Synthèse vocale open-source multi-langue
@@ -141,6 +161,12 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
         onConfigure={handleConfigureMaryTTS}
         serverUrl={serverUrl}
         currentVoice={currentVoice}
+      />
+      
+      <VoiceSelectionDialog
+        open={voiceSelectionOpen}
+        onOpenChange={setVoiceSelectionOpen}
+        speechService={window.jarvisSpeechService}
       />
     </>
   );

@@ -1,3 +1,4 @@
+
 import { RecognitionService } from './speech/RecognitionService';
 import { SynthesisService } from './speech/SynthesisService';
 
@@ -97,5 +98,22 @@ export class SpeechService {
   // Obtenir les voix disponibles de MaryTTS
   async getMaryTTSVoices(serverUrl: string): Promise<string[]> {
     return await this.synthesisService.getMaryTTSVoices(serverUrl);
+  }
+  
+  // Nouvelles méthodes pour configurer la voix du navigateur
+  setVoice(voiceName: string) {
+    this.synthesisService.setVoice(voiceName);
+  }
+  
+  setRate(rate: number) {
+    this.synthesisService.setRate(rate);
+  }
+  
+  setPitch(pitch: number) {
+    this.synthesisService.setPitch(pitch);
+  }
+  
+  setVolume(volume: number) {
+    this.synthesisService.setVolume(volume);
   }
 }

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useOllamaService } from './jarvis/useOllamaService';
 import { useSpeechService } from './jarvis/useSpeechService';
 import { useConversation } from './jarvis/useConversation';
@@ -37,7 +37,8 @@ export const useJarvisServices = () => {
     noMicrophoneMode,
     toggleNoMicrophoneMode,
     configureMaryTTS,
-    testMaryTTSConnection
+    testMaryTTSConnection,
+    speechService
   } = useSpeechService();
 
   const {
@@ -50,6 +51,11 @@ export const useJarvisServices = () => {
     addAssistantMessage,
     clearConversation
   } = useConversation();
+
+  // Expose speech service globally for component access
+  useEffect(() => {
+    window.jarvisSpeechService = speechService;
+  }, [speechService]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -156,6 +162,14 @@ export const useJarvisServices = () => {
     noMicrophoneMode,
     toggleNoMicrophoneMode,
     configureMaryTTS,
-    testMaryTTSConnection
+    testMaryTTSConnection,
+    speechService
   };
 };
+
+// Extend Window interface to include global speechService
+declare global {
+  interface Window {
+    jarvisSpeechService: any;
+  }
+}

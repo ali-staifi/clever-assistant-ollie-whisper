@@ -4,6 +4,7 @@ export interface SynthesisOptions {
   rate?: number;
   pitch?: number;
   volume?: number;
+  voice?: string;
 }
 
 export interface MaryTTSConfig {

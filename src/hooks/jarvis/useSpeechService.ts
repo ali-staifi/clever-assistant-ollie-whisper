@@ -1,5 +1,5 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { SpeechService } from '@/services/SpeechService';
 import { useAudioMonitoring } from './useAudioMonitoring';
 import { useMicSensitivity } from './useMicSensitivity';
@@ -8,6 +8,7 @@ import { useSpeechSynthesis } from './useSpeechSynthesis';
 
 export const useSpeechService = () => {
   const speechService = useRef(new SpeechService()).current;
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   
   // Get microphone sensitivity settings
   const { micSensitivity, setMicSensitivity } = useMicSensitivity();
@@ -32,7 +33,34 @@ export const useSpeechService = () => {
   } = useSpeechRecognition(speechService, micSensitivity);
   
   // Setup speech synthesis
-  const { isSpeaking, speak, toggleSpeaking } = useSpeechSynthesis(speechService);
+  const { 
+    isSpeaking, 
+    speak, 
+    toggleSpeaking,
+    setVoice,
+    setVoiceSettings,
+    getAvailableVoices
+  } = useSpeechSynthesis(speechService);
+  
+  // Load available voices
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      const loadVoices = () => {
+        const voices = getAvailableVoices();
+        setAvailableVoices(voices);
+      };
+      
+      // Initial load
+      loadVoices();
+      
+      // Listen for voice changes
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      
+      return () => {
+        window.speechSynthesis.onvoiceschanged = null;
+      };
+    }
+  }, [getAvailableVoices]);
   
   // Check if speech recognition is available on mount and apply sensitivity
   useEffect(() => {
@@ -93,6 +121,10 @@ export const useSpeechService = () => {
     noMicrophoneMode,
     toggleNoMicrophoneMode,
     configureMaryTTS,
-    testMaryTTSConnection
+    testMaryTTSConnection,
+    setVoice,
+    setVoiceSettings,
+    availableVoices,
+    speechService
   };
 };
