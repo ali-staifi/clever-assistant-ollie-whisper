@@ -220,7 +220,7 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
             </div>
             
             {availableModels.length === 0 && (
-              <Alert variant="warning" className="mt-2 p-2 bg-orange-500/10 border border-orange-500/30">
+              <Alert variant="default" className="mt-2 p-2 bg-orange-500/10 border border-orange-500/30">
                 <AlertTriangle className="h-3 w-3 text-orange-500" />
                 <AlertDescription className="ml-1 text-xs">
                   Aucun modèle n'a été trouvé. Installez-en un avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code>
