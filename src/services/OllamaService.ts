@@ -6,7 +6,7 @@ interface OllamaResponse {
 }
 
 export interface Message {
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';  // Ajout de 'system' comme type possible
   content: string;
 }
 
@@ -14,6 +14,7 @@ export class OllamaService {
   private baseUrl: string;
   private model: string;
   private controller: AbortController | null = null;
+  private language: string = 'french'; // Définir le français comme langue par défaut
 
   constructor(baseUrl: string = 'http://localhost:11434', model: string = 'llama3') {
     this.baseUrl = baseUrl;
@@ -105,6 +106,10 @@ Try these steps:
       const isQwenModel = this.model.toLowerCase().includes('qwen');
       const endpoint = isQwenModel ? '/api/generate' : '/api/chat';
       
+      // Ajouter l'instruction de langue
+      const languageInstruction = "Réponds uniquement en français, quelle que soit la langue de la question.";
+      const enhancedPrompt = isQwenModel ? `${languageInstruction}\n\n${prompt}` : prompt;
+      
       // Prepare request payload based on model type
       let requestPayload;
       
@@ -112,14 +117,19 @@ Try these steps:
         // Format for Qwen models with the generate API
         requestPayload = {
           model: this.model,
-          prompt: this.formatMessagesToPrompt(messages, prompt),
+          prompt: this.formatMessagesToPrompt(messages, enhancedPrompt, true),
           stream: true,
         };
       } else {
+        // Add system message for language instruction
+        const systemMessages: Message[] = [
+          { role: 'system', content: languageInstruction }
+        ];
+        
         // Standard format for chat API
         requestPayload = {
           model: this.model,
-          messages: [...messages, { role: 'user', content: prompt }],
+          messages: [...systemMessages, ...messages, { role: 'user', content: prompt }],
           stream: true,
         };
       }
@@ -214,16 +224,26 @@ ollama pull ${this.model}`;
   }
   
   // Helper method to format chat messages into a prompt string for models that need it
-  private formatMessagesToPrompt(messages: Message[], currentPrompt: string): string {
+  private formatMessagesToPrompt(
+    messages: Message[], 
+    currentPrompt: string,
+    includeLanguageInstruction: boolean = false
+  ): string {
     let formattedPrompt = '';
+    
+    // Add language instruction at the beginning if requested
+    if (includeLanguageInstruction) {
+      formattedPrompt += `System: Réponds uniquement en français, quelle que soit la langue de la question.\n\n`;
+    }
     
     // Add previous messages
     for (const msg of messages) {
       if (msg.role === 'user') {
         formattedPrompt += `Human: ${msg.content}\n\n`;
-      } else {
+      } else if (msg.role === 'assistant') {
         formattedPrompt += `Assistant: ${msg.content}\n\n`;
       }
+      // Ignorer les messages système car ils sont déjà ajoutés au début
     }
     
     // Add current prompt
@@ -247,5 +267,10 @@ ollama pull ${this.model}`;
   setBaseUrl(url: string) {
     console.log(`Setting Ollama base URL to: ${url}`);
     this.baseUrl = url;
+  }
+  
+  // Nouvelle méthode pour définir la langue
+  setLanguage(language: string) {
+    this.language = language;
   }
 }

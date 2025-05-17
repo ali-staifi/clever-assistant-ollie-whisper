@@ -1,4 +1,3 @@
-
 import { Message } from '@/services/OllamaService';
 
 interface ChatOllamaResponse {
@@ -16,6 +15,7 @@ export class ChatOllamaService {
   private baseUrl: string;
   private model: string;
   private controller: AbortController | null = null;
+  private language: string = 'french'; // Définir le français comme langue par défaut
 
   constructor(baseUrl: string = 'http://localhost:11434', model: string = 'llama3') {
     this.baseUrl = baseUrl;
@@ -91,18 +91,27 @@ export class ChatOllamaService {
       // Prepare request payload based on model type
       let requestPayload;
       
+      // Ajouter l'instruction de langue dans le prompt
+      const languageInstruction = "Réponds uniquement en français, quelle que soit la langue de la question.";
+      const enhancedPrompt = isQwenModel ? `${languageInstruction}\n\n${prompt}` : prompt;
+      
       if (isQwenModel) {
         // Format for Qwen models with the generate API
         requestPayload = {
           model: this.model,
-          prompt: this.formatMessagesToPrompt(messages, prompt),
+          prompt: this.formatMessagesToPrompt(messages, enhancedPrompt, true),
           stream: true,
         };
       } else {
-        // Standard format for chat API
+        // Add system message for language instruction in chat API
+        const systemMessages: Message[] = [
+          { role: 'system', content: languageInstruction }
+        ];
+        
+        // Standard format for chat API with system message
         requestPayload = {
           model: this.model,
-          messages: [...messages, { role: 'user', content: prompt }],
+          messages: [...systemMessages, ...messages, { role: 'user', content: prompt }],
           stream: true,
         };
       }
@@ -204,8 +213,17 @@ export class ChatOllamaService {
   }
   
   // Helper method to format chat messages into a prompt string for models that need it
-  private formatMessagesToPrompt(messages: Message[], currentPrompt: string): string {
+  private formatMessagesToPrompt(
+    messages: Message[], 
+    currentPrompt: string, 
+    includeLanguageInstruction: boolean = false
+  ): string {
     let formattedPrompt = '';
+    
+    // Add language instruction at the beginning if requested
+    if (includeLanguageInstruction) {
+      formattedPrompt += `System: Réponds uniquement en français, quelle que soit la langue de la question.\n\n`;
+    }
     
     // Add previous messages
     for (const msg of messages) {
@@ -235,5 +253,10 @@ export class ChatOllamaService {
 
   setBaseUrl(url: string) {
     this.baseUrl = url;
+  }
+  
+  // Nouvelle méthode pour définir la langue
+  setLanguage(language: string) {
+    this.language = language;
   }
 }
