@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume, VolumeX, AlertTriangle } from 'lucide-react';
+import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
 
 interface VoiceControlProps {
@@ -12,6 +12,7 @@ interface VoiceControlProps {
   toggleSpeaking: () => void;
   ollamaStatus: 'idle' | 'connecting' | 'connected' | 'error';
   speechRecognitionAvailable?: boolean;
+  onTestMicrophone?: () => void;
 }
 
 const VoiceControl: React.FC<VoiceControlProps> = ({
@@ -21,7 +22,8 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
   toggleListening,
   toggleSpeaking,
   ollamaStatus,
-  speechRecognitionAvailable = true
+  speechRecognitionAvailable = true,
+  onTestMicrophone
 }) => {
   return (
     <div className="flex-1 flex items-center justify-center">
@@ -83,6 +85,17 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
                 ) : (
                   <Volume className="h-6 w-6" />
                 )}
+              </Button>
+            )}
+
+            {/* Test Mic Button - Only visible when not listening */}
+            {!isListening && onTestMicrophone && (
+              <Button 
+                className="rounded-full w-12 h-12 bg-jarvis-blue/60 hover:bg-jarvis-blue/80"
+                onClick={onTestMicrophone}
+                title="Test microphone"
+              >
+                <Settings className="h-6 w-6" />
               </Button>
             )}
           </div>

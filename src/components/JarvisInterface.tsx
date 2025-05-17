@@ -29,6 +29,7 @@ const JarvisInterface = () => {
     clearConversation,
     checkOllamaConnection,
     dismissError,
+    testMicrophone,
   } = useJarvisServices();
 
   return (
@@ -43,6 +44,7 @@ const JarvisInterface = () => {
       <ErrorDisplay 
         errorMessage={errorMessage} 
         onDismiss={dismissError}
+        onRetryMic={testMicrophone}
       />
       
       {/* Settings Panel */}
@@ -70,6 +72,7 @@ const JarvisInterface = () => {
           toggleSpeaking={toggleSpeaking}
           ollamaStatus={ollamaStatus}
           speechRecognitionAvailable={speechRecognitionAvailable}
+          onTestMicrophone={testMicrophone}
         />
         
         {/* Conversation Section */}
