@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,24 @@ const Navigation = () => {
           </div>
         </div>
         
+        {/* Settings button on desktop */}
+        <div className="hidden md:block">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="bg-jarvis-blue/10 border-jarvis-blue/30 hover:bg-jarvis-blue/20"
+            onClick={() => {
+              // Show settings for the active component
+              // This will need to be connected to the appropriate state in the parent component
+              const event = new CustomEvent('toggle-jarvis-settings');
+              document.dispatchEvent(event);
+            }}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            <span>Settings</span>
+          </Button>
+        </div>
+        
         {/* Mobile navigation */}
         <div className="md:hidden flex justify-center fixed bottom-0 left-0 right-0 p-2 bg-jarvis-darkBlue/90 border-t border-gray-800">
           <div className="flex space-x-2">
@@ -86,6 +105,19 @@ const Navigation = () => {
               <Link to="/api">
                 <ServerIcon className="h-5 w-5" />
               </Link>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="bg-jarvis-blue/10"
+              onClick={() => {
+                // Show settings for the active component
+                const event = new CustomEvent('toggle-jarvis-settings');
+                document.dispatchEvent(event);
+              }}
+            >
+              <Settings className="h-5 w-5" />
             </Button>
           </div>
         </div>

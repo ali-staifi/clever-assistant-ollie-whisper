@@ -10,7 +10,11 @@ export const useSpeechService = () => {
   const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [micVolume, setMicVolume] = useState(0);
-  const [micSensitivity, setMicSensitivity] = useState(1.0); // Default sensitivity
+  const [micSensitivity, setMicSensitivity] = useState(() => {
+    // Try to get saved sensitivity from localStorage or use default
+    const savedSensitivity = localStorage.getItem('jarvis-mic-sensitivity');
+    return savedSensitivity ? parseFloat(savedSensitivity) : 1.5; // Increased default sensitivity
+  });
   
   const speechService = useRef(new SpeechService()).current;
   const { toast } = useToast();
@@ -24,7 +28,22 @@ export const useSpeechService = () => {
     if (!speechService.isRecognitionSupported()) {
       setErrorMessage('Speech recognition is not supported in your browser. Please try using Chrome, Edge, or Safari.');
     }
+    
+    // Apply saved sensitivity to speech service
+    if (speechService.setSensitivity && typeof speechService.setSensitivity === 'function') {
+      speechService.setSensitivity(micSensitivity);
+    }
   }, []);
+
+  // Save sensitivity changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('jarvis-mic-sensitivity', micSensitivity.toString());
+    
+    // Apply sensitivity changes to speech service
+    if (speechService.setSensitivity && typeof speechService.setSensitivity === 'function') {
+      speechService.setSensitivity(micSensitivity);
+    }
+  }, [micSensitivity]);
 
   // Clean up audio resources on unmount
   useEffect(() => {
@@ -45,12 +64,19 @@ export const useSpeechService = () => {
         audioContext.current = new AudioContext();
       }
       
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true // Enable auto gain to help with quiet microphones
+        } 
+      });
       
       // Create analyzer
       if (!analyser.current) {
         analyser.current = audioContext.current.createAnalyser();
         analyser.current.fftSize = 256;
+        analyser.current.smoothingTimeConstant = 0.8; // Add smoothing for more stable visualization
       }
       
       // Connect microphone to analyzer
@@ -72,7 +98,7 @@ export const useSpeechService = () => {
           sum += dataArray[i];
         }
         
-        // Calculate average volume (0-100)
+        // Calculate average volume (0-100) with sensitivity applied
         const avgVolume = (sum / bufferLength) * micSensitivity;
         setMicVolume(Math.min(100, avgVolume));
         
@@ -129,6 +155,13 @@ export const useSpeechService = () => {
     
     if (success) {
       setIsListening(true);
+      
+      // Notification to encourage the user to speak louder
+      toast({
+        title: "Listening...",
+        description: "Speak clearly and a bit louder than normal conversation.",
+        variant: "default",
+      });
     } else {
       const micError = "Could not access the microphone. Please check your browser permissions.";
       setErrorMessage(`Microphone error: ${micError}`);

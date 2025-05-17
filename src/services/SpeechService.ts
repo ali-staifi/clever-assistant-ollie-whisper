@@ -43,4 +43,11 @@ export class SpeechService {
     this.recognitionService.setLanguage(lang);
     this.synthesisService.setLanguage(lang);
   }
+  
+  // Add sensitivity method
+  setSensitivity(value: number) {
+    if (this.recognitionService.setSensitivity) {
+      this.recognitionService.setSensitivity(value);
+    }
+  }
 }

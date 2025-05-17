@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useJarvisServices } from '@/hooks/useJarvisServices';
 import JarvisHeader from './jarvis/JarvisHeader';
 import VoiceControl from './jarvis/VoiceControl';
@@ -35,6 +35,19 @@ const JarvisInterface = () => {
     dismissError,
     testMicrophone,
   } = useJarvisServices();
+  
+  // Listen for settings toggle events from Navigation
+  useEffect(() => {
+    const handleToggleSettings = () => {
+      setShowSettings(prev => !prev);
+    };
+    
+    document.addEventListener('toggle-jarvis-settings', handleToggleSettings);
+    
+    return () => {
+      document.removeEventListener('toggle-jarvis-settings', handleToggleSettings);
+    };
+  }, [setShowSettings]);
 
   return (
     <div className="flex flex-col h-screen bg-jarvis-darkBlue text-white p-4 overflow-hidden">
