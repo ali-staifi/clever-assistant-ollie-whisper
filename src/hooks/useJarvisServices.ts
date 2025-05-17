@@ -187,21 +187,26 @@ export const useJarvisServices = () => {
     setResponse('');
     
     try {
+      // Store the full response text
+      let fullResponse = '';
+      
       await ollamaService.generateResponse(
         text,
         messages,
         (progressText) => {
+          // Update both the temporary response state and our full response
+          fullResponse = progressText;
           setResponse(progressText);
         }
       );
       
       // Save assistant response to messages
-      const assistantMessage = { role: 'assistant' as const, content: response };
+      const assistantMessage = { role: 'assistant' as const, content: fullResponse };
       setMessages(prev => [...prev, assistantMessage]);
       
       // Speak the response
       setIsSpeaking(true);
-      speechService.speak(response, () => {
+      speechService.speak(fullResponse, () => {
         setIsSpeaking(false);
       });
     } catch (error) {
