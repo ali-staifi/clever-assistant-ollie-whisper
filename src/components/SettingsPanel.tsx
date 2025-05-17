@@ -12,6 +12,7 @@ interface SettingsPanelProps {
   onOllamaModelChange: (model: string) => void;
   onClearConversation: () => void;
   onClose: () => void;
+  checkConnection: () => void;
 }
 
 const COMMON_MODELS = [
@@ -34,7 +35,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onOllamaUrlChange,
   onOllamaModelChange,
   onClearConversation,
-  onClose
+  onClose,
+  checkConnection
 }) => {
   return (
     <div className="bg-card rounded-lg p-4 mb-4 shadow-lg animate-fade-in">
@@ -43,12 +45,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
       <div className="grid gap-4">
         <div className="space-y-2">
           <Label htmlFor="ollama-url">Ollama API URL</Label>
-          <Input
-            id="ollama-url"
-            value={ollamaUrl}
-            onChange={(e) => onOllamaUrlChange(e.target.value)}
-            placeholder="http://localhost:11434"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="ollama-url"
+              value={ollamaUrl}
+              onChange={(e) => onOllamaUrlChange(e.target.value)}
+              placeholder="http://localhost:11434"
+            />
+            <Button variant="secondary" onClick={checkConnection}>
+              Test
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             The URL where your Ollama server is running
           </p>
@@ -73,6 +80,9 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </Select>
           <p className="text-xs text-muted-foreground">
             The model should be installed on your Ollama server
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Install more models using: <code className="bg-muted-foreground/20 px-1 rounded">ollama run modelname</code>
           </p>
         </div>
         

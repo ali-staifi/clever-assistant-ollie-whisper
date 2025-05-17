@@ -82,8 +82,12 @@ export class SpeechService {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       this.recognition = new SpeechRecognition();
       this.recognition.continuous = false;
-      this.recognition.interimResults = false;
+      this.recognition.interimResults = true; // Set to true to get interim results
       this.recognition.lang = this.lang;
+      
+      console.log("Speech recognition initialized successfully");
+    } else {
+      console.warn("Speech recognition not supported in this browser");
     }
     
     // Select a good voice if available
@@ -139,39 +143,67 @@ export class SpeechService {
     onError?: (error: string) => void
   ): boolean {
     if (!this.recognition) {
-      if (onError) onError('Speech recognition is not supported in this browser');
+      const errorMsg = 'Speech recognition is not supported in this browser';
+      console.error(errorMsg);
+      if (onError) onError(errorMsg);
       return false;
     }
 
     try {
       this.recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        if (event.results[0].isFinal && onResult) {
-          onResult(transcript);
-        } else if (onInterimResult) {
-          onInterimResult(transcript);
+        if (event.results.length > 0) {
+          const transcript = event.results[0][0].transcript;
+          if (event.results[0].isFinal && onResult) {
+            console.log("Final transcript:", transcript);
+            onResult(transcript);
+          } else if (onInterimResult) {
+            console.log("Interim transcript:", transcript);
+            onInterimResult(transcript);
+          }
         }
       };
 
       this.recognition.onerror = (event) => {
-        if (onError) onError(`Speech recognition error: ${event.error}`);
+        console.error('Speech recognition error:', event.error);
+        
+        let errorMessage = `Speech recognition error: ${event.error}`;
+        // Provide more helpful messages for common errors
+        if (event.error === 'no-speech') {
+          errorMessage = "No speech detected. Please speak more loudly or check your microphone.";
+        } else if (event.error === 'network') {
+          errorMessage = "Network error occurred. Please check your internet connection.";
+        } else if (event.error === 'not-allowed') {
+          errorMessage = "Microphone access denied. Please allow microphone access in your browser settings.";
+        }
+        
+        if (onError) onError(errorMessage);
       };
 
       this.recognition.onend = () => {
+        console.log("Speech recognition ended");
         this.isListening = false;
       };
+      
+      // Log when recognition starts
+      this.recognition.onstart = () => {
+        console.log("Speech recognition started");
+      };
 
+      console.log("Starting speech recognition...");
       this.recognition.start();
       this.isListening = true;
       return true;
     } catch (error) {
-      if (onError) onError(`Failed to start speech recognition: ${error}`);
+      const errorMsg = `Failed to start speech recognition: ${error}`;
+      console.error(errorMsg);
+      if (onError) onError(errorMsg);
       return false;
     }
   }
 
   stopListening() {
     if (this.recognition && this.isListening) {
+      console.log("Stopping speech recognition");
       this.recognition.stop();
       this.isListening = false;
     }
@@ -197,6 +229,7 @@ export class SpeechService {
       utterance.onend = onEnd;
     }
     
+    console.log("Speaking:", text.substring(0, 50) + (text.length > 50 ? "..." : ""));
     this.synthesis.speak(utterance);
     return true;
   }

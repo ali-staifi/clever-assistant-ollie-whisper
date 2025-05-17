@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Settings } from 'lucide-react';
+import { Mic, MicOff, Settings, Volume, VolumeX } from 'lucide-react';
 import { OllamaService, Message } from '@/services/OllamaService';
 import { SpeechService } from '@/services/SpeechService';
 import AudioVisualizer from './AudioVisualizer';
 import SettingsPanel from './SettingsPanel';
+import { useToast } from "@/components/ui/use-toast";
 
 const JarvisInterface = () => {
   const [isListening, setIsListening] = useState(false);
@@ -17,20 +18,66 @@ const JarvisInterface = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [ollamaModel, setOllamaModel] = useState('llama3');
+  const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
   
   const ollamaService = useRef(new OllamaService(ollamaUrl, ollamaModel)).current;
   const speechService = useRef(new SpeechService()).current;
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  
+  // Check Ollama connection on startup and when URL/model changes
+  useEffect(() => {
+    checkOllamaConnection();
+  }, [ollamaUrl, ollamaModel]);
   
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const checkOllamaConnection = async () => {
+    setOllamaStatus('connecting');
+    try {
+      // Simple test request
+      await fetch(`${ollamaUrl}/api/tags`, { 
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      }).then(res => {
+        if (!res.ok) {
+          throw new Error(`Status: ${res.status}`);
+        }
+        return res.json();
+      });
+      
+      setOllamaStatus('connected');
+      setErrorMessage('');
+    } catch (error) {
+      console.error('Error connecting to Ollama:', error);
+      setOllamaStatus('error');
+      setErrorMessage(`Cannot connect to Ollama at ${ollamaUrl}. Please check the URL and make sure Ollama is running.`);
+      toast({
+        title: "Connection Error",
+        description: `Cannot connect to Ollama at ${ollamaUrl}. Please check if Ollama is running.`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleListening = () => {
     if (isListening) {
       speechService.stopListening();
       setIsListening(false);
+      return;
+    }
+    
+    // Check for connection before starting listening
+    if (ollamaStatus === 'error') {
+      toast({
+        title: "Connection Error",
+        description: "Cannot connect to Ollama. Please check settings and try again.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -52,11 +99,22 @@ const JarvisInterface = () => {
       (error) => {
         console.error('Speech recognition error:', error);
         setIsListening(false);
+        toast({
+          title: "Speech Recognition Error",
+          description: error,
+          variant: "destructive",
+        });
       }
     );
     
     if (success) {
       setIsListening(true);
+    } else {
+      toast({
+        title: "Microphone Error",
+        description: "Could not access the microphone. Please check your browser permissions.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -84,7 +142,14 @@ const JarvisInterface = () => {
       });
     } catch (error) {
       console.error('Error processing with Ollama:', error);
-      setResponse('Sorry, I encountered an error while processing your request.');
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      setResponse(`Sorry, I encountered an error while processing your request: ${errorMsg}`);
+      
+      toast({
+        title: "Processing Error",
+        description: "An error occurred while processing with Ollama.",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -105,21 +170,48 @@ const JarvisInterface = () => {
     setTranscript('');
     setResponse('');
   };
+  
+  const toggleSpeaking = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-jarvis-darkBlue text-white p-4 overflow-hidden">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-4xl font-bold text-jarvis-blue text-shadow-glow">J.A.R.V.I.S</h1>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setShowSettings(!showSettings)}
-          className="text-jarvis-blue hover:bg-jarvis-darkBlue/30"
-        >
-          <Settings className="h-6 w-6" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className={`h-3 w-3 rounded-full ${
+            ollamaStatus === 'connected' ? 'bg-green-500' : 
+            ollamaStatus === 'connecting' ? 'bg-yellow-500' : 
+            'bg-red-500'
+          }`}></div>
+          <span className="text-xs text-gray-400">
+            {ollamaStatus === 'connected' ? 'Ollama connected' : 
+             ollamaStatus === 'connecting' ? 'Connecting...' : 
+             'Ollama offline'}
+          </span>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setShowSettings(!showSettings)}
+            className="text-jarvis-blue hover:bg-jarvis-darkBlue/30"
+          >
+            <Settings className="h-6 w-6" />
+          </Button>
+        </div>
       </div>
+      
+      {/* Error Message */}
+      {errorMessage && (
+        <div className="bg-red-900/30 border border-red-500 rounded-md p-3 mb-4 text-sm">
+          <p className="font-bold">Error:</p>
+          <p>{errorMessage}</p>
+        </div>
+      )}
       
       {/* Settings Panel */}
       {showSettings && (
@@ -130,6 +222,7 @@ const JarvisInterface = () => {
           onOllamaModelChange={handleOllamaModelChange}
           onClearConversation={clearConversation}
           onClose={() => setShowSettings(false)}
+          checkConnection={checkOllamaConnection}
         />
       )}
       
@@ -155,21 +248,38 @@ const JarvisInterface = () => {
               />
             </div>
             
-            {/* Mic Button */}
+            {/* Control Buttons */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <Button 
-                className={`rounded-full w-16 h-16 transition-all ${
-                  isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
-                }`}
-                onClick={toggleListening}
-                disabled={isProcessing}
-              >
-                {isListening ? (
-                  <MicOff className="h-8 w-8" />
-                ) : (
-                  <Mic className="h-8 w-8" />
+              <div className="flex gap-4">
+                {/* Mic Button */}
+                <Button 
+                  className={`rounded-full w-16 h-16 transition-all ${
+                    isListening ? 'bg-red-600 hover:bg-red-700' : 'bg-jarvis-blue hover:bg-jarvis-blue/80'
+                  }`}
+                  onClick={toggleListening}
+                  disabled={isProcessing || ollamaStatus === 'error'}
+                >
+                  {isListening ? (
+                    <MicOff className="h-8 w-8" />
+                  ) : (
+                    <Mic className="h-8 w-8" />
+                  )}
+                </Button>
+                
+                {/* Speaker Button - Only visible when speaking */}
+                {isSpeaking && (
+                  <Button 
+                    className="rounded-full w-12 h-12 bg-jarvis-blue hover:bg-jarvis-blue/80 ml-2"
+                    onClick={toggleSpeaking}
+                  >
+                    {isSpeaking ? (
+                      <VolumeX className="h-6 w-6" />
+                    ) : (
+                      <Volume className="h-6 w-6" />
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
             
             {/* Status Text */}
@@ -188,6 +298,8 @@ const JarvisInterface = () => {
             {messages.length === 0 && (
               <div className="text-center text-gray-400 mt-10">
                 <p>Say "Hello" to start a conversation</p>
+                <p className="mt-2 text-sm">Make sure Ollama is running at {ollamaUrl}</p>
+                <p className="mt-1 text-sm">Using model: {ollamaModel}</p>
               </div>
             )}
             
