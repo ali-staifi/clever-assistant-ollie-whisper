@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Settings, Volume, VolumeX } from 'lucide-react';
@@ -223,6 +222,7 @@ const JarvisInterface = () => {
           onClearConversation={clearConversation}
           onClose={() => setShowSettings(false)}
           checkConnection={checkOllamaConnection}
+          ollamaStatus={ollamaStatus}
         />
       )}
       
