@@ -59,6 +59,13 @@ export const useSpeechService = () => {
     testSpeechRecognition(setupAudioMonitoring);
   };
 
+  // Configure MaryTTS
+  const configureMaryTTS = (useIt: boolean, serverUrl?: string, voice?: string) => {
+    if (typeof speechService.configureMaryTTS === 'function') {
+      speechService.configureMaryTTS(useIt, serverUrl, voice);
+    }
+  };
+
   return {
     isListening,
     isSpeaking,
@@ -76,6 +83,7 @@ export const useSpeechService = () => {
     toggleSpeaking,
     testMicrophone,
     noMicrophoneMode,
-    toggleNoMicrophoneMode
+    toggleNoMicrophoneMode,
+    configureMaryTTS
   };
 };

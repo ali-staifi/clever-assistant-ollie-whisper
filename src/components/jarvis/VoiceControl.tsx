@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, Volume2, Keyboard, KeyboardX } from 'lucide-react';
+import { Mic, MicOff, Volume, VolumeX, AlertTriangle, Settings, Volume2, Keyboard } from 'lucide-react';
 import AudioVisualizer from '../AudioVisualizer';
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -76,10 +76,11 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
           <div className="absolute -bottom-12 left-0 right-0 flex items-center px-6">
             <Volume2 className="h-4 w-4 text-gray-400 mr-2" />
             <Slider
-              value={[micSensitivity]}
+              id="mic-sensitivity"
               min={0.5}
-              max={5.0}
+              max={5.0}  // Augmentation de la valeur maximale pour plus de sensibilité
               step={0.2}
+              value={[micSensitivity]}
               onValueChange={(values) => onSensitivityChange(values[0])}
               className="flex-1"
             />

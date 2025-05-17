@@ -78,8 +78,6 @@ const JarvisInterface = () => {
           checkConnection={checkOllamaConnection}
           ollamaStatus={ollamaStatus}
           availableModels={availableModels}
-          noMicrophoneMode={noMicrophoneMode}
-          toggleNoMicrophoneMode={toggleNoMicrophoneMode}
         />
       )}
       

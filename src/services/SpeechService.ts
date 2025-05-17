@@ -24,7 +24,7 @@ export class SpeechService {
   }
 
   async speak(text: string, onEnd?: () => void): Promise<boolean> {
-    return this.synthesisService.speak(text, onEnd);
+    return await this.synthesisService.speak(text, onEnd);
   }
 
   isRecognitionSupported(): boolean {
@@ -55,6 +55,13 @@ export class SpeechService {
   enableNoMicrophoneMode(enable: boolean = true) {
     if (typeof this.recognitionService.enableNoMicrophoneMode === 'function') {
       this.recognitionService.enableNoMicrophoneMode(enable);
+    }
+  }
+  
+  // Ajouter la configuration MaryTTS
+  configureMaryTTS(useIt: boolean, serverUrl?: string, voice?: string) {
+    if (typeof this.synthesisService.configureMaryTTS === 'function') {
+      this.synthesisService.configureMaryTTS(useIt, serverUrl, voice);
     }
   }
 }
