@@ -1,4 +1,3 @@
-
 interface OllamaResponse {
   model: string;
   created_at: string;
@@ -102,16 +101,35 @@ Try these steps:
       console.log(`Generating response using model ${this.model} at ${this.baseUrl}`);
       console.log(`Prompt: ${prompt.substring(0, 50)}${prompt.length > 50 ? '...' : ''}`);
 
-      const response = await fetch(`${this.baseUrl}/api/chat`, {
+      // Determine if we need to use the chat or generate endpoint based on model
+      const isQwenModel = this.model.toLowerCase().includes('qwen');
+      const endpoint = isQwenModel ? '/api/generate' : '/api/chat';
+      
+      // Prepare request payload based on model type
+      let requestPayload;
+      
+      if (isQwenModel) {
+        // Format for Qwen models with the generate API
+        requestPayload = {
+          model: this.model,
+          prompt: this.formatMessagesToPrompt(messages, prompt),
+          stream: true,
+        };
+      } else {
+        // Standard format for chat API
+        requestPayload = {
+          model: this.model,
+          messages: [...messages, { role: 'user', content: prompt }],
+          stream: true,
+        };
+      }
+
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [...messages, { role: 'user', content: prompt }],
-          stream: true,
-        }),
+        body: JSON.stringify(requestPayload),
         signal: this.controller.signal
       });
 
@@ -144,10 +162,13 @@ Try these steps:
         
         for (const line of lines) {
           try {
-            const parsedLine = JSON.parse(line) as OllamaResponse;
+            const parsedLine = JSON.parse(line);
+            // Handle both generate and chat API response formats
+            const responseText = isQwenModel ? parsedLine.response : parsedLine.message?.content || parsedLine.response;
+            
             // Make sure we have valid text before adding it
-            if (parsedLine.response && typeof parsedLine.response === 'string') {
-              fullResponse += parsedLine.response;
+            if (responseText && typeof responseText === 'string') {
+              fullResponse += responseText;
               // Only call onProgress if fullResponse is valid
               if (onProgress && fullResponse.trim() !== '') {
                 onProgress(fullResponse);
@@ -190,6 +211,25 @@ ollama pull ${this.model}`;
       
       return `Error connecting to Ollama: ${errorMsg}`;
     }
+  }
+  
+  // Helper method to format chat messages into a prompt string for models that need it
+  private formatMessagesToPrompt(messages: Message[], currentPrompt: string): string {
+    let formattedPrompt = '';
+    
+    // Add previous messages
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        formattedPrompt += `Human: ${msg.content}\n\n`;
+      } else {
+        formattedPrompt += `Assistant: ${msg.content}\n\n`;
+      }
+    }
+    
+    // Add current prompt
+    formattedPrompt += `Human: ${currentPrompt}\n\nAssistant:`;
+    
+    return formattedPrompt;
   }
 
   abortRequest() {

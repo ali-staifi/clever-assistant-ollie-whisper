@@ -1,19 +1,23 @@
 
-import { SpeechRecognitionErrorEvent } from './types';
-import { RecognitionCallbacks } from './types/recognition';
+import { RecognitionCallbacks, RecognitionOptions, RecognitionProvider } from './types/recognition';
 import { SpeechRecognitionProvider } from './providers/SpeechRecognitionProvider';
 import { NoMicrophoneProvider } from './providers/NoMicrophoneProvider';
 import { testMicrophoneAccess } from './MicrophoneUtils';
 
 export class RecognitionService {
-  private provider: SpeechRecognitionProvider | NoMicrophoneProvider;
+  private provider: RecognitionProvider;
   private browserProvider: SpeechRecognitionProvider;
   private noMicProvider: NoMicrophoneProvider;
   private language: string = 'fr-FR';
   private sensitivity: number = 2.0;
   private noMicrophoneMode: boolean = false;
 
-  constructor() {
+  constructor(options?: RecognitionOptions) {
+    // Apply options if provided
+    if (options) {
+      if (options.lang) this.language = options.lang;
+    }
+    
     // Initialize both providers
     this.browserProvider = new SpeechRecognitionProvider();
     this.noMicProvider = new NoMicrophoneProvider();
@@ -25,6 +29,7 @@ export class RecognitionService {
     // If browser recognition isn't supported, enable no-microphone mode
     if (!this.browserProvider.isSupported()) {
       this.noMicrophoneMode = true;
+      console.log("Mode sans microphone activé par défaut (navigateur non compatible)");
     }
   }
 
@@ -77,5 +82,15 @@ export class RecognitionService {
   enableNoMicrophoneMode(enable: boolean = true) {
     this.noMicrophoneMode = enable;
     console.log("Mode sans microphone:", enable ? "activé" : "désactivé");
+  }
+  
+  getSpeechRecognitionStatus(): {
+    supported: boolean;
+    noMicMode: boolean;
+  } {
+    return {
+      supported: this.isRecognitionSupported(),
+      noMicMode: this.noMicrophoneMode
+    };
   }
 }

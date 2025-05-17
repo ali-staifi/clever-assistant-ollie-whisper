@@ -6,6 +6,10 @@ interface ChatOllamaResponse {
   created_at: string;
   response: string;
   done: boolean;
+  message?: {
+    role: string;
+    content: string;
+  };
 }
 
 export class ChatOllamaService {
@@ -76,23 +80,47 @@ export class ChatOllamaService {
       this.abortRequest();
       this.controller = new AbortController();
 
-      console.log(`Sending chat request to: ${this.baseUrl}/api/chat with model ${this.model}`);
-      console.log('Request payload:', JSON.stringify({
-        model: this.model,
-        messages: [...messages, { role: 'user', content: prompt }],
-        stream: true,
-      }));
+      console.log(`Sending chat request to: ${this.baseUrl} with model ${this.model}`);
+      
+      // Determine if we need to use the chat or generate endpoint based on model
+      const isQwenModel = this.model.toLowerCase().includes('qwen');
+      const endpoint = isQwenModel ? '/api/generate' : '/api/chat';
+      
+      // Prepare request payload based on model type
+      let requestPayload;
+      let requestBody;
+      
+      if (isQwenModel) {
+        // Format for Qwen models with the generate API
+        requestPayload = {
+          model: this.model,
+          prompt: this.formatMessagesToPrompt(messages, prompt),
+          stream: true,
+        };
+        
+        console.log('Using generate API for Qwen model');
+        requestBody = JSON.stringify(requestPayload);
+      } else {
+        // Standard format for chat API
+        requestPayload = {
+          model: this.model,
+          messages: [...messages, { role: 'user', content: prompt }],
+          stream: true,
+        };
+        
+        console.log('Using chat API for standard model');
+        requestBody = JSON.stringify(requestPayload);
+      }
+      
+      console.log(`Request endpoint: ${this.baseUrl}${endpoint}`);
+      console.log('Request payload:', requestBody.substring(0, 200) + (requestBody.length > 200 ? '...' : ''));
 
-      const response = await fetch(`${this.baseUrl}/api/chat`, {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [...messages, { role: 'user', content: prompt }],
-          stream: true,
-        }),
+        body: requestBody,
         signal: this.controller.signal
       });
 
@@ -123,16 +151,27 @@ export class ChatOllamaService {
         if (done) break;
 
         const chunk = decoder.decode(value);
-        console.log('Received chunk:', chunk);
+        console.log('Received chunk:', chunk.substring(0, 50) + (chunk.length > 50 ? '...' : ''));
         
         const lines = chunk.split('\n').filter(line => line.trim() !== '');
         
         for (const line of lines) {
           try {
-            const parsedLine = JSON.parse(line) as ChatOllamaResponse;
+            const parsedLine = JSON.parse(line);
+            
+            // Handle response based on API endpoint
+            let responseText;
+            if (isQwenModel) {
+              // For generate API
+              responseText = parsedLine.response;
+            } else {
+              // For chat API
+              responseText = parsedLine.message?.content || parsedLine.response;
+            }
+            
             // Make sure we have valid text before adding it
-            if (parsedLine.response && typeof parsedLine.response === 'string') {
-              fullResponse += parsedLine.response;
+            if (responseText && typeof responseText === 'string') {
+              fullResponse += responseText;
               // Only call onProgress if fullResponse is valid
               if (onProgress && fullResponse.trim() !== '') {
                 onProgress(fullResponse);
@@ -164,6 +203,25 @@ export class ChatOllamaService {
       
       return `Error connecting to Ollama: ${errorMsg}`;
     }
+  }
+  
+  // Helper method to format chat messages into a prompt string for models that need it
+  private formatMessagesToPrompt(messages: Message[], currentPrompt: string): string {
+    let formattedPrompt = '';
+    
+    // Add previous messages
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        formattedPrompt += `Human: ${msg.content}\n\n`;
+      } else {
+        formattedPrompt += `Assistant: ${msg.content}\n\n`;
+      }
+    }
+    
+    // Add current prompt
+    formattedPrompt += `Human: ${currentPrompt}\n\nAssistant:`;
+    
+    return formattedPrompt;
   }
 
   abortRequest() {
