@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,10 @@ const COMMON_MODELS = [
   { value: "qwen2", label: "Qwen 2" },
   { value: "qwen2:7b", label: "Qwen 2 (7B)" },
   { value: "qwen2:4b", label: "Qwen 2 (4B)" },
+  { value: "qwen2:1.5b", label: "Qwen 2 (1.5B)" }, 
+  { value: "qwen:14b", label: "Qwen 1 (14B)" },
+  { value: "gemma:7b", label: "Gemma (7B)" },
+  { value: "gemma:2b", label: "Gemma (2B)" },
 ];
 
 const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
@@ -96,9 +101,19 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
 
   const displayModels = getDisplayModels();
   
-  // Vérifie si Qwen est présent dans les modèles disponibles
+  // Vérifie si les modèles sont présents dans les modèles disponibles
   const hasQwenModel = availableModels.some(model => model.toLowerCase().includes('qwen'));
+  const hasLlamaModel = availableModels.some(model => model.toLowerCase().includes('llama'));
+  const hasGemmaModel = availableModels.some(model => model.toLowerCase().includes('gemma'));
+  
   const isUsingQwen = ollamaModel.toLowerCase().includes('qwen');
+  const isUsingLlama = ollamaModel.toLowerCase().includes('llama');
+  const isUsingGemma = ollamaModel.toLowerCase().includes('gemma');
+  
+  // Modèle qui manque
+  const missingModel = isUsingQwen && !hasQwenModel ? "Qwen" : 
+                       isUsingLlama && !hasLlamaModel ? "Llama" :
+                       isUsingGemma && !hasGemmaModel ? "Gemma" : null;
 
   return (
     <div className="p-4 bg-card border rounded-lg mb-4">
@@ -188,13 +203,60 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
             <ol className="list-decimal pl-5 mt-1 space-y-1">
               <li>Téléchargez et installez Ollama depuis <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">ollama.com/download</a></li>
               <li>Lancez Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
-              <li>Installez un modèle: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code></li>
-              {isUsingQwen && !hasQwenModel && (
-                <li className="text-red-500">
-                  Pour utiliser Qwen 2, exécutez: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull qwen2</code> ou <code className="bg-muted-foreground/20 px-1 rounded">ollama pull qwen2:7b</code>
-                </li>
-              )}
+              <li>Installez un modèle de votre choix:</li>
             </ol>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+              <div className="p-2 border rounded bg-black/10">
+                <strong className="block">Llama 3:</strong>
+                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
+                  ollama pull llama3
+                </code>
+                <span className="text-[10px] mt-1 block">Recommandé pour performances générales</span>
+              </div>
+              
+              <div className="p-2 border rounded bg-black/10">
+                <strong className="block">Qwen 2:</strong>
+                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
+                  ollama pull qwen2
+                </code>
+                <span className="text-[10px] mt-1 block">Utilisez API "generate" (automatiquement détecté)</span>
+              </div>
+              
+              <div className="p-2 border rounded bg-black/10">
+                <strong className="block">Gemma:</strong>
+                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
+                  ollama pull gemma:2b
+                </code>
+                <span className="text-[10px] mt-1 block">Version légère pour ordinateurs moins puissants</span>
+              </div>
+              
+              <div className="p-2 border rounded bg-black/10">
+                <strong className="block">Phi-3 Mini:</strong>
+                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
+                  ollama pull phi3:mini
+                </code>
+                <span className="text-[10px] mt-1 block">Petit modèle efficace de Microsoft</span>
+              </div>
+            </div>
+            
+            {missingModel && (
+              <div className="mt-3 p-2 bg-red-500/20 border border-red-500/30 rounded">
+                <div className="font-semibold flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 text-red-500" />
+                  Modèle manquant
+                </div>
+                <p className="mt-1">
+                  Vous essayez d'utiliser le modèle <strong>{ollamaModel}</strong> qui n'est pas installé sur votre serveur Ollama.
+                </p>
+                <p className="mt-1">
+                  Pour l'installer, exécutez:
+                  <code className="block mt-1 p-1 bg-black/30 rounded text-[11px]">
+                    ollama pull {ollamaModel}
+                  </code>
+                </p>
+              </div>
+            )}
           </AlertDescription>
         </Alert>
         
@@ -239,13 +301,13 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
               </Alert>
             )}
             
-            {isUsingQwen && !hasQwenModel && (
+            {missingModel && (
               <Alert variant="destructive" className="mt-2 p-2">
                 <AlertCircle className="h-3 w-3" />
                 <AlertDescription className="ml-1 text-xs">
-                  Le modèle Qwen n'est pas installé sur votre Ollama. Installez-le avec:
+                  Le modèle {ollamaModel} n'est pas installé sur votre Ollama. Installez-le avec:
                   <code className="block mt-1 p-1 bg-black/20 rounded text-[11px]">
-                    ollama pull qwen2
+                    ollama pull {ollamaModel}
                   </code>
                 </AlertDescription>
               </Alert>

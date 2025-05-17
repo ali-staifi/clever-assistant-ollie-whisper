@@ -51,6 +51,13 @@ export class ChatOllamaService {
     }
   }
 
+  // Determine if we're using a Qwen model or similar that requires the generate API
+  private isGenerateAPIModel(modelName: string): boolean {
+    const lowerModelName = modelName.toLowerCase();
+    // Detect models that need the generate API instead of chat API
+    return lowerModelName.includes('qwen');
+  }
+
   // Generate a chat response from the Ollama API with streaming
   async generateChatResponse(
     prompt: string,
@@ -64,15 +71,17 @@ export class ChatOllamaService {
         content: msg.content
       }));
 
-      // Détermine si on doit utiliser l'API chat ou generate basé sur le modèle
-      const isQwenModel = this.model.toLowerCase().includes('qwen');
+      // Determine if we should use the generate API or chat API based on the model
+      const isQwenModel = this.isGenerateAPIModel(this.model);
       const endpoint = isQwenModel ? '/api/generate' : '/api/chat';
       
-      // Préparer la charge utile de la requête en fonction du type de modèle
+      console.log(`Using ${endpoint} endpoint for model ${this.model}`);
+      
+      // Prepare request body based on the API endpoint type
       let requestBody;
       
       if (isQwenModel) {
-        // Pour les modèles Qwen avec l'API generate
+        // For generate API (Qwen models)
         const formattedPrompt = formatMessagesToPrompt(messages, prompt, true, 'french');
         console.log("Formatted Qwen prompt:", formattedPrompt.substring(0, 100) + "...");
         
@@ -82,16 +91,19 @@ export class ChatOllamaService {
           stream: true,
         });
       } else {
-        // Pour les autres modèles avec l'API chat
+        // For chat API (standard models like Llama, Gemma, etc.)
         requestBody = JSON.stringify({
           model: this.model,
-          messages: formattedMessages,
+          messages: [
+            // Add a system message to ensure response in French
+            { role: 'system', content: 'Réponds uniquement en français, quelle que soit la langue de la question.' },
+            ...formattedMessages
+          ],
           stream: true,
         });
       }
-      
-      console.log(`Using ${endpoint} endpoint for model ${this.model}`);
 
+      // Make the API request
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
@@ -100,22 +112,29 @@ export class ChatOllamaService {
         body: requestBody,
       });
 
+      // Handle HTTP errors
       if (!response.ok) {
-        // Gestion des erreurs spécifiques
-        if (response.status === 404 || response.status === 400) {
-          let errorText;
-          try {
-            const errorData = await response.json();
-            errorText = errorData.error || `Erreur HTTP ${response.status}`;
-          } catch (e) {
-            errorText = `Erreur HTTP ${response.status}`;
+        let errorMsg = `HTTP error! Status: ${response.status}`;
+        
+        // Try to extract more detailed error information
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMsg = `Erreur Ollama: ${errorData.error}`;
+            
+            // Add specific guidance for common errors
+            if (errorData.error.includes('not found') || errorData.error.includes('no model loaded')) {
+              errorMsg += `\nVeuillez installer le modèle "${this.model}" avec la commande: ollama pull ${this.model}`;
+            }
           }
-          
-          throw new Error(`Erreur API Ollama: ${errorText}. Assurez-vous que le modèle "${this.model}" est installé.`);
+        } catch (e) {
+          // If we can't parse the error, just use the HTTP status
         }
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        
+        throw new Error(errorMsg);
       }
 
+      // Read the streaming response
       const reader = response.body?.getReader();
       if (!reader) {
         throw new Error('Response body is empty');
