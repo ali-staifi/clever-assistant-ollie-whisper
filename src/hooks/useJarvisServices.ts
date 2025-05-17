@@ -1,185 +1,73 @@
 
-import { useState, useRef, useEffect } from 'react';
-import { OllamaService, Message } from '@/services/OllamaService';
-import { SpeechService } from '@/services/SpeechService';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { useOllamaService } from './jarvis/useOllamaService';
+import { useSpeechService } from './jarvis/useSpeechService';
+import { useConversation } from './jarvis/useConversation';
 
 export const useJarvisServices = () => {
-  const [isListening, setIsListening] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [response, setResponse] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
-  const [ollamaModel, setOllamaModel] = useState('llama3');
-  const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [speechRecognitionAvailable, setSpeechRecognitionAvailable] = useState(true);
   
-  const ollamaService = useRef(new OllamaService(ollamaUrl, ollamaModel)).current;
-  const speechService = useRef(new SpeechService()).current;
-  const { toast } = useToast();
-  
-  // Check if speech recognition is available
-  useEffect(() => {
-    setSpeechRecognitionAvailable(speechService.isRecognitionSupported());
-    if (!speechService.isRecognitionSupported()) {
-      setErrorMessage('Speech recognition is not supported in your browser. Please try using Chrome, Edge, or Safari.');
-    }
-  }, []);
+  const {
+    ollamaUrl,
+    ollamaModel,
+    ollamaStatus,
+    ollamaService,
+    handleOllamaUrlChange,
+    handleOllamaModelChange,
+    checkOllamaConnection
+  } = useOllamaService();
 
-  // Check Ollama connection on startup and when URL/model changes
-  useEffect(() => {
-    checkOllamaConnection();
-  }, [ollamaUrl, ollamaModel]);
+  const {
+    isListening,
+    isSpeaking,
+    transcript,
+    setTranscript,
+    speechRecognitionAvailable,
+    errorMessage,
+    setErrorMessage,
+    startListening,
+    stopListening,
+    speak,
+    toggleSpeaking,
+    testMicrophone
+  } = useSpeechService();
 
-  const checkOllamaConnection = async () => {
-    setOllamaStatus('connecting');
-    try {
-      // Simple test request
-      await fetch(`${ollamaUrl}/api/tags`, { 
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      }).then(res => {
-        if (!res.ok) {
-          throw new Error(`Status: ${res.status}`);
-        }
-        return res.json();
-      });
-      
-      setOllamaStatus('connected');
-      setErrorMessage('');
-    } catch (error) {
-      console.error('Error connecting to Ollama:', error);
-      setOllamaStatus('error');
-      setErrorMessage(`Cannot connect to Ollama at ${ollamaUrl}. Please check the URL and make sure Ollama is running.`);
-      toast({
-        title: "Connection Error",
-        description: `Cannot connect to Ollama at ${ollamaUrl}. Please check if Ollama is running.`,
-        variant: "destructive",
-      });
-    }
-  };
+  const {
+    messages,
+    response,
+    setResponse,
+    isProcessing,
+    setIsProcessing,
+    addUserMessage,
+    addAssistantMessage,
+    clearConversation
+  } = useConversation();
 
   const toggleListening = () => {
     if (isListening) {
-      speechService.stopListening();
-      setIsListening(false);
+      stopListening();
       return;
     }
     
     // Check for connection before starting listening
     if (ollamaStatus === 'error') {
-      toast({
-        title: "Connection Error",
-        description: "Cannot connect to Ollama. Please check settings and try again.",
-        variant: "destructive",
-      });
+      setErrorMessage("Cannot connect to Ollama. Please check settings and try again.");
       return;
     }
 
-    // Clear any previous error
-    setErrorMessage('');
-    
-    const success = speechService.startListening(
+    // Start listening and process the final result
+    startListening(
+      // Interim result handler
       (interimText) => {
         setTranscript(interimText);
       },
+      // Final result handler
       async (finalText) => {
-        setIsListening(false);
         setTranscript(finalText);
-        
-        // Add user message to chat
-        const userMessage = { role: 'user' as const, content: finalText };
-        setMessages(prev => [...prev, userMessage]);
-        
-        // Process with Ollama
+        addUserMessage(finalText);
         await processOllamaResponse(finalText);
-      },
-      (error) => {
-        console.error('Speech recognition error:', error);
-        setIsListening(false);
-        setErrorMessage(`Microphone error: ${error}`);
-        toast({
-          title: "Speech Recognition Error",
-          description: error,
-          variant: "destructive",
-        });
       }
     );
-    
-    if (success) {
-      setIsListening(true);
-    } else {
-      const micError = "Could not access the microphone. Please check your browser permissions.";
-      setErrorMessage(`Microphone error: ${micError}`);
-      toast({
-        title: "Microphone Error",
-        description: micError,
-        variant: "destructive",
-      });
-    }
-  };
-  
-  // Test microphone function
-  const testMicrophone = () => {
-    // Clear any previous error
-    setErrorMessage('');
-
-    toast({
-      title: "Testing Microphone",
-      description: "Please speak after clicking OK. This will check if your microphone is working.",
-    });
-
-    // Short listening test
-    const success = speechService.startListening(
-      (interimText) => {
-        if (interimText && interimText.length > 0) {
-          // We got some speech! Microphone is working
-          speechService.stopListening();
-          toast({
-            title: "Microphone Test Successful",
-            description: "Your microphone is working! Voice detected.",
-          });
-        }
-      },
-      (finalText) => {
-        // Successfully got final text
-        speechService.stopListening();
-        toast({
-          title: "Microphone Test Successful",
-          description: "Your microphone is working properly.",
-        });
-      },
-      (error) => {
-        console.error('Microphone test error:', error);
-        setErrorMessage(`Microphone test failed: ${error}`);
-        toast({
-          title: "Microphone Test Failed",
-          description: error,
-          variant: "destructive",
-        });
-      }
-    );
-
-    // Set a timeout to stop listening after 5 seconds if no speech is detected
-    if (success) {
-      setTimeout(() => {
-        if (speechService) {
-          speechService.stopListening();
-        }
-      }, 5000);
-    } else {
-      const micError = "Could not access the microphone. Please check your browser permissions.";
-      setErrorMessage(`Microphone error: ${micError}`);
-      toast({
-        title: "Microphone Test Failed",
-        description: micError,
-        variant: "destructive",
-      });
-    }
   };
   
   const processOllamaResponse = async (text: string) => {
@@ -200,50 +88,18 @@ export const useJarvisServices = () => {
         }
       );
       
-      // Save assistant response to messages
-      const assistantMessage = { role: 'assistant' as const, content: fullResponse };
-      setMessages(prev => [...prev, assistantMessage]);
+      // Save assistant response to messages and speak it
+      addAssistantMessage(fullResponse);
+      speak(fullResponse);
       
-      // Speak the response
-      setIsSpeaking(true);
-      speechService.speak(fullResponse, () => {
-        setIsSpeaking(false);
-      });
     } catch (error) {
       console.error('Error processing with Ollama:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
       setResponse(`Sorry, I encountered an error while processing your request: ${errorMsg}`);
       
-      toast({
-        title: "Processing Error",
-        description: "An error occurred while processing with Ollama.",
-        variant: "destructive",
-      });
+      setErrorMessage(`Processing error: ${errorMsg}`);
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleOllamaUrlChange = (url: string) => {
-    setOllamaUrl(url);
-    ollamaService.setBaseUrl(url);
-  };
-
-  const handleOllamaModelChange = (model: string) => {
-    setOllamaModel(model);
-    ollamaService.setModel(model);
-  };
-
-  const clearConversation = () => {
-    setMessages([]);
-    setTranscript('');
-    setResponse('');
-  };
-  
-  const toggleSpeaking = () => {
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
     }
   };
 
