@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, ServerIcon, Check, AlertTriangle, RefreshCw } from "lucide-react";
+import { ServerIcon, Check, AlertCircle, RefreshCw } from "lucide-react";
 import { OllamaConnectionStatus } from '@/hooks/useChatOllama';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from '@/hooks/use-toast';
@@ -195,70 +195,7 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
           )}
         </div>
         
-        <Alert variant="default" className="bg-yellow-500/10 border border-yellow-500/30">
-          <AlertTriangle className="h-4 w-4 text-yellow-500" />
-          <AlertTitle className="text-sm">Installation requise</AlertTitle>
-          <AlertDescription className="text-xs mt-1">
-            <p>Pour utiliser cette interface, vous devez installer Ollama sur votre ordinateur:</p>
-            <ol className="list-decimal pl-5 mt-1 space-y-1">
-              <li>Téléchargez et installez Ollama depuis <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">ollama.com/download</a></li>
-              <li>Lancez Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
-              <li>Installez un modèle de votre choix:</li>
-            </ol>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-              <div className="p-2 border rounded bg-black/10">
-                <strong className="block">Llama 3:</strong>
-                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
-                  ollama pull llama3
-                </code>
-                <span className="text-[10px] mt-1 block">Recommandé pour performances générales</span>
-              </div>
-              
-              <div className="p-2 border rounded bg-black/10">
-                <strong className="block">Qwen 2:</strong>
-                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
-                  ollama pull qwen2
-                </code>
-                <span className="text-[10px] mt-1 block">Utilisez API "generate" (automatiquement détecté)</span>
-              </div>
-              
-              <div className="p-2 border rounded bg-black/10">
-                <strong className="block">Gemma:</strong>
-                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
-                  ollama pull gemma:2b
-                </code>
-                <span className="text-[10px] mt-1 block">Version légère pour ordinateurs moins puissants</span>
-              </div>
-              
-              <div className="p-2 border rounded bg-black/10">
-                <strong className="block">Phi-3 Mini:</strong>
-                <code className="bg-muted-foreground/20 px-1 rounded block mt-1">
-                  ollama pull phi3:mini
-                </code>
-                <span className="text-[10px] mt-1 block">Petit modèle efficace de Microsoft</span>
-              </div>
-            </div>
-            
-            {missingModel && (
-              <div className="mt-3 p-2 bg-red-500/20 border border-red-500/30 rounded">
-                <div className="font-semibold flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3 text-red-500" />
-                  Modèle manquant
-                </div>
-                <p className="mt-1">
-                  Vous essayez d'utiliser le modèle <strong>{ollamaModel}</strong> qui n'est pas installé sur votre serveur Ollama.
-                </p>
-                <p className="mt-1">
-                  Pour l'installer, exécutez:
-                  <code className="block mt-1 p-1 bg-black/30 rounded text-[11px]">
-                    ollama pull {ollamaModel}
-                  </code>
-                </p>
-              </div>
-            )}
-          </AlertDescription>
-        </Alert>
+        {/* Section installation requise retirée comme demandé */}
         
         {connectionStatus === 'connected' && (
           <div>
@@ -294,9 +231,9 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
             
             {availableModels.length === 0 && (
               <Alert variant="default" className="mt-2 p-2 bg-orange-500/10 border border-orange-500/30">
-                <AlertTriangle className="h-3 w-3 text-orange-500" />
+                <AlertCircle className="h-3 w-3 text-orange-500" />
                 <AlertDescription className="ml-1 text-xs">
-                  Aucun modèle n'a été trouvé. Installez-en un avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code>
+                  Aucun modèle trouvé sur votre serveur Ollama.
                 </AlertDescription>
               </Alert>
             )}
