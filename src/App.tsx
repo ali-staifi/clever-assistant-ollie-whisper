@@ -9,6 +9,7 @@ import ChatPage from "./pages/ChatPage";
 import ApiPage from "./pages/ApiPage";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
+import VoiceSettingsDemo from "./components/VoiceSettingsDemo";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/api" element={<ApiPage />} />
+              <Route path="/voice-settings" element={<VoiceSettingsDemo />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
