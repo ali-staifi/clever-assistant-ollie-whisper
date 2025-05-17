@@ -23,7 +23,7 @@ export class SpeechService {
     this.recognitionService.stopListening();
   }
 
-  speak(text: string, onEnd?: () => void): boolean {
+  async speak(text: string, onEnd?: () => void): Promise<boolean> {
     return this.synthesisService.speak(text, onEnd);
   }
 

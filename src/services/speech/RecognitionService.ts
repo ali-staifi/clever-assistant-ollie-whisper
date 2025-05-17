@@ -14,10 +14,10 @@ export class RecognitionService {
   setupRecognition() {
     // Check if browser supports SpeechRecognition
     if ('webkitSpeechRecognition' in window) {
-      const WebkitSpeechRecognition = window.webkitSpeechRecognition;
+      const WebkitSpeechRecognition = (window as any).webkitSpeechRecognition;
       this.recognition = new WebkitSpeechRecognition();
     } else if ('SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition;
+      const SpeechRecognition = (window as any).SpeechRecognition;
       this.recognition = new SpeechRecognition();
     } else {
       console.warn("Speech recognition not supported in this browser");
