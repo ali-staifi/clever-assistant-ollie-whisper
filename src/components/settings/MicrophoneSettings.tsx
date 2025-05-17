@@ -79,20 +79,6 @@ const MicrophoneSettings: React.FC<MicrophoneSettingsProps> = ({
         </p>
       </div>
       
-      <Alert variant="default" className="mt-4 bg-blue-500/10 border border-blue-500/30">
-        <Info className="h-4 w-4 text-blue-500 mr-2" />
-        <AlertTitle className="text-sm font-medium">Conseils pour la reconnaissance vocale</AlertTitle>
-        <AlertDescription className="text-xs mt-1">
-          <ul className="list-disc pl-5 space-y-1">
-            <li>Parlez clairement et à un volume normal</li>
-            <li>Réduisez les bruits de fond</li>
-            <li>Utilisez un microphone externe pour une meilleure qualité</li>
-            <li>Si vous n'êtes pas entendu, augmentez la sensibilité ci-dessus</li>
-            <li>Testez régulièrement votre microphone avec le bouton ci-dessous</li>
-          </ul>
-        </AlertDescription>
-      </Alert>
-      
       <div className="space-y-2 mt-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="recognition-language">Langue de reconnaissance</Label>
