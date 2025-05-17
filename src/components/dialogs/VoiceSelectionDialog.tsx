@@ -168,9 +168,9 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
           <Button 
             onClick={handleTestVoice} 
             variant="outline" 
-            className="w-full"
-            leftIcon={<Music className="h-4 w-4 mr-2" />}
+            className="w-full flex items-center justify-center gap-2"
           >
+            <Music className="h-4 w-4" />
             {isSpeaking ? "Arrêter le test" : "Tester la voix"}
           </Button>
         </div>
