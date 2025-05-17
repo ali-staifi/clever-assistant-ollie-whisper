@@ -21,6 +21,7 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
 
   const toggleSpeaking = () => {
     if (isSpeaking) {
+      // Utilisons la méthode correcte pour arrêter la synthèse vocale
       speechService.stopSpeaking();
       setIsSpeaking(false);
     }

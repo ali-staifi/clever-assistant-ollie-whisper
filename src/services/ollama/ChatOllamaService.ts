@@ -64,19 +64,55 @@ export class ChatOllamaService {
         content: msg.content
       }));
 
-      const response = await fetch(`${this.baseUrl}/api/chat`, {
+      // Détermine si on doit utiliser l'API chat ou generate basé sur le modèle
+      const isQwenModel = this.model.toLowerCase().includes('qwen');
+      const endpoint = isQwenModel ? '/api/generate' : '/api/chat';
+      
+      // Préparer la charge utile de la requête en fonction du type de modèle
+      let requestBody;
+      
+      if (isQwenModel) {
+        // Pour les modèles Qwen avec l'API generate
+        const formattedPrompt = formatMessagesToPrompt(messages, prompt, true, 'french');
+        console.log("Formatted Qwen prompt:", formattedPrompt.substring(0, 100) + "...");
+        
+        requestBody = JSON.stringify({
+          model: this.model,
+          prompt: formattedPrompt,
+          stream: true,
+        });
+      } else {
+        // Pour les autres modèles avec l'API chat
+        requestBody = JSON.stringify({
+          model: this.model,
+          messages: formattedMessages,
+          stream: true,
+        });
+      }
+      
+      console.log(`Using ${endpoint} endpoint for model ${this.model}`);
+
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: this.model,
-          messages: formattedMessages,
-          stream: true,
-        }),
+        body: requestBody,
       });
 
       if (!response.ok) {
+        // Gestion des erreurs spécifiques
+        if (response.status === 404 || response.status === 400) {
+          let errorText;
+          try {
+            const errorData = await response.json();
+            errorText = errorData.error || `Erreur HTTP ${response.status}`;
+          } catch (e) {
+            errorText = `Erreur HTTP ${response.status}`;
+          }
+          
+          throw new Error(`Erreur API Ollama: ${errorText}. Assurez-vous que le modèle "${this.model}" est installé.`);
+        }
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
@@ -101,9 +137,10 @@ export class ChatOllamaService {
         for (const line of lines) {
           if (line.trim()) {
             try {
-              const parsedToken = parseStreamedResponse(line, this.model.includes('qwen'));
+              const parsedToken = parseStreamedResponse(line, isQwenModel);
               if (parsedToken) {
-                onProgress(parsedToken);
+                partialResponse += parsedToken;
+                onProgress(partialResponse);
               }
             } catch (e) {
               console.error('Error parsing response line:', e);

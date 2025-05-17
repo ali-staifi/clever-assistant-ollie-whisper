@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +25,9 @@ const COMMON_MODELS = [
   { value: "mistral", label: "Mistral" },
   { value: "mixtral", label: "Mixtral 8x7B" },
   { value: "phi3:mini", label: "Phi-3 Mini" },
+  { value: "qwen2", label: "Qwen 2" },
+  { value: "qwen2:7b", label: "Qwen 2 (7B)" },
+  { value: "qwen2:4b", label: "Qwen 2 (4B)" },
 ];
 
 const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
@@ -93,6 +95,10 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
   };
 
   const displayModels = getDisplayModels();
+  
+  // Vérifie si Qwen est présent dans les modèles disponibles
+  const hasQwenModel = availableModels.some(model => model.toLowerCase().includes('qwen'));
+  const isUsingQwen = ollamaModel.toLowerCase().includes('qwen');
 
   return (
     <div className="p-4 bg-card border rounded-lg mb-4">
@@ -183,6 +189,11 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
               <li>Téléchargez et installez Ollama depuis <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">ollama.com/download</a></li>
               <li>Lancez Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code></li>
               <li>Installez un modèle: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code></li>
+              {isUsingQwen && !hasQwenModel && (
+                <li className="text-red-500">
+                  Pour utiliser Qwen 2, exécutez: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull qwen2</code> ou <code className="bg-muted-foreground/20 px-1 rounded">ollama pull qwen2:7b</code>
+                </li>
+              )}
             </ol>
           </AlertDescription>
         </Alert>
@@ -224,6 +235,18 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
                 <AlertTriangle className="h-3 w-3 text-orange-500" />
                 <AlertDescription className="ml-1 text-xs">
                   Aucun modèle n'a été trouvé. Installez-en un avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull llama3</code>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {isUsingQwen && !hasQwenModel && (
+              <Alert variant="destructive" className="mt-2 p-2">
+                <AlertCircle className="h-3 w-3" />
+                <AlertDescription className="ml-1 text-xs">
+                  Le modèle Qwen n'est pas installé sur votre Ollama. Installez-le avec:
+                  <code className="block mt-1 p-1 bg-black/20 rounded text-[11px]">
+                    ollama pull qwen2
+                  </code>
                 </AlertDescription>
               </Alert>
             )}

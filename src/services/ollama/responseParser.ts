@@ -12,12 +12,16 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
     if (isQwenModel) {
       // For generate API
       const responseText = parsedLine.response || '';
-      console.log('Qwen response text:', responseText.substring(0, 50) + (responseText.length > 50 ? '...' : ''));
+      if (responseText.trim()) {
+        console.log('Qwen response token:', responseText);
+      }
       return responseText;
     } else {
       // For chat API
       const responseText = parsedLine.message?.content || parsedLine.response || '';
-      console.log('Standard response text:', responseText.substring(0, 50) + (responseText.length > 50 ? '...' : ''));
+      if (responseText.trim()) {
+        console.log('Standard response token:', responseText);
+      }
       return responseText;
     }
   } catch (e) {
