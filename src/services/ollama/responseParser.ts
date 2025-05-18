@@ -30,8 +30,8 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
       // For chat API (used by other models like Llama, Gemma, etc.)
       
       // Case 1: Standard message object format
-      if (parsedLine.message && typeof parsedLine.message === 'object') {
-        const responseText = parsedLine.message?.content || '';
+      if (parsedLine.message && typeof parsedLine.message === 'object' && parsedLine.message.content) {
+        const responseText = parsedLine.message.content || '';
         if (responseText) console.log('Standard response token:', responseText);
         return responseText;
       } 

@@ -100,22 +100,23 @@ export class ChatOllamaService {
           options: this.options
         });
       } else {
-        let systemMessage = 'Vous êtes un assistant intelligent et serviable.';
+        let systemMessage = 'Vous êtes un assistant intelligent et serviable. Répondez de façon claire, concise et utile.';
         
         // If prompt contains language instructions, use them for system message too
         if (prompt.includes('réponse doit être en français')) {
-          systemMessage = 'Réponds uniquement en français, quelle que soit la langue de la question.';
+          systemMessage = 'Réponds uniquement en français, quelle que soit la langue de la question. Sois clair, précis et utile.';
         } else if (prompt.includes('response must be in English')) {
-          systemMessage = 'Always respond in English, regardless of the question language.';
+          systemMessage = 'Always respond in English, regardless of the question language. Be clear, concise and helpful.';
         } else if (prompt.includes('باللغة العربية')) {
-          systemMessage = 'أجب دائمًا باللغة العربية بغض النظر عن لغة السؤال.';
+          systemMessage = 'أجب دائمًا باللغة العربية بغض النظر عن لغة السؤال. كن واضحًا، موجزًا ومفيدًا.';
         }
         
         requestBody = JSON.stringify({
           model: this.model,
           messages: [
             { role: 'system', content: systemMessage },
-            ...formattedMessages
+            ...formattedMessages,
+            { role: 'user', content: prompt }
           ],
           stream: true,
           options: this.options
@@ -160,36 +161,49 @@ export class ChatOllamaService {
 
       let partialResponse = '';
       const decoder = new TextDecoder();
+      let responseText = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
+      // Add a watchdog timer to ensure we don't get stuck
+      const watchdogTimer = setTimeout(() => {
+        console.warn('Response watchdog timer triggered after 60 seconds');
+        if (this.controller) this.controller.abort();
+      }, 60000);
 
-        if (done) {
-          break;
-        }
-
-        const chunk = decoder.decode(value);
-        console.log("Received chunk:", chunk.substring(0, 100) + (chunk.length > 100 ? "..." : ""));
-        
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const parsedToken = parseStreamedResponse(line, isQwenModel);
-              if (parsedToken) {
-                partialResponse += parsedToken;
-                onProgress(partialResponse);
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+  
+          if (done) {
+            break;
+          }
+  
+          const chunk = decoder.decode(value);
+          console.log("Received chunk:", chunk.substring(0, 100) + (chunk.length > 100 ? "..." : ""));
+          
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.trim()) {
+              try {
+                const parsedToken = parseStreamedResponse(line, isQwenModel);
+                if (parsedToken) {
+                  responseText += parsedToken;
+                  partialResponse += parsedToken;
+                  onProgress(partialResponse);
+                }
+              } catch (e) {
+                console.error('Error parsing response line:', e);
+                console.error('Line content:', line);
               }
-            } catch (e) {
-              console.error('Error parsing response line:', e);
-              console.error('Line content:', line);
             }
           }
         }
+      } finally {
+        clearTimeout(watchdogTimer);
       }
       
       if (!partialResponse.trim()) {
+        console.warn('Empty response received from model');
         const fallbackMsg = "Je suis désolé, je n'ai pas pu générer de réponse. Veuillez vérifier si le modèle est correctement installé.";
         onProgress(fallbackMsg);
       }
@@ -201,6 +215,7 @@ export class ChatOllamaService {
       
       if (error instanceof DOMException && error.name === 'AbortError') {
         console.log('Request was aborted');
+        onProgress("Je suis désolé, la requête a été interrompue. Veuillez réessayer.");
         return;
       }
       

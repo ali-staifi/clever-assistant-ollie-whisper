@@ -35,7 +35,10 @@ export const useInputHandling = (
         // Process the response with a small delay to allow message display
         setTimeout(() => {
           processOllamaResponse(userMessage, responseLanguage)
-            .catch(err => console.error("Error processing response:", err));
+            .catch(err => {
+              console.error("Error processing response:", err);
+              setErrorMessage(`Erreur de traitement: ${err.message || 'Erreur inconnue'}`);
+            });
         }, 100);
       } else {
         console.log("User canceled or provided an empty message");
@@ -46,7 +49,7 @@ export const useInputHandling = (
     // Check connection before starting listening
     if (ollamaStatus === 'error') {
       console.error("Cannot connect to Ollama. Current status:", ollamaStatus);
-      setErrorMessage("Cannot connect to Ollama. Please check the settings and try again.");
+      setErrorMessage("Impossible de se connecter à Ollama. Veuillez vérifier les paramètres et réessayer.");
       return;
     }
 
@@ -71,17 +74,18 @@ export const useInputHandling = (
             await processOllamaResponse(finalText, responseLanguage);
           } catch (error) {
             console.error("Error processing response:", error);
-            setErrorMessage("Error processing your request. Please try again.");
+            setErrorMessage("Erreur lors du traitement de votre demande. Veuillez réessayer.");
           }
         } else {
           console.log("Empty speech recognition result, ignored");
+          setErrorMessage("Je n'ai pas entendu votre question. Veuillez parler plus distinctement ou utiliser le mode texte.");
         }
       }
     );
     
     if (!started) {
       console.error("Failed to start speech recognition");
-      setErrorMessage("Failed to start speech recognition. Please check your microphone permissions.");
+      setErrorMessage("Impossible de démarrer la reconnaissance vocale. Veuillez vérifier les permissions de votre microphone.");
     }
   };
 
