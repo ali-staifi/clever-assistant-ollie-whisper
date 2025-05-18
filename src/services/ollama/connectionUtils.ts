@@ -5,10 +5,18 @@
 export async function testOllamaConnection(baseUrl: string): Promise<{ success: boolean; error?: string }> {
   try {
     console.log(`Testing connection to Ollama at ${baseUrl}...`);
+    
+    // Ajout d'un timeout pour éviter les attentes infinies
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+    
     const response = await fetch(`${baseUrl}/api/tags`, { 
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       return { 
@@ -45,10 +53,18 @@ export async function testOllamaConnection(baseUrl: string): Promise<{ success: 
 export async function getAvailableModels(baseUrl: string): Promise<string[]> {
   try {
     console.log(`Fetching available models from ${baseUrl}...`);
+    
+    // Ajout d'un timeout pour éviter les attentes infinies
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+    
     const response = await fetch(`${baseUrl}/api/tags`, { 
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch models: ${response.status} ${response.statusText}`);

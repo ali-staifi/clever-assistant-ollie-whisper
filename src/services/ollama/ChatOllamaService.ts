@@ -2,7 +2,7 @@
 import { Message, ChatOllamaResponse } from './types';
 import { formatMessagesToPrompt } from './formatUtils';
 import { parseStreamedResponse } from './responseParser';
-import { testOllamaConnection } from './connectionUtils';
+import { testOllamaConnection, getAvailableModels } from './connectionUtils';
 
 export class ChatOllamaService {
   private baseUrl: string;
@@ -60,24 +60,8 @@ export class ChatOllamaService {
   // List available models on the Ollama server
   async listAvailableModels(): Promise<string[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/tags`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data && data.models) {
-        return data.models.map((model: any) => model.name);
-      } else {
-        console.error("No models found in response:", data);
-        return [];
-      }
-    } catch (error: any) {
+      return await getAvailableModels(this.baseUrl);
+    } catch (error) {
       console.error("Error listing available models:", error);
       return [];
     }
@@ -202,6 +186,7 @@ export class ChatOllamaService {
               }
             } catch (e) {
               console.error('Error parsing response line:', e);
+              console.error('Line content:', line);
             }
           }
         }

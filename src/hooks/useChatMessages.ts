@@ -71,6 +71,8 @@ export const useChatMessages = (ollamaService: ChatOllamaService | null) => {
         content
       });
       
+      console.log("Sending messages to Ollama:", JSON.stringify(ollamaMessages));
+      
       // Generate response with streaming updates
       await ollamaService.generateChatResponse(
         content,

@@ -8,7 +8,7 @@ export type OllamaConnectionStatus = 'idle' | 'connecting' | 'connected' | 'erro
 
 export const useOllamaConnection = (
   initialUrl = 'http://localhost:11434',
-  initialModel = 'gemma:7b'
+  initialModel = 'gemma:latest'
 ) => {
   const {
     ollamaUrl,
@@ -41,7 +41,7 @@ export const useOllamaConnection = (
       // Abort any pending requests when unmounting
       ollamaServiceRef.current?.abortRequest();
     };
-  }, []);
+  }, [ollamaUrl, ollamaModel]); // Ajout des dépendances pour réinitialiser le service lorsque les paramètres changent
 
   // Check connection when URL changes
   useEffect(() => {
@@ -80,7 +80,7 @@ export const useOllamaConnection = (
           toast({
             title: "Aucun modèle trouvé",
             description: "Aucun modèle n'a été trouvé sur votre serveur Ollama. Assurez-vous d'en installer avec 'ollama pull nom_du_modèle'",
-            variant: "default", // Changed from "warning" to "default" to fix the type error
+            variant: "default",
           });
         } else {
           setAvailableModels(models);
@@ -97,6 +97,7 @@ export const useOllamaConnection = (
         return false;
       }
     } catch (error) {
+      console.error("Error connecting to Ollama:", error);
       setConnectionStatus('error');
       toast({
         title: "Erreur de connexion",

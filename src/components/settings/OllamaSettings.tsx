@@ -19,19 +19,17 @@ interface OllamaSettingsProps {
 
 // Liste des modèles courants mise à jour
 const COMMON_MODELS = [
-  { value: "gemma:7b", label: "Gemma 7B" },
-  { value: "gemma:2b", label: "Gemma 2B" },
+  { value: "gemma:latest", label: "Gemma Latest" },
+  { value: "gemma3:latest", label: "Gemma 3" },
+  { value: "llama3:latest", label: "Llama 3" },
+  { value: "llama3.2:latest", label: "Llama 3.2" },
+  { value: "mistral:latest", label: "Mistral" },
+  { value: "qwen:latest", label: "Qwen" },
+  { value: "qwen3:latest", label: "Qwen 3" },
+  { value: "qwen3:8b", label: "Qwen 3 8B" },
   { value: "mixtral", label: "Mixtral 8x7B" },
-  { value: "llama3", label: "Llama 3 (8B)" },
-  { value: "llama3:8b", label: "Llama 3 (8B)" },
-  { value: "llama3:8b-instruct-q4_0", label: "Llama 3 (8B) Instruct Q4" },
-  { value: "llama3:70b-instruct-q4_0", label: "Llama 3 (70B) Instruct Q4" },
-  { value: "mistral", label: "Mistral" },
   { value: "phi3:mini", label: "Phi-3 Mini" },
   { value: "phi3:medium", label: "Phi-3 Medium" },
-  { value: "qwen2", label: "Qwen 2" },
-  { value: "qwen2:7b", label: "Qwen 2 (7B)" },
-  { value: "qwen2:4b", label: "Qwen 2 (4B)" },
   { value: "stablelm:zephyr", label: "StableLM Zephyr" }
 ];
 
@@ -110,7 +108,7 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
         </Alert>
       )}
 
-      <Alert className="bg-muted/50 border border-muted">
+      <Alert className="bg-muted/50 border border-muted mt-2">
         <Info className="h-4 w-4 mr-2" />
         <AlertDescription className="text-xs">
           Pour exécuter Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code>
@@ -119,7 +117,7 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
         </AlertDescription>
       </Alert>
       
-      <div className="space-y-2">
+      <div className="space-y-2 mt-4">
         <Label htmlFor="ollama-model">Modèle Ollama</Label>
         <Select
           value={ollamaModel}
@@ -148,20 +146,13 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
         </p>
       </div>
 
-      <Alert className="mt-2 bg-blue-500/10 border border-blue-500/30">
+      <Alert className="mt-4 bg-blue-500/10 border border-blue-500/30">
         <Database className="h-4 w-4 mr-2 text-blue-500" />
         <AlertDescription className="text-xs">
-          Pour les paramètres avancés d'Ollama (comme dans l'article que vous avez mentionné), consultez la 
+          Pour les paramètres avancés d'Ollama (comme mentionné sur arsturn.com), consultez la 
           <a href="https://github.com/ollama/ollama/blob/main/docs/modelfile.md" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
             documentation Modelfile
           </a>
-        </AlertDescription>
-      </Alert>
-
-      <Alert className="mt-2 bg-green-500/10 border border-green-500/30">
-        <Save className="h-4 w-4 mr-2 text-green-500" />
-        <AlertDescription className="text-xs text-green-600">
-          Vos paramètres sont automatiquement sauvegardés et seront restaurés lors de votre prochaine visite.
         </AlertDescription>
       </Alert>
     </>
