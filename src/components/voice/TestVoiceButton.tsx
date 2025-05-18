@@ -36,34 +36,63 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
     if (isSpeaking) {
       toggleSpeaking();
     } else {
-      let testText = "Bonjour, je suis votre assistant vocal. Comment puis-je vous aider aujourd'hui?";
-      
-      // Apply settings temporarily for test
+      // Sélectionner la voix avant tout
       if (selectedVoice) {
         localSpeechService.setVoice(selectedVoice);
       }
+      
+      // Détermine la langue basée sur la voix sélectionnée
+      const voices = localSpeechService.getAvailableVoices();
+      const voiceObj = voices.find(v => v.name === selectedVoice);
+      const lang = voiceObj?.lang || 'fr-FR';
+      
+      // Choisir un texte de test en fonction de la langue
+      let testText = "Bonjour, je suis votre assistant vocal. Comment puis-je vous aider aujourd'hui?";
+      
+      // Ajuster le texte en fonction de la langue de la voix
+      if (lang.startsWith('en')) {
+        testText = "Hello, I am your voice assistant. How can I help you today?";
+      } else if (lang.startsWith('de')) {
+        testText = "Hallo, ich bin Ihr Sprachassistent. Wie kann ich Ihnen heute helfen?";
+      } else if (lang.startsWith('es')) {
+        testText = "Hola, soy tu asistente de voz. ¿Cómo puedo ayudarte hoy?";
+      } else if (lang.startsWith('it')) {
+        testText = "Ciao, sono il tuo assistente vocale. Come posso aiutarti oggi?";
+      } else if (lang.startsWith('ja')) {
+        testText = "こんにちは、音声アシスタントです。今日はどのようにお手伝いできますか？";
+      }
+      
+      // Appliquer les paramètres temporairement pour le test
       localSpeechService.setRate(rate);
       localSpeechService.setPitch(pitch);
       localSpeechService.setVolume(volume);
       
-      // Add robotic effect if slider is not at zero
+      // Ajouter l'effet robotique si le curseur n'est pas à zéro
       if (roboticEffect > 0) {
-        // Adjust pitch and rate to simulate robotic voice
+        // Ajuster le pitch et le rate pour simuler une voix robotique
         const roboticPitch = Math.max(0.5, pitch - (roboticEffect * 0.3));
         const roboticRate = rate + (roboticEffect * 0.5);
         localSpeechService.setPitch(roboticPitch);
         localSpeechService.setRate(roboticRate);
         
-        // Change text for more robotic feel at high settings
+        // Modifier le texte pour un effet plus robotique à des réglages élevés
         if (roboticEffect > 0.7) {
-          testText = "Sys-tème ac-ti-vé. As-sis-tant Jar-vis prêt à fonc-ti-on-ner.";
+          if (lang.startsWith('en')) {
+            testText = "Sys-tem ac-ti-va-ted. As-sis-tant Jar-vis ready to func-tion.";
+          } else if (lang.startsWith('fr')) {
+            testText = "Sys-tème ac-ti-vé. As-sis-tant Jar-vis prêt à fonc-ti-on-ner.";
+          } else if (lang.startsWith('de')) {
+            testText = "Sys-tem ak-ti-viert. As-sis-tent Jar-vis be-reit zu funk-ti-on-ie-ren.";
+          } else if (lang.startsWith('es')) {
+            testText = "Sis-te-ma ac-ti-va-do. A-sis-ten-te Jar-vis lis-to pa-ra fun-ci-on-ar.";
+          }
         }
       }
       
-      // Speak test text
+      // Parler le texte de test
       speak(testText);
       
-      // Reset to original settings after test
+      // Réinitialiser aux paramètres d'origine après le test
       if (roboticEffect > 0) {
         setTimeout(() => {
           localSpeechService.setPitch(pitch);

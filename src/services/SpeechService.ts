@@ -66,7 +66,7 @@ export class SpeechService {
     // Set the voice in the synthesis service
     this.synthesisService.setVoice(voiceName);
     
-    // CRITICAL: Always sync languages across all services when voice changes
+    // CRITICAL FIX: Always sync languages across all services when voice changes
     console.log(`Synchronisation de la langue avec la voix sélectionnée: ${selectedVoice.lang}`);
     
     // Update synthesis language to exactly match the voice's language

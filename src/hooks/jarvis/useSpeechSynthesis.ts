@@ -54,7 +54,7 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
       return;
     }
     
-    // The setVoice method in SpeechService now handles all language synchronization
+    // La méthode setVoice dans SpeechService gère maintenant la synchronisation des langues
     speechService.setVoice(voiceName);
   };
   

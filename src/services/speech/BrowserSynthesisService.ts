@@ -80,7 +80,7 @@ export class BrowserSynthesisService {
     
     if (this.voice) {
       utterance.voice = this.voice;
-      // CRITICAL: Always use the voice's native language for the utterance, not system language
+      // CRITICAL FIX: Use the voice's native language for the text, not system language
       utterance.lang = this.voice.lang;
       console.log(`Synthèse vocale avec: ${this.voice.name} en langue ${this.voice.lang}`);
     } else {
@@ -127,13 +127,11 @@ export class BrowserSynthesisService {
   setLanguage(lang: string) {
     this.lang = lang;
     console.log("Langue de synthèse définie sur:", lang);
-    // Important: We don't auto-change the voice to avoid overriding a user's voice choice
-    // But we do update our language setting for when no specific voice is selected
   }
   
   setVoice(voiceName: string) {
     this.selectVoice(voiceName);
-    // Voice language is automatically set in selectVoice
+    // La langue est automatiquement mise à jour dans selectVoice
   }
   
   setRate(rate: number) {
