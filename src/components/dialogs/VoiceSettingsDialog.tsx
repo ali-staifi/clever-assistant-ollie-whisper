@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -15,6 +15,7 @@ import { useMicSensitivity } from "@/hooks/jarvis/useMicSensitivity";
 import { useMaryTTS } from "@/hooks/jarvis/useMaryTTS";
 import MaryTTSConfigDialog from "@/components/dialogs/MaryTTSConfigDialog";
 import VoiceSelectionDialog from "@/components/dialogs/VoiceSelectionDialog";
+import { SpeechService } from '@/services/SpeechService';
 
 interface VoiceSettingsDialogProps {
   open: boolean;
@@ -48,6 +49,20 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
   
   // State for voice selection dialog
   const [voiceSelectionOpen, setVoiceSelectionOpen] = useState(false);
+  
+  // Get speech service from window or create a new instance
+  const [speechService, setSpeechService] = useState<SpeechService | undefined>(undefined);
+  
+  // Initialize speech service
+  useEffect(() => {
+    // Try to get from window global first
+    if (typeof window !== 'undefined' && window.jarvisSpeechService) {
+      setSpeechService(window.jarvisSpeechService);
+    } else {
+      // Create a new instance if not available globally
+      setSpeechService(new SpeechService());
+    }
+  }, []);
   
   // Handle microphone test button click
   const handleTestMicrophone = async () => {
@@ -166,7 +181,7 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
       <VoiceSelectionDialog
         open={voiceSelectionOpen}
         onOpenChange={setVoiceSelectionOpen}
-        speechService={window.jarvisSpeechService}
+        speechService={speechService}
       />
     </>
   );

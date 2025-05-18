@@ -10,10 +10,15 @@ interface VoiceSettings {
   roboticEffect?: number;
 }
 
-export const useSpeechSynthesis = (speechService: SpeechService) => {
+export const useSpeechSynthesis = (speechService?: SpeechService) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   
   const speak = (text: string) => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     setIsSpeaking(true);
     speechService.speak(text, () => {
       setIsSpeaking(false);
@@ -21,6 +26,11 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
   };
 
   const toggleSpeaking = () => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     if (isSpeaking) {
       // Stop speaking with empty text
       speechService.stopSpeaking();
@@ -29,10 +39,20 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
   };
   
   const setVoice = (voiceName: string) => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     speechService.setVoice(voiceName);
   };
   
   const setVoiceSettings = (settings: VoiceSettings) => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     if (settings.voiceName) {
       speechService.setVoice(settings.voiceName);
     }
@@ -55,10 +75,15 @@ export const useSpeechSynthesis = (speechService: SpeechService) => {
   };
   
   const getAvailableVoices = () => {
-    return speechService.getAvailableVoices();
+    return speechService ? speechService.getAvailableVoices() : [];
   };
   
   const stopSpeaking = () => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     speechService.stopSpeaking();
     setIsSpeaking(false);
   };

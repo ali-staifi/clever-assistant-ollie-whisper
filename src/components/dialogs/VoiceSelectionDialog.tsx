@@ -16,11 +16,12 @@ import { useSpeechSynthesis } from '@/hooks/jarvis/useSpeechSynthesis';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { SpeechService } from '@/services/SpeechService';
 
 interface VoiceSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  speechService: any;
+  speechService?: SpeechService;
 }
 
 const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
@@ -35,12 +36,17 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
   const [volume, setVolume] = useState<number>(1.0);
   const [roboticEffect, setRoboticEffect] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const { speak, isSpeaking, toggleSpeaking } = useSpeechSynthesis(speechService);
+  
+  // Create a default speechService if one isn't provided
+  const localSpeechService = React.useMemo(() => speechService || new SpeechService(), [speechService]);
+  
+  // Use the local speechService instance for the hook
+  const { speak, isSpeaking, toggleSpeaking } = useSpeechSynthesis(localSpeechService);
 
   useEffect(() => {
     if (open) {
-      // Get available voices when dialog opens
-      const voices = speechService.getAvailableVoices();
+      // Get available voices when dialog opens, with a safety check
+      const voices = localSpeechService ? localSpeechService.getAvailableVoices() : [];
       setAvailableVoices(voices);
       
       // Get current settings
@@ -58,7 +64,7 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
         console.error('Error loading voice settings:', e);
       }
     }
-  }, [open, speechService]);
+  }, [open, localSpeechService]);
 
   // Filter voices by gender and language
   const filterVoices = (voices: SpeechSynthesisVoice[], genderFilter?: string): SpeechSynthesisVoice[] => {
@@ -126,15 +132,20 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
   }, {});
 
   const handleApply = () => {
+    if (!localSpeechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     if (selectedVoice) {
-      speechService.setVoice(selectedVoice);
+      localSpeechService.setVoice(selectedVoice);
     }
     
     // Apply other settings
-    speechService.setRate(rate);
-    speechService.setPitch(pitch);
-    speechService.setVolume(volume);
-    speechService.setRoboticEffect(roboticEffect);
+    localSpeechService.setRate(rate);
+    localSpeechService.setPitch(pitch);
+    localSpeechService.setVolume(volume);
+    localSpeechService.setRoboticEffect(roboticEffect);
     
     // Save settings to localStorage
     const settings = {
@@ -150,6 +161,11 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
   };
 
   const handleTestVoice = () => {
+    if (!localSpeechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
     if (isSpeaking) {
       toggleSpeaking();
     } else {
@@ -157,19 +173,19 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
       
       // Apply settings temporarily for test
       if (selectedVoice) {
-        speechService.setVoice(selectedVoice);
+        localSpeechService.setVoice(selectedVoice);
       }
-      speechService.setRate(rate);
-      speechService.setPitch(pitch);
-      speechService.setVolume(volume);
+      localSpeechService.setRate(rate);
+      localSpeechService.setPitch(pitch);
+      localSpeechService.setVolume(volume);
       
       // Add robotic effect if slider is not at zero
       if (roboticEffect > 0) {
         // Adjust pitch and rate to simulate robotic voice
         const roboticPitch = Math.max(0.5, pitch - (roboticEffect * 0.3));
         const roboticRate = rate + (roboticEffect * 0.5);
-        speechService.setPitch(roboticPitch);
-        speechService.setRate(roboticRate);
+        localSpeechService.setPitch(roboticPitch);
+        localSpeechService.setRate(roboticRate);
         
         // Change text for more robotic feel at high settings
         if (roboticEffect > 0.7) {
@@ -183,8 +199,8 @@ const VoiceSelectionDialog: React.FC<VoiceSelectionDialogProps> = ({
       // Reset to original settings after test
       if (roboticEffect > 0) {
         setTimeout(() => {
-          speechService.setPitch(pitch);
-          speechService.setRate(rate);
+          localSpeechService.setPitch(pitch);
+          localSpeechService.setRate(rate);
         }, 100);
       }
     }
