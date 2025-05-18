@@ -1,3 +1,4 @@
+
 export class BrowserSynthesisService {
   private synthesis: SpeechSynthesis;
   private voice: SpeechSynthesisVoice | null = null;
@@ -79,12 +80,12 @@ export class BrowserSynthesisService {
     
     if (this.voice) {
       utterance.voice = this.voice;
-      // Use the language of the selected voice, not the system language
+      // Toujours utiliser la langue de la voix sélectionnée, pas la langue système
       utterance.lang = this.voice.lang;
-      console.log(`Utilisation de la voix: ${this.voice.name} avec langue ${this.voice.lang}`);
+      console.log(`Synthèse vocale avec: ${this.voice.name} en langue ${this.voice.lang}`);
     } else {
       utterance.lang = this.lang;
-      console.log("Aucune voix spécifique sélectionnée pour la synthèse");
+      console.log("Aucune voix spécifique sélectionnée pour la synthèse, utilisant la langue par défaut:", this.lang);
     }
     
     // Apply base settings
@@ -126,7 +127,7 @@ export class BrowserSynthesisService {
   setLanguage(lang: string) {
     this.lang = lang;
     console.log("Langue de synthèse définie sur:", lang);
-    // Don't auto-refresh voice selection to prevent overriding voice choice
+    // Ne pas automatiquement changer la voix pour éviter de remplacer un choix utilisateur
   }
   
   setVoice(voiceName: string) {
@@ -147,8 +148,5 @@ export class BrowserSynthesisService {
   
   setRoboticEffect(effect: number) {
     this.roboticEffect = Math.max(0, Math.min(1, effect));
-    
-    // Robotic effect is applied by adjusting pitch and rate
-    // when speaking, not here
   }
 }

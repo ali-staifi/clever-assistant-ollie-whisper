@@ -1,3 +1,4 @@
+
 import { RecognitionService } from './speech/RecognitionService';
 import { SynthesisService } from './speech/SynthesisService';
 
@@ -46,8 +47,36 @@ export class SpeechService {
   }
 
   setLanguage(lang: string) {
+    console.log(`Définition de la langue système: ${lang}`);
     this.recognitionService.setLanguage(lang);
     this.synthesisService.setLanguage(lang);
+  }
+  
+  // Méthode pour définir la voix
+  setVoice(voiceName: string) {
+    // Définir d'abord la voix
+    this.synthesisService.setVoice(voiceName);
+    
+    // Obtenir les voix disponibles
+    const voices = this.getAvailableVoices();
+    const selectedVoice = voices.find(voice => voice.name === voiceName);
+    
+    // Si une voix correspondante est trouvée, synchroniser la langue
+    if (selectedVoice) {
+      console.log(`Synchronisation de la langue avec la voix sélectionnée: ${selectedVoice.lang}`);
+      
+      // Mettre à jour la langue de synthèse
+      this.synthesisService.setLanguage(selectedVoice.lang);
+      
+      // Adapter la langue de reconnaissance si possible
+      // Note: la reconnaissance a généralement besoin d'un format 'fr-FR', 'en-US', etc.
+      const langParts = selectedVoice.lang.split('-');
+      if (langParts.length >= 2) {
+        const recognitionLang = `${langParts[0]}-${langParts[1].toUpperCase()}`;
+        this.recognitionService.setLanguage(recognitionLang);
+        console.log(`Langue de reconnaissance définie sur: ${recognitionLang}`);
+      }
+    }
   }
   
   // Add sensitivity method
@@ -100,11 +129,7 @@ export class SpeechService {
     return await this.synthesisService.getMaryTTSVoices(serverUrl);
   }
   
-  // Nouvelles méthodes pour configurer la voix du navigateur
-  setVoice(voiceName: string) {
-    this.synthesisService.setVoice(voiceName);
-  }
-  
+  // Méthodes pour configurer la voix du navigateur
   setRate(rate: number) {
     this.synthesisService.setRate(rate);
   }

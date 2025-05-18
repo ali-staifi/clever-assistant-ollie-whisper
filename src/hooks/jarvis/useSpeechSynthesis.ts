@@ -44,7 +44,19 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
       return;
     }
     
+    // Trouver la voix pour obtenir sa langue
+    const voices = speechService.getAvailableVoices();
+    const selectedVoice = voices.find(voice => voice.name === voiceName);
+    
+    // Définir la voix
     speechService.setVoice(voiceName);
+    
+    // Mettre à jour la langue si une voix est trouvée
+    if (selectedVoice) {
+      // Synchroniser la langue avec celle de la voix
+      speechService.setLanguage(selectedVoice.lang);
+      console.log(`Langue mise à jour en fonction de la voix: ${selectedVoice.lang}`);
+    }
   };
   
   const setVoiceSettings = (settings: VoiceSettings) => {
@@ -54,7 +66,8 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     }
     
     if (settings.voiceName) {
-      speechService.setVoice(settings.voiceName);
+      // Utiliser setVoice qui synchronisera aussi la langue
+      setVoice(settings.voiceName);
     }
     
     if (settings.rate !== undefined) {
