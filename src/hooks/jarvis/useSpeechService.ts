@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from 'react';
 import { SpeechService } from '@/services/SpeechService';
 import { useAudioMonitoring } from './useAudioMonitoring';
@@ -38,6 +37,7 @@ export const useSpeechService = () => {
     speak, 
     toggleSpeaking,
     setVoice,
+    setLanguage, // We need to expose this function
     setVoiceSettings,
     getAvailableVoices
   } = useSpeechSynthesis(speechService);
@@ -125,6 +125,7 @@ export const useSpeechService = () => {
     setVoice,
     setVoiceSettings,
     availableVoices,
-    speechService
+    speechService,
+    setLanguage // Make sure to include setLanguage in the returned object
   };
 };
