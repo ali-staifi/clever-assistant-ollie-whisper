@@ -4,6 +4,7 @@
  */
 export async function testOllamaConnection(baseUrl: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Testing connection to Ollama at ${baseUrl}...`);
     const response = await fetch(`${baseUrl}/api/tags`, { 
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
@@ -13,6 +14,17 @@ export async function testOllamaConnection(baseUrl: string): Promise<{ success: 
       return { 
         success: false, 
         error: `Status: ${response.status} ${response.statusText}` 
+      };
+    }
+    
+    // Vérifier que la réponse contient des données valides
+    const data = await response.json();
+    console.log('Ollama connection test response:', data);
+    
+    if (!data || !data.models || !Array.isArray(data.models)) {
+      return {
+        success: false,
+        error: 'La réponse du serveur Ollama ne contient pas de liste de modèles valide'
       };
     }
     
@@ -32,6 +44,7 @@ export async function testOllamaConnection(baseUrl: string): Promise<{ success: 
  */
 export async function getAvailableModels(baseUrl: string): Promise<string[]> {
   try {
+    console.log(`Fetching available models from ${baseUrl}...`);
     const response = await fetch(`${baseUrl}/api/tags`, { 
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
@@ -42,10 +55,14 @@ export async function getAvailableModels(baseUrl: string): Promise<string[]> {
     }
     
     const data = await response.json();
+    console.log('Available models response:', data);
+    
     // Extract model names from the response
-    if (data && data.models) {
+    if (data && data.models && Array.isArray(data.models)) {
       return data.models.map((model: any) => model.name);
     }
+    
+    console.error('Invalid models response format:', data);
     return [];
   } catch (error) {
     console.error('Error fetching Ollama models:', error);

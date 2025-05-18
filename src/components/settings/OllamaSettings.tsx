@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Info, Save } from "lucide-react";
+import { AlertCircle, Info, Save, Database } from "lucide-react";
 
 interface OllamaSettingsProps {
   ollamaUrl: string;
@@ -17,18 +17,22 @@ interface OllamaSettingsProps {
   availableModels?: string[];
 }
 
-// Common models list with Gemma as the default choice now
+// Liste des modèles courants mise à jour
 const COMMON_MODELS = [
   { value: "gemma:7b", label: "Gemma 7B" },
   { value: "gemma:2b", label: "Gemma 2B" },
   { value: "mixtral", label: "Mixtral 8x7B" },
   { value: "llama3", label: "Llama 3 (8B)" },
+  { value: "llama3:8b", label: "Llama 3 (8B)" },
   { value: "llama3:8b-instruct-q4_0", label: "Llama 3 (8B) Instruct Q4" },
   { value: "llama3:70b-instruct-q4_0", label: "Llama 3 (70B) Instruct Q4" },
   { value: "mistral", label: "Mistral" },
   { value: "phi3:mini", label: "Phi-3 Mini" },
   { value: "phi3:medium", label: "Phi-3 Medium" },
   { value: "qwen2", label: "Qwen 2" },
+  { value: "qwen2:7b", label: "Qwen 2 (7B)" },
+  { value: "qwen2:4b", label: "Qwen 2 (4B)" },
+  { value: "stablelm:zephyr", label: "StableLM Zephyr" }
 ];
 
 const OllamaSettings: React.FC<OllamaSettingsProps> = ({
@@ -42,20 +46,32 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
 }) => {
   // Get displayed models - either available models or common models
   const getDisplayModels = () => {
+    // Combine both available and common models
+    const allModels = new Set<string>();
+    
+    // Add available models from the server
     if (availableModels && availableModels.length > 0) {
-      // Map available models to the format needed for display
-      return availableModels.map(modelName => {
-        // Try to find a matching common model for better labeling
-        const commonModel = COMMON_MODELS.find(m => m.value === modelName);
-        return {
-          value: modelName,
-          label: commonModel ? commonModel.label : modelName
-        };
-      });
+      availableModels.forEach(model => allModels.add(model));
     }
     
-    // Fallback to common models if available models not provided
-    return COMMON_MODELS;
+    // Also add common models that might not be on the server yet
+    COMMON_MODELS.forEach(model => allModels.add(model.value));
+    
+    // Convert to the format needed for display
+    return Array.from(allModels).map(modelName => {
+      // Try to find a matching common model for better labeling
+      const commonModel = COMMON_MODELS.find(m => m.value === modelName);
+      return {
+        value: modelName,
+        label: commonModel ? commonModel.label : modelName,
+        isAvailable: availableModels.includes(modelName)
+      };
+    }).sort((a, b) => {
+      // Sort by availability first, then alphabetically
+      if (a.isAvailable && !b.isAvailable) return -1;
+      if (!a.isAvailable && b.isAvailable) return 1;
+      return a.label.localeCompare(b.label);
+    });
   };
   
   const displayModels = getDisplayModels();
@@ -98,6 +114,8 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
         <Info className="h-4 w-4 mr-2" />
         <AlertDescription className="text-xs">
           Pour exécuter Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code>
+          <br/>
+          Ou pour Windows PowerShell: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; .\ollama.exe serve</code>
         </AlertDescription>
       </Alert>
       
@@ -112,8 +130,12 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
           </SelectTrigger>
           <SelectContent>
             {displayModels.map((model) => (
-              <SelectItem key={model.value} value={model.value}>
-                {model.label}
+              <SelectItem 
+                key={model.value} 
+                value={model.value}
+                className={model.isAvailable ? "" : "text-muted-foreground"}
+              >
+                {model.label} {!model.isAvailable && "(non installé)"}
               </SelectItem>
             ))}
           </SelectContent>
@@ -125,6 +147,16 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
           Installez plus de modèles avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull nom_du_modèle</code>
         </p>
       </div>
+
+      <Alert className="mt-2 bg-blue-500/10 border border-blue-500/30">
+        <Database className="h-4 w-4 mr-2 text-blue-500" />
+        <AlertDescription className="text-xs">
+          Pour les paramètres avancés d'Ollama (comme dans l'article que vous avez mentionné), consultez la 
+          <a href="https://github.com/ollama/ollama/blob/main/docs/modelfile.md" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
+            documentation Modelfile
+          </a>
+        </AlertDescription>
+      </Alert>
 
       <Alert className="mt-2 bg-green-500/10 border border-green-500/30">
         <Save className="h-4 w-4 mr-2 text-green-500" />

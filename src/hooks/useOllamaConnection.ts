@@ -26,6 +26,17 @@ export const useOllamaConnection = (
   // Initialize the service
   useEffect(() => {
     ollamaServiceRef.current = new ChatOllamaService(ollamaUrl, ollamaModel);
+    
+    // Set default advanced parameters
+    if (ollamaServiceRef.current) {
+      ollamaServiceRef.current.setOptions({
+        temperature: 0.7,
+        numPredict: 256,
+        topK: 40,
+        topP: 0.9
+      });
+    }
+    
     return () => {
       // Abort any pending requests when unmounting
       ollamaServiceRef.current?.abortRequest();
@@ -50,14 +61,31 @@ export const useOllamaConnection = (
   const checkConnection = async () => {
     if (!ollamaServiceRef.current) return false;
     
+    console.log("Checking connection to Ollama server...");
     setConnectionStatus('connecting');
+    
     try {
       const result = await ollamaServiceRef.current.testConnection();
+      console.log("Connection test result:", result);
+      
       if (result.success) {
         setConnectionStatus('connected');
+        
         // Also fetch available models
+        console.log("Fetching available models...");
         const models = await ollamaServiceRef.current.listAvailableModels();
-        setAvailableModels(models);
+        console.log("Available models:", models);
+        
+        if (models.length === 0) {
+          toast({
+            title: "Aucun modèle trouvé",
+            description: "Aucun modèle n'a été trouvé sur votre serveur Ollama. Assurez-vous d'en installer avec 'ollama pull nom_du_modèle'",
+            variant: "warning",
+          });
+        } else {
+          setAvailableModels(models);
+        }
+        
         return true;
       } else {
         setConnectionStatus('error');

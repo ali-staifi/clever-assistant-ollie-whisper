@@ -8,10 +8,23 @@ export class ChatOllamaService {
   private baseUrl: string;
   private model: string;
   private controller: AbortController | null = null;
+  // Ajout des paramètres de configuration avancés
+  private options: {
+    temperature?: number;
+    numPredict?: number;
+    topK?: number;
+    topP?: number;
+  };
 
   constructor(baseUrl: string, model: string) {
     this.baseUrl = baseUrl;
     this.model = model;
+    this.options = {
+      temperature: 0.7,
+      numPredict: 256,
+      topK: 40,
+      topP: 0.9
+    };
   }
 
   setBaseUrl(baseUrl: string) {
@@ -20,6 +33,16 @@ export class ChatOllamaService {
 
   setModel(model: string) {
     this.model = model;
+  }
+
+  // Méthode pour configurer les options avancées
+  setOptions(options: {
+    temperature?: number;
+    numPredict?: number;
+    topK?: number;
+    topP?: number;
+  }) {
+    this.options = { ...this.options, ...options };
   }
 
   abortRequest() {
@@ -51,6 +74,7 @@ export class ChatOllamaService {
       if (data && data.models) {
         return data.models.map((model: any) => model.name);
       } else {
+        console.error("No models found in response:", data);
         return [];
       }
     } catch (error: any) {
@@ -101,6 +125,7 @@ export class ChatOllamaService {
           model: this.model,
           prompt: formattedPrompt,
           stream: true,
+          options: this.options
         });
       } else {
         // For chat API (standard models like Llama, Gemma, etc.)
@@ -112,6 +137,7 @@ export class ChatOllamaService {
             ...formattedMessages
           ],
           stream: true,
+          options: this.options
         });
       }
 
