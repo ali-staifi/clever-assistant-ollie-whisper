@@ -3,7 +3,7 @@ export async function handleStreamedResponse(
   response: Response,
   onProgress: (token: string) => void,
   isQwenModel: boolean,
-  abortSignal?: AbortSignal
+  abortController?: AbortController | null
 ): Promise<void> {
   const reader = response.body?.getReader();
   if (!reader) {
@@ -17,8 +17,7 @@ export async function handleStreamedResponse(
   // Add a watchdog timer to ensure we don't get stuck
   const watchdogTimer = setTimeout(() => {
     console.warn('Response watchdog timer triggered after 60 seconds');
-    if (abortSignal && 'abort' in abortSignal) {
-      const abortController = abortSignal as any;
+    if (abortController) {
       abortController.abort();
     }
   }, 60000);
