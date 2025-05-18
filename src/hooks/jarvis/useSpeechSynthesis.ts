@@ -118,6 +118,35 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
       return false;
     }
   };
+  
+  // New function for testing Arabic voices with French text
+  const testArabicVoiceInFrench = () => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    // Get available Arabic voices
+    const voices = getAvailableVoices();
+    const arabicVoices = voices.filter(voice => 
+      voice.lang.startsWith('ar') || 
+      voice.name.toLowerCase().includes('arabic') || 
+      voice.name.includes('arabe')
+    );
+    
+    // Select an Arabic voice if available
+    if (arabicVoices.length > 0) {
+      const arabicVoiceName = arabicVoices[0].name;
+      setVoice(arabicVoiceName);
+      
+      // Test with French text even though it's an Arabic voice
+      speak("Bonjour, je suis votre assistant vocal avec une voix arabe mais qui parle en français. Comment puis-je vous aider aujourd'hui?");
+      return true;
+    } else {
+      console.warn("Aucune voix arabe n'a été trouvée");
+      return false;
+    }
+  };
 
   return {
     isSpeaking,
@@ -127,6 +156,7 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     setVoice,
     setVoiceSettings,
     getAvailableVoices,
-    testFrenchVoice // Add new French test function
+    testFrenchVoice,
+    testArabicVoiceInFrench // Add new Arabic voice with French text function
   };
 };

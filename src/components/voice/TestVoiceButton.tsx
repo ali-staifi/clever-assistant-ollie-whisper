@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Music, Flag } from "lucide-react";
+import { Music, Flag, Globe } from "lucide-react";
 import { SpeechService } from '@/services/SpeechService';
 
 interface TestVoiceButtonProps {
@@ -143,6 +143,47 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
       alert("Aucune voix française n'est disponible sur votre navigateur.");
     }
   };
+  
+  // Nouvelle fonction pour tester une voix arabe parlant en français
+  const handleTestArabicVoiceInFrench = () => {
+    if (!localSpeechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    if (isSpeaking) {
+      toggleSpeaking();
+      return;
+    }
+    
+    // Chercher une voix arabe
+    const voices = localSpeechService.getAvailableVoices();
+    const arabicVoices = voices.filter(v => 
+      v.lang.startsWith('ar') || 
+      v.name.toLowerCase().includes('arabic') || 
+      v.name.includes('arabe')
+    );
+    
+    if (arabicVoices.length > 0) {
+      // Sélectionner la première voix arabe
+      const arabicVoice = arabicVoices[0];
+      localSpeechService.setVoice(arabicVoice.name);
+      
+      // Texte de test en français même si c'est une voix arabe
+      const testText = "Test d'une voix arabe parlant en français. Je suis l'assistant Jarvis avec une voix arabe mais qui parle en français. Comment puis-je vous aider aujourd'hui?";
+      
+      // Appliquer les paramètres actuels
+      localSpeechService.setRate(rate);
+      localSpeechService.setPitch(pitch);
+      localSpeechService.setVolume(volume);
+      
+      // Parler en français avec une voix arabe
+      speak(testText);
+    } else {
+      // Alerte si aucune voix arabe n'est disponible
+      alert("Aucune voix arabe n'est disponible sur votre navigateur.");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -162,6 +203,15 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
       >
         <Flag className="h-4 w-4" />
         {isSpeaking ? "Arrêter" : "Tester en français"}
+      </Button>
+      
+      <Button 
+        onClick={handleTestArabicVoiceInFrench} 
+        variant="outline" 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        <Globe className="h-4 w-4" />
+        {isSpeaking ? "Arrêter" : "Voix arabe en français"}
       </Button>
     </div>
   );
