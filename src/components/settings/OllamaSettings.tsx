@@ -17,7 +17,6 @@ interface OllamaSettingsProps {
   availableModels?: string[];
 }
 
-// Liste des modèles courants mise à jour
 const COMMON_MODELS = [
   { value: "gemma:latest", label: "Gemma Latest" },
   { value: "gemma3:latest", label: "Gemma 3" },

@@ -41,7 +41,7 @@ export const useOllamaConnection = (
       // Abort any pending requests when unmounting
       ollamaServiceRef.current?.abortRequest();
     };
-  }, [ollamaUrl, ollamaModel]); // Ajout des dépendances pour réinitialiser le service lorsque les paramètres changent
+  }, [ollamaUrl, ollamaModel]);
 
   // Check connection when URL changes
   useEffect(() => {

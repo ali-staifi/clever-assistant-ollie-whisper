@@ -23,6 +23,7 @@ export const useChatMessages = (ollamaService: ChatOllamaService | null) => {
     
     // Check connection first
     if (connectionStatus !== 'connected') {
+      console.log("Connection not established, checking...");
       const connected = await checkConnection();
       if (!connected) {
         toast({
@@ -71,14 +72,16 @@ export const useChatMessages = (ollamaService: ChatOllamaService | null) => {
         content
       });
       
-      console.log("Sending messages to Ollama:", JSON.stringify(ollamaMessages));
+      console.log("Sending messages to Ollama:", JSON.stringify(ollamaMessages, null, 2));
       
       // Generate response with streaming updates
+      let finalResponse = '';
       await ollamaService.generateChatResponse(
         content,
         ollamaMessages,
         (progressText) => {
           setPartialResponse(progressText);
+          finalResponse = progressText;
           
           // Update the assistant message with current progress
           setMessages(prev => prev.map(msg => 
@@ -89,10 +92,12 @@ export const useChatMessages = (ollamaService: ChatOllamaService | null) => {
         }
       );
       
+      console.log("Completed response generation, final response length:", finalResponse.length);
+      
       // Final update to remove pending state
       setMessages(prev => prev.map(msg => 
         msg.id === assistantMessageId 
-          ? { ...msg, content: partialResponse || "Je suis désolé, je n'ai pas pu générer de réponse.", pending: false } 
+          ? { ...msg, content: finalResponse || "Je suis désolé, je n'ai pas pu générer de réponse.", pending: false } 
           : msg
       ));
       

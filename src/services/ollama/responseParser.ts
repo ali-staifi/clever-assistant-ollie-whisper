@@ -42,7 +42,7 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
     
     return '';
   } catch (e) {
-    console.error('Failed to parse Ollama response line:', line, e);
+    console.error('Failed to parse Ollama response line:', e);
     return '';
   }
 }
