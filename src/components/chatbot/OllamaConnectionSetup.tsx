@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,13 +50,20 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
   const [isChecking, setIsChecking] = useState(false);
   const { toast } = useToast();
 
-  // Check connection on mount
+  // Check connection on mount and if model changes
   useEffect(() => {
     if (!initialSetupDone) {
       onCheckConnection();
       setInitialSetupDone(true);
     }
   }, []);
+  
+  // Re-check connection when model changes
+  useEffect(() => {
+    if (initialSetupDone) {
+      onCheckConnection();
+    }
+  }, [ollamaModel]);
 
   // Fonction pour tester la connexion avec feedback
   const handleTestConnection = async () => {
@@ -194,8 +202,6 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
           )}
         </div>
         
-        {/* Section installation requise retirée comme demandé */}
-        
         {connectionStatus === 'connected' && (
           <div>
             <label className="text-sm mb-1 block">Sélectionner un modèle</label>
@@ -242,8 +248,21 @@ const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({
                 <AlertCircle className="h-3 w-3" />
                 <AlertDescription className="ml-1 text-xs">
                   Le modèle {ollamaModel} n'est pas installé sur votre Ollama. Installez-le avec:
-                  <code className="block mt-1 p-1 bg-black/20 rounded text-[11px]">
+                  <code className="block mt-1 p-1 bg-black/20 rounded text-[11px] whitespace-normal break-words">
                     ollama pull {ollamaModel}
+                  </code>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Instructions spécifiques pour Gemma */}
+            {isUsingGemma && (
+              <Alert variant="default" className="mt-2 p-2 bg-blue-500/10 border border-blue-500/30">
+                <AlertCircle className="h-3 w-3 text-blue-500" />
+                <AlertDescription className="ml-1 text-xs">
+                  Assurez-vous d'avoir installé Gemma avec la commande:
+                  <code className="block mt-1 p-1 bg-black/20 rounded text-[11px]">
+                    ollama pull gemma:7b
                   </code>
                 </AlertDescription>
               </Alert>

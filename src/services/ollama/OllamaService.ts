@@ -1,3 +1,4 @@
+
 import { Message } from './types';
 import { formatMessagesToPrompt } from './formatUtils';
 import { parseStreamedResponse } from './responseParser';
@@ -81,15 +82,15 @@ export class OllamaService {
         if (response.status === 404) {
           const errorData = await response.json();
           if (errorData.error && errorData.error.includes("not found, try pulling it first")) {
-            throw new Error(`Model "${this.model}" is not installed on your Ollama server. Please install it using: ollama pull ${this.model}`);
+            throw new Error(`Le modèle "${this.model}" n'est pas installé sur votre serveur Ollama. Veuillez l'installer avec: ollama pull ${this.model}`);
           }
         }
         
-        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+        throw new Error(`Erreur API Ollama: ${response.status} ${response.statusText}`);
       }
 
       if (!response.body) {
-        throw new Error("Response body is empty");
+        throw new Error("Le corps de la réponse est vide");
       }
 
       const reader = response.body.getReader();
@@ -125,11 +126,21 @@ export class OllamaService {
 
       this.controller = null;
       console.log("Response generation complete");
+      
+      // Check for empty response and provide fallback
+      if (!fullResponse.trim()) {
+        const fallbackMsg = "Je suis désolé, je n'ai pas pu générer de réponse. Veuillez vérifier si le modèle Gemma est correctement installé avec 'ollama pull gemma:7b'";
+        if (onProgress) {
+          onProgress(fallbackMsg);
+        }
+        return fallbackMsg;
+      }
+      
       // Final sanitization to ensure no "undefined" text
       return fullResponse.replace(/undefined/g, '').trim();
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
-        return '[Request cancelled]';
+        return '[Requête annulée]';
       }
       
       console.error('Error calling Ollama:', error);
@@ -137,22 +148,22 @@ export class OllamaService {
       
       // Enhanced error messaging
       if (errorMsg.includes('Failed to fetch') || errorMsg.includes('CORS')) {
-        return `Error connecting to Ollama: Possible CORS issue. Make sure Ollama is running with CORS enabled: OLLAMA_ORIGINS="*" ollama serve
+        return `Erreur de connexion à Ollama: Problème CORS possible. Assurez-vous qu'Ollama est exécuté avec CORS activé: OLLAMA_ORIGINS="*" ollama serve
         
-If you get "Only one usage of each socket address" error, this means Ollama is already running. In PowerShell:
-1. Check if Ollama is running: Get-Process -Name ollama
-2. Stop the existing process: Stop-Process -Name ollama
-3. Then start again with CORS: $env:OLLAMA_ORIGINS="*"; ollama serve
-4. For Mac/Linux: OLLAMA_ORIGINS="*" ollama serve`;
+Si vous obtenez l'erreur "Only one usage of each socket address", cela signifie qu'Ollama est déjà en cours d'exécution. Dans PowerShell:
+1. Vérifiez si Ollama est en cours d'exécution: Get-Process -Name ollama
+2. Arrêtez le processus existant: Stop-Process -Name ollama
+3. Puis redémarrez avec CORS: $env:OLLAMA_ORIGINS="*"; ollama serve
+4. Pour Mac/Linux: OLLAMA_ORIGINS="*" ollama serve`;
       }
       
       if (errorMsg.includes("not installed") || errorMsg.includes("not found, try pulling it first")) {
-        return `Model Error: The model "${this.model}" is not installed on your Ollama server. Please install it first with this command:
+        return `Erreur de modèle: Le modèle "${this.model}" n'est pas installé sur votre serveur Ollama. Veuillez l'installer d'abord avec cette commande:
         
 ollama pull ${this.model}`;
       }
       
-      return `Error connecting to Ollama: ${errorMsg}`;
+      return `Erreur de connexion à Ollama: ${errorMsg}`;
     }
   }
 

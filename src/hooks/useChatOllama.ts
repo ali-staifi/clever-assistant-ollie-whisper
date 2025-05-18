@@ -15,7 +15,7 @@ export interface ChatMessage {
 
 export const useChatOllama = (
   initialUrl = 'http://localhost:11434',
-  initialModel = 'llama3'
+  initialModel = 'gemma:7b'
 ) => {
   const [ollamaUrl, setOllamaUrl] = useState<string>(initialUrl);
   const [ollamaModel, setOllamaModel] = useState<string>(initialModel);
@@ -25,35 +25,50 @@ export const useChatOllama = (
   const [isGenerating, setIsGenerating] = useState(false);
   const [partialResponse, setPartialResponse] = useState('');
   
-  const ollamaService = useRef(new ChatOllamaService(ollamaUrl, ollamaModel)).current;
+  const ollamaServiceRef = useRef<ChatOllamaService | null>(null);
   const { toast } = useToast();
+  
+  // Initialize the service
+  useEffect(() => {
+    ollamaServiceRef.current = new ChatOllamaService(ollamaUrl, ollamaModel);
+    return () => {
+      // Abort any pending requests when unmounting
+      ollamaServiceRef.current?.abortRequest();
+    };
+  }, []);
 
   // Check connection when URL or model changes
   useEffect(() => {
-    ollamaService.setBaseUrl(ollamaUrl);
-    checkConnection();
+    if (ollamaServiceRef.current) {
+      ollamaServiceRef.current.setBaseUrl(ollamaUrl);
+      checkConnection();
+    }
   }, [ollamaUrl]);
 
   // Update model when changed
   useEffect(() => {
-    ollamaService.setModel(ollamaModel);
+    if (ollamaServiceRef.current) {
+      ollamaServiceRef.current.setModel(ollamaModel);
+    }
   }, [ollamaModel]);
 
   const checkConnection = async () => {
+    if (!ollamaServiceRef.current) return false;
+    
     setConnectionStatus('connecting');
     try {
-      const result = await ollamaService.testConnection();
+      const result = await ollamaServiceRef.current.testConnection();
       if (result.success) {
         setConnectionStatus('connected');
         // Also fetch available models
-        const models = await ollamaService.listAvailableModels();
+        const models = await ollamaServiceRef.current.listAvailableModels();
         setAvailableModels(models);
         return true;
       } else {
         setConnectionStatus('error');
         toast({
-          title: "Connection Error",
-          description: result.error || "Failed to connect to Ollama server",
+          title: "Erreur de connexion",
+          description: result.error || "Impossible de se connecter au serveur Ollama",
           variant: "destructive",
         });
         return false;
@@ -61,8 +76,8 @@ export const useChatOllama = (
     } catch (error) {
       setConnectionStatus('error');
       toast({
-        title: "Connection Error",
-        description: "Failed to connect to Ollama server",
+        title: "Erreur de connexion",
+        description: "Impossible de se connecter au serveur Ollama",
         variant: "destructive",
       });
       return false;
@@ -70,15 +85,15 @@ export const useChatOllama = (
   };
 
   const sendMessage = async (content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim() || !ollamaServiceRef.current) return;
     
     // Check connection first
     if (connectionStatus !== 'connected') {
       const connected = await checkConnection();
       if (!connected) {
         toast({
-          title: "Connection Required",
-          description: "Please connect to Ollama server first",
+          title: "Connexion requise",
+          description: "Veuillez vous connecter au serveur Ollama d'abord",
           variant: "destructive",
         });
         return;
@@ -123,7 +138,7 @@ export const useChatOllama = (
       });
       
       // Generate response with streaming updates
-      await ollamaService.generateChatResponse(
+      await ollamaServiceRef.current.generateChatResponse(
         content,
         ollamaMessages,
         (progressText) => {
@@ -141,23 +156,23 @@ export const useChatOllama = (
       // Final update to remove pending state
       setMessages(prev => prev.map(msg => 
         msg.id === assistantMessageId 
-          ? { ...msg, content: partialResponse || "I'm sorry, I couldn't generate a response.", pending: false } 
+          ? { ...msg, content: partialResponse || "Je suis désolé, je n'ai pas pu générer de réponse.", pending: false } 
           : msg
       ));
       
     } catch (error) {
       console.error("Error generating response:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to generate response";
+      const errorMessage = error instanceof Error ? error.message : "Échec de la génération de la réponse";
       
       // Update assistant message with error
       setMessages(prev => prev.map(msg => 
         msg.id === assistantMessageId 
-          ? { ...msg, content: `Error: ${errorMessage}`, pending: false } 
+          ? { ...msg, content: `Erreur: ${errorMessage}`, pending: false } 
           : msg
       ));
       
       toast({
-        title: "Generation Error",
+        title: "Erreur de génération",
         description: errorMessage,
         variant: "destructive",
       });

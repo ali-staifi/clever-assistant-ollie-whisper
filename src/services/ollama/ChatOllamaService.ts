@@ -7,6 +7,7 @@ import { testOllamaConnection } from './connectionUtils';
 export class ChatOllamaService {
   private baseUrl: string;
   private model: string;
+  private controller: AbortController | null = null;
 
   constructor(baseUrl: string, model: string) {
     this.baseUrl = baseUrl;
@@ -19,6 +20,13 @@ export class ChatOllamaService {
 
   setModel(model: string) {
     this.model = model;
+  }
+
+  abortRequest() {
+    if (this.controller) {
+      this.controller.abort();
+      this.controller = null;
+    }
   }
 
   // Test the connection to the Ollama server
@@ -65,6 +73,10 @@ export class ChatOllamaService {
     onProgress: (token: string) => void
   ): Promise<void> {
     try {
+      // Cancel any previous requests
+      this.abortRequest();
+      this.controller = new AbortController();
+      
       // Format messages to the format expected by the API
       const formattedMessages = messages.map(msg => ({
         role: msg.role,
@@ -110,6 +122,7 @@ export class ChatOllamaService {
           'Content-Type': 'application/json',
         },
         body: requestBody,
+        signal: this.controller.signal
       });
 
       // Handle HTTP errors
@@ -167,8 +180,22 @@ export class ChatOllamaService {
           }
         }
       }
+      
+      // If we got no content after all processing, provide a fallback message
+      if (!partialResponse.trim()) {
+        const fallbackMsg = "Je suis désolé, je n'ai pas pu générer de réponse. Veuillez vérifier si le modèle est correctement installé.";
+        onProgress(fallbackMsg);
+      }
+      
+      this.controller = null;
+      
     } catch (error) {
       console.error('Error generating chat response:', error);
+      
+      // Provide an error message to display to the user
+      const errorMsg = error instanceof Error ? error.message : "Une erreur s'est produite lors de la communication avec Ollama";
+      onProgress(`Erreur: ${errorMsg}`);
+      
       throw error;
     }
   }
