@@ -6,6 +6,7 @@ import VoiceControl from './jarvis/VoiceControl';
 import ConversationView from './jarvis/ConversationView';
 import ErrorDisplay from './jarvis/ErrorDisplay';
 import SettingsPanel from './SettingsPanel';
+import LanguageControls from './jarvis/LanguageControls';
 
 const JarvisInterface = () => {
   const {
@@ -35,7 +36,9 @@ const JarvisInterface = () => {
     dismissError,
     testMicrophone,
     noMicrophoneMode,
-    toggleNoMicrophoneMode
+    toggleNoMicrophoneMode,
+    responseLanguage,
+    changeResponseLanguage
   } = useJarvisServices();
   
   // Listen for settings toggle events from Navigation
@@ -80,6 +83,14 @@ const JarvisInterface = () => {
           availableModels={availableModels}
         />
       )}
+      
+      {/* Language Controls */}
+      <div className="mb-4">
+        <LanguageControls
+          currentLanguage={responseLanguage}
+          onLanguageChange={changeResponseLanguage}
+        />
+      </div>
       
       {/* Main Interface */}
       <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden">
