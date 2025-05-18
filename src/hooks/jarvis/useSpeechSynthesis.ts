@@ -8,10 +8,12 @@ interface VoiceSettings {
   pitch?: number;
   volume?: number;
   roboticEffect?: number;
+  language?: string; // Ajout d'un paramètre de langue
 }
 
 export const useSpeechSynthesis = (speechService?: SpeechService) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState('fr-FR'); // Par défaut en français
   
   const speak = (text: string) => {
     if (!speechService) {
@@ -56,6 +58,34 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     
     // La méthode setVoice dans SpeechService gère maintenant la synchronisation des langues
     speechService.setVoice(voiceName);
+    
+    // Mettre à jour la langue actuelle en fonction de la voix
+    const voices = getAvailableVoices();
+    const selectedVoice = voices.find(voice => voice.name === voiceName);
+    if (selectedVoice) {
+      setCurrentLanguage(selectedVoice.lang);
+    }
+  };
+  
+  const setLanguage = (language: string) => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    setCurrentLanguage(language);
+    speechService.setLanguage(language);
+    
+    // Sélectionner automatiquement une voix correspondant à la langue
+    const voices = getAvailableVoices();
+    const matchingVoices = voices.filter(voice => 
+      voice.lang.startsWith(language.split('-')[0])
+    );
+    
+    if (matchingVoices.length > 0) {
+      // Sélectionner la première voix correspondant à la langue
+      setVoice(matchingVoices[0].name);
+    }
   };
   
   const setVoiceSettings = (settings: VoiceSettings) => {
@@ -67,6 +97,11 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     if (settings.voiceName) {
       // This will handle language synchronization
       setVoice(settings.voiceName);
+    }
+    
+    if (settings.language) {
+      // Set language explicitly if provided
+      setLanguage(settings.language);
     }
     
     if (settings.rate !== undefined) {
@@ -90,6 +125,12 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     return speechService ? speechService.getAvailableVoices() : [];
   };
   
+  // Fonction pour obtenir les voix disponibles pour une langue spécifique
+  const getVoicesForLanguage = (langCode: string) => {
+    const voices = getAvailableVoices();
+    return voices.filter(voice => voice.lang.startsWith(langCode));
+  };
+  
   // Helper function for testing French voice specifically
   const testFrenchVoice = () => {
     if (!speechService) {
@@ -98,12 +139,7 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     }
     
     // Get available French voices
-    const voices = getAvailableVoices();
-    const frenchVoices = voices.filter(voice => 
-      voice.lang.startsWith('fr') || 
-      voice.name.toLowerCase().includes('french') ||
-      voice.name.includes('français')
-    );
+    const frenchVoices = getVoicesForLanguage('fr');
     
     // Select a French voice if available
     if (frenchVoices.length > 0) {
@@ -119,7 +155,31 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     }
   };
   
-  // New function for testing Arabic voices with French text
+  // Fonction pour tester les voix arabes
+  const testArabicVoice = () => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    // Get available Arabic voices
+    const arabicVoices = getVoicesForLanguage('ar');
+    
+    // Select an Arabic voice if available
+    if (arabicVoices.length > 0) {
+      const arabicVoiceName = arabicVoices[0].name;
+      setVoice(arabicVoiceName);
+      
+      // Test with Arabic text
+      speak("مرحبا، أنا المساعد الصوتي الخاص بك. أتحدث العربية الآن. كيف يمكنني مساعدتك اليوم؟");
+      return true;
+    } else {
+      console.warn("لم يتم العثور على صوت عربي");
+      return false;
+    }
+  };
+  
+  // Function for testing Arabic voices with French text
   const testArabicVoiceInFrench = () => {
     if (!speechService) {
       console.error("Speech service is not available");
@@ -154,9 +214,13 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     toggleSpeaking,
     stopSpeaking,
     setVoice,
+    setLanguage,
     setVoiceSettings,
     getAvailableVoices,
+    getVoicesForLanguage,
     testFrenchVoice,
-    testArabicVoiceInFrench // Add new Arabic voice with French text function
+    testArabicVoice,
+    testArabicVoiceInFrench,
+    currentLanguage
   };
 };

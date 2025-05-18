@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useOllamaService } from './jarvis/useOllamaService';
 import { useSpeechService } from './jarvis/useSpeechService';
@@ -6,6 +5,7 @@ import { useConversation } from './jarvis/useConversation';
 
 export const useJarvisServices = () => {
   const [showSettings, setShowSettings] = useState(false);
+  const [responseLanguage, setResponseLanguage] = useState('fr-FR'); // Langue par défaut: français
   
   const {
     ollamaUrl,
@@ -38,6 +38,7 @@ export const useJarvisServices = () => {
     toggleNoMicrophoneMode,
     configureMaryTTS,
     testMaryTTSConnection,
+    setLanguage,
     speechService
   } = useSpeechService();
 
@@ -55,7 +56,16 @@ export const useJarvisServices = () => {
   // Expose speech service globally for component access
   useEffect(() => {
     window.jarvisSpeechService = speechService;
-  }, [speechService]);
+    
+    // Charger les préférences de langue depuis localStorage
+    const savedLanguage = localStorage.getItem('jarvis-response-language');
+    if (savedLanguage) {
+      setResponseLanguage(savedLanguage);
+      if (setLanguage) {
+        setLanguage(savedLanguage);
+      }
+    }
+  }, [speechService, setLanguage]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -103,8 +113,22 @@ export const useJarvisServices = () => {
       // Store the full response text
       let fullResponse = '';
       
+      // Définir les instructions de langue pour Ollama
+      let languageInstruction = '';
+      if (responseLanguage.startsWith('fr')) {
+        languageInstruction = "Ta réponse doit être en français.";
+      } else if (responseLanguage.startsWith('ar')) {
+        languageInstruction = "يجب أن تكون إجابتك باللغة العربية.";
+      } else if (responseLanguage.startsWith('en')) {
+        languageInstruction = "Your response must be in English.";
+      }
+      
+      // Ajouter l'instruction de langue à la requête
+      const promptWithLanguage = languageInstruction ? 
+        `${languageInstruction} ${text}` : text;
+      
       await ollamaService.generateResponse(
-        text,
+        promptWithLanguage,
         messages,
         (progressText) => {
           // Update both the temporary response state and our full response
@@ -131,6 +155,16 @@ export const useJarvisServices = () => {
 
   const dismissError = () => {
     setErrorMessage('');
+  };
+  
+  // Nouvelle fonction pour changer la langue de réponse
+  const changeResponseLanguage = (language: string) => {
+    setResponseLanguage(language);
+    if (setLanguage) {
+      setLanguage(language);
+    }
+    // Sauvegarder la préférence de langue
+    localStorage.setItem('jarvis-response-language', language);
   };
 
   return {
@@ -163,7 +197,9 @@ export const useJarvisServices = () => {
     toggleNoMicrophoneMode,
     configureMaryTTS,
     testMaryTTSConnection,
-    speechService
+    speechService,
+    responseLanguage,
+    changeResponseLanguage
   };
 };
 

@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Music, Flag, Globe } from "lucide-react";
+import { Music, Flag, Globe, Languages } from "lucide-react";
 import { SpeechService } from '@/services/SpeechService';
 
 interface TestVoiceButtonProps {
@@ -144,7 +143,7 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
     }
   };
   
-  // Nouvelle fonction pour tester une voix arabe parlant en français
+  // Fonction pour tester une voix arabe parlant en français
   const handleTestArabicVoiceInFrench = () => {
     if (!localSpeechService) {
       console.error("Speech service is not available");
@@ -184,6 +183,47 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
       alert("Aucune voix arabe n'est disponible sur votre navigateur.");
     }
   };
+  
+  // Nouvelle fonction pour tester une voix arabe parlant en arabe
+  const handleTestArabicVoice = () => {
+    if (!localSpeechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    if (isSpeaking) {
+      toggleSpeaking();
+      return;
+    }
+    
+    // Chercher une voix arabe
+    const voices = localSpeechService.getAvailableVoices();
+    const arabicVoices = voices.filter(v => 
+      v.lang.startsWith('ar') || 
+      v.name.toLowerCase().includes('arabic') || 
+      v.name.includes('arabe')
+    );
+    
+    if (arabicVoices.length > 0) {
+      // Sélectionner la première voix arabe
+      const arabicVoice = arabicVoices[0];
+      localSpeechService.setVoice(arabicVoice.name);
+      
+      // Texte de test en arabe
+      const testText = "مرحبا، أنا المساعد جارفيس وأتحدث باللغة العربية الآن. كيف يمكنني مساعدتك؟";
+      
+      // Appliquer les paramètres actuels
+      localSpeechService.setRate(rate);
+      localSpeechService.setPitch(pitch);
+      localSpeechService.setVolume(volume);
+      
+      // Parler en arabe
+      speak(testText);
+    } else {
+      // Alerte si aucune voix arabe n'est disponible
+      alert("لا توجد أصوات عربية متاحة في متصفحك");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -212,6 +252,15 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
       >
         <Globe className="h-4 w-4" />
         {isSpeaking ? "Arrêter" : "Voix arabe en français"}
+      </Button>
+      
+      <Button 
+        onClick={handleTestArabicVoice} 
+        variant="outline" 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        <Languages className="h-4 w-4" />
+        {isSpeaking ? "توقف" : "اختبار باللغة العربية"}
       </Button>
     </div>
   );
