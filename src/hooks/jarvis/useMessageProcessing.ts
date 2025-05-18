@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Message } from '@/services/ollama/types';
 import { OllamaService } from '@/services/ollama/OllamaService';
+import { useToast } from '@/hooks/use-toast';
 
 export const useMessageProcessing = (
   ollamaService: OllamaService,
@@ -11,6 +12,7 @@ export const useMessageProcessing = (
 ) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [response, setResponse] = useState('');
+  const { toast } = useToast();
   
   const processOllamaResponse = async (text: string, responseLanguage: string) => {
     setIsProcessing(true);
@@ -34,7 +36,16 @@ export const useMessageProcessing = (
       const promptWithLanguage = languageInstruction ? 
         `${languageInstruction} ${text}` : text;
       
-      await ollamaService.generateResponse(
+      console.log('Sending request to Ollama:', promptWithLanguage);
+      console.log('Current messages history:', JSON.stringify(messages));
+      
+      // Ajout d'un timeout pour abandonner la requête si elle prend trop de temps
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('La requête a pris trop de temps')), 60000);
+      });
+      
+      // Création d'une promesse pour la génération de réponse
+      const responsePromise = ollamaService.generateResponse(
         promptWithLanguage,
         messages,
         (progressText) => {
@@ -43,6 +54,16 @@ export const useMessageProcessing = (
           setResponse(progressText);
         }
       );
+      
+      // Utilisation de Promise.race pour limiter le temps d'attente
+      await Promise.race([responsePromise, timeoutPromise]);
+      
+      // Si nous arrivons ici, c'est que la requête a abouti
+      console.log('Response completed, full length:', fullResponse.length);
+      
+      if (fullResponse.trim() === '') {
+        throw new Error('La réponse reçue est vide');
+      }
       
       // Save assistant response to messages and speak it
       addAssistantMessage(fullResponse);
@@ -54,7 +75,18 @@ export const useMessageProcessing = (
       console.error('Error processing with Ollama:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
       
+      // Afficher l'erreur dans l'interface
       setResponse(`Désolé, j'ai rencontré une erreur lors du traitement de votre demande: ${errorMsg}`);
+      
+      // Enregistrer également cette erreur comme message de l'assistant
+      addAssistantMessage(`Désolé, j'ai rencontré une erreur lors du traitement de votre demande: ${errorMsg}`);
+      
+      // Notification de l'erreur
+      toast({
+        title: "Erreur de traitement",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
     }
