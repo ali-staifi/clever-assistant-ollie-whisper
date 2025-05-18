@@ -15,15 +15,18 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState('fr-FR'); // Par défaut en français
   
-  const speak = (text: string) => {
+  const speak = async (text: string): Promise<boolean> => {
     if (!speechService) {
       console.error("Speech service is not available");
-      return;
+      return false;
     }
     
     setIsSpeaking(true);
-    speechService.speak(text, () => {
-      setIsSpeaking(false);
+    return new Promise<boolean>((resolve) => {
+      speechService.speak(text, () => {
+        setIsSpeaking(false);
+        resolve(true);
+      });
     });
   };
 

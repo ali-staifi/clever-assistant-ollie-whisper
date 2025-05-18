@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Music, Flag, Globe, Languages } from "lucide-react";
@@ -12,7 +13,7 @@ interface TestVoiceButtonProps {
   pitch: number;
   volume: number;
   roboticEffect: number;
-  speak: (text: string) => void;
+  speak: (text: string) => Promise<boolean>;
 }
 
 const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
@@ -94,7 +95,7 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
       }
       
       // Parler le texte de test
-      speak(testText);
+      speak(testText).catch(console.error);
       
       // Réinitialiser aux paramètres d'origine après le test
       if (roboticEffect > 0) {
