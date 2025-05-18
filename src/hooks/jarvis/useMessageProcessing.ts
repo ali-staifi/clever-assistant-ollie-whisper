@@ -47,7 +47,7 @@ export const useMessageProcessing = (
       // Save assistant response to messages and speak it
       addAssistantMessage(fullResponse);
       if (speak) {
-        speak(fullResponse);
+        await speak(fullResponse);
       }
       
     } catch (error) {

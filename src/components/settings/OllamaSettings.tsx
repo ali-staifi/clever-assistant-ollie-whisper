@@ -17,13 +17,13 @@ interface OllamaSettingsProps {
   availableModels?: string[];
 }
 
-// Common models list moved from SettingsPanel
+// Common models list with Mixtral as the default choice now
 const COMMON_MODELS = [
+  { value: "mixtral", label: "Mixtral 8x7B" },
   { value: "llama3", label: "Llama 3 (8B)" },
   { value: "llama3:8b-instruct-q4_0", label: "Llama 3 (8B) Instruct Q4" },
   { value: "llama3:70b-instruct-q4_0", label: "Llama 3 (70B) Instruct Q4" },
   { value: "mistral", label: "Mistral" },
-  { value: "mixtral", label: "Mixtral 8x7B" },
   { value: "phi3:mini", label: "Phi-3 Mini" },
   { value: "phi3:medium", label: "Phi-3 Medium" },
   { value: "gemma:7b", label: "Gemma 7B" },
@@ -64,7 +64,7 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="ollama-url">Ollama API URL</Label>
+        <Label htmlFor="ollama-url">URL de l'API Ollama</Label>
         <div className="flex gap-2">
           <Input
             id="ollama-url"
@@ -78,11 +78,11 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
             className={`${ollamaStatus === 'connecting' ? 'opacity-70' : ''}`}
             disabled={ollamaStatus === 'connecting'}
           >
-            {ollamaStatus === 'connecting' ? 'Connecting...' : 'Test'}
+            {ollamaStatus === 'connecting' ? 'Connexion...' : 'Tester'}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          The URL where your Ollama server is running
+          L'URL où votre serveur Ollama est en cours d'exécution
         </p>
       </div>
       
@@ -90,7 +90,7 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
         <Alert variant="destructive" className="mt-2">
           <AlertCircle className="h-4 w-4 mr-2" />
           <AlertDescription>
-            Cannot connect to Ollama. Make sure Ollama is running with CORS enabled.
+            Impossible de se connecter à Ollama. Assurez-vous qu'Ollama est en cours d'exécution avec CORS activé.
           </AlertDescription>
         </Alert>
       )}
@@ -98,18 +98,18 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
       <Alert className="bg-muted/50 border border-muted">
         <Info className="h-4 w-4 mr-2" />
         <AlertDescription className="text-xs">
-          To run Ollama with CORS enabled: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code>
+          Pour exécuter Ollama avec CORS activé: <code className="bg-muted-foreground/20 px-1 rounded">$env:OLLAMA_ORIGINS="*"; ollama serve</code>
         </AlertDescription>
       </Alert>
       
       <div className="space-y-2">
-        <Label htmlFor="ollama-model">Ollama Model</Label>
+        <Label htmlFor="ollama-model">Modèle Ollama</Label>
         <Select
           value={ollamaModel}
           onValueChange={onOllamaModelChange}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select a model" />
+            <SelectValue placeholder="Sélectionner un modèle" />
           </SelectTrigger>
           <SelectContent>
             {displayModels.map((model) => (
@@ -120,10 +120,10 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          The model should be installed on your Ollama server
+          Le modèle doit être installé sur votre serveur Ollama
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          Install more models using: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull modelname</code>
+          Installez plus de modèles avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull nom_du_modèle</code>
         </p>
       </div>
     </>
