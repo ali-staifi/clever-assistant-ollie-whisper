@@ -10,7 +10,7 @@ export const useChatOllama = (
   initialUrl = 'http://localhost:11434',
   initialModel = 'gemma:7b'
 ) => {
-  // Utiliser le hook de connexion
+  // Use the connection hook which now uses persistent settings
   const {
     ollamaUrl,
     ollamaModel,
@@ -22,7 +22,7 @@ export const useChatOllama = (
     checkConnection
   } = useOllamaConnection(initialUrl, initialModel);
 
-  // Utiliser le hook de messages
+  // Use the chat messages hook
   const {
     messages,
     isGenerating,
@@ -31,7 +31,15 @@ export const useChatOllama = (
     clearMessages
   } = useChatMessages(ollamaService);
 
-  // Wrapper pour la fonction sendMessage qui inclut les informations de connexion
+  // Check connection when the component mounts
+  useEffect(() => {
+    // Check connection on initial load
+    if (connectionStatus === 'idle') {
+      checkConnection();
+    }
+  }, []);
+
+  // Wrapper for the sendMessage function that includes the connection information
   const sendMessage = async (content: string) => {
     await sendMessageBase(content, connectionStatus, checkConnection);
   };

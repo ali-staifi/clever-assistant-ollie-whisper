@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Info } from "lucide-react";
+import { AlertCircle, Info, Save } from "lucide-react";
 
 interface OllamaSettingsProps {
   ollamaUrl: string;
@@ -124,6 +125,13 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
           Installez plus de modèles avec: <code className="bg-muted-foreground/20 px-1 rounded">ollama pull nom_du_modèle</code>
         </p>
       </div>
+
+      <Alert className="mt-2 bg-green-500/10 border border-green-500/30">
+        <Save className="h-4 w-4 mr-2 text-green-500" />
+        <AlertDescription className="text-xs text-green-600">
+          Vos paramètres sont automatiquement sauvegardés et seront restaurés lors de votre prochaine visite.
+        </AlertDescription>
+      </Alert>
     </>
   );
 };

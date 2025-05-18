@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChatOllamaService } from '@/services/ollama/ChatOllamaService';
 import { useToast } from '@/hooks/use-toast';
+import { usePersistentSettings } from './usePersistentSettings';
 
 export type OllamaConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error';
 
@@ -9,8 +10,13 @@ export const useOllamaConnection = (
   initialUrl = 'http://localhost:11434',
   initialModel = 'gemma:7b'
 ) => {
-  const [ollamaUrl, setOllamaUrl] = useState<string>(initialUrl);
-  const [ollamaModel, setOllamaModel] = useState<string>(initialModel);
+  const {
+    ollamaUrl,
+    ollamaModel,
+    updateOllamaUrl,
+    updateOllamaModel
+  } = usePersistentSettings(initialUrl, initialModel);
+  
   const [connectionStatus, setConnectionStatus] = useState<OllamaConnectionStatus>('idle');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   
@@ -79,8 +85,8 @@ export const useOllamaConnection = (
     connectionStatus,
     availableModels,
     ollamaService: ollamaServiceRef.current,
-    setOllamaUrl,
-    setOllamaModel,
+    setOllamaUrl: updateOllamaUrl,
+    setOllamaModel: updateOllamaModel,
     checkConnection
   };
 };
