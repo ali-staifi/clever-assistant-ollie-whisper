@@ -25,16 +25,23 @@ export const useOllamaConnection = (
   
   // Initialize the service
   useEffect(() => {
-    ollamaServiceRef.current = new ChatOllamaService(ollamaUrl, ollamaModel);
+    if (!ollamaUrl) return;
     
-    // Set default advanced parameters
-    if (ollamaServiceRef.current) {
-      ollamaServiceRef.current.setOptions({
-        temperature: 0.7,
-        numPredict: 256,
-        topK: 40,
-        topP: 0.9
-      });
+    try {
+      ollamaServiceRef.current = new ChatOllamaService(ollamaUrl, ollamaModel);
+      
+      // Set default advanced parameters
+      if (ollamaServiceRef.current) {
+        ollamaServiceRef.current.setOptions({
+          temperature: 0.7,
+          numPredict: 256,
+          topK: 40,
+          topP: 0.9
+        });
+      }
+    } catch (error) {
+      console.error("Error initializing Ollama service:", error);
+      setConnectionStatus('error');
     }
     
     return () => {
@@ -45,7 +52,7 @@ export const useOllamaConnection = (
 
   // Check connection when URL changes
   useEffect(() => {
-    if (ollamaServiceRef.current) {
+    if (ollamaServiceRef.current && ollamaUrl) {
       ollamaServiceRef.current.setBaseUrl(ollamaUrl);
       checkConnection();
     }
@@ -59,7 +66,10 @@ export const useOllamaConnection = (
   }, [ollamaModel]);
 
   const checkConnection = async () => {
-    if (!ollamaServiceRef.current) return false;
+    if (!ollamaServiceRef.current || !ollamaUrl) {
+      setConnectionStatus('error');
+      return false;
+    }
     
     console.log("Checking connection to Ollama server...");
     setConnectionStatus('connecting');
