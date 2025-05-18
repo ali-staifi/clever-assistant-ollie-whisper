@@ -1,4 +1,3 @@
-
 import { Message } from './types';
 import { formatMessagesToPrompt } from './formatUtils';
 import { parseStreamedResponse } from './responseParser';
@@ -10,7 +9,7 @@ export class OllamaService {
   private controller: AbortController | null = null;
   private language: string = 'french'; // Définir le français comme langue par défaut
 
-  constructor(baseUrl: string = 'http://localhost:11434', model: string = 'llama3') {
+  constructor(baseUrl: string = 'http://localhost:11434', model: string = 'gemma:7b') {
     this.baseUrl = baseUrl;
     this.model = model;
   }

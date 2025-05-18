@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const useOllamaService = (
   initialUrl = 'http://localhost:11434',
-  initialModel = 'mixtral' // Changed default model from 'llama3' to 'mixtral'
+  initialModel = 'gemma:7b' // Changed default model from 'mixtral' to 'gemma:7b'
 ) => {
   const [ollamaUrl, setOllamaUrl] = useState(initialUrl);
   const [ollamaModel, setOllamaModel] = useState(initialModel);

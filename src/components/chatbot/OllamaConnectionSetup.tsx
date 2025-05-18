@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +19,8 @@ interface OllamaConnectionSetupProps {
 }
 
 const COMMON_MODELS = [
+  { value: "gemma:7b", label: "Gemma (7B)" },
+  { value: "gemma:2b", label: "Gemma (2B)" },
   { value: "llama3", label: "Llama 3 (8B)" },
   { value: "llama3:8b-instruct-q4_0", label: "Llama 3 (8B) Instruct Q4" },
   { value: "llama3:70b-instruct-q4_0", label: "Llama 3 (70B) Instruct Q4" },
@@ -31,8 +32,6 @@ const COMMON_MODELS = [
   { value: "qwen2:4b", label: "Qwen 2 (4B)" },
   { value: "qwen2:1.5b", label: "Qwen 2 (1.5B)" }, 
   { value: "qwen:14b", label: "Qwen 1 (14B)" },
-  { value: "gemma:7b", label: "Gemma (7B)" },
-  { value: "gemma:2b", label: "Gemma (2B)" },
 ];
 
 const OllamaConnectionSetup: React.FC<OllamaConnectionSetupProps> = ({

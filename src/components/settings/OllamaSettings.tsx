@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +16,10 @@ interface OllamaSettingsProps {
   availableModels?: string[];
 }
 
-// Common models list with Mixtral as the default choice now
+// Common models list with Gemma as the default choice now
 const COMMON_MODELS = [
+  { value: "gemma:7b", label: "Gemma 7B" },
+  { value: "gemma:2b", label: "Gemma 2B" },
   { value: "mixtral", label: "Mixtral 8x7B" },
   { value: "llama3", label: "Llama 3 (8B)" },
   { value: "llama3:8b-instruct-q4_0", label: "Llama 3 (8B) Instruct Q4" },
@@ -26,9 +27,6 @@ const COMMON_MODELS = [
   { value: "mistral", label: "Mistral" },
   { value: "phi3:mini", label: "Phi-3 Mini" },
   { value: "phi3:medium", label: "Phi-3 Medium" },
-  { value: "gemma:7b", label: "Gemma 7B" },
-  { value: "gemma:2b", label: "Gemma 2B" },
-  { value: "codellama", label: "CodeLlama" },
   { value: "qwen2", label: "Qwen 2" },
 ];
 
