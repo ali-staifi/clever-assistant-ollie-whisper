@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,41 +23,6 @@ const ApiPage = () => {
         
         <TabsContent value="settings">
           <div className="grid gap-6">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Paramètres Ollama</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">URL du serveur</label>
-                  <Input 
-                    defaultValue="http://localhost:11434" 
-                    placeholder="URL du serveur Ollama" 
-                    className="max-w-md"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    L'URL où votre serveur Ollama est accessible
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium mb-1">Modèle</label>
-                  <Input 
-                    defaultValue="llama3" 
-                    placeholder="Nom du modèle" 
-                    className="max-w-md"
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Le modèle à utiliser pour les requêtes
-                  </p>
-                </div>
-                
-                <div className="pt-2">
-                  <Button>
-                    Vérifier la connexion
-                  </Button>
-                </div>
-              </div>
-            </Card>
-            
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">API Externes</h2>
               <div className="space-y-4">
