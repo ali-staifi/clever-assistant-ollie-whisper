@@ -80,7 +80,7 @@ export const useOllamaConnection = (
           toast({
             title: "Aucun modèle trouvé",
             description: "Aucun modèle n'a été trouvé sur votre serveur Ollama. Assurez-vous d'en installer avec 'ollama pull nom_du_modèle'",
-            variant: "warning",
+            variant: "default", // Changed from "warning" to "default" to fix the type error
           });
         } else {
           setAvailableModels(models);
