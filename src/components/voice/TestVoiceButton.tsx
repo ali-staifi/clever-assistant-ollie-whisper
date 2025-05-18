@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Music } from "lucide-react";
+import { Music, Flag } from "lucide-react";
 import { SpeechService } from '@/services/SpeechService';
 
 interface TestVoiceButtonProps {
@@ -62,6 +62,11 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
         testText = "こんにちは、音声アシスタントです。今日はどのようにお手伝いできますか？";
       }
       
+      // Texte spécifique pour le français (plus développé)
+      if (lang.startsWith('fr')) {
+        testText = "Bonjour, je suis votre assistant vocal en français. Je peux vous aider avec différentes tâches et répondre à vos questions. N'hésitez pas à me demander ce que vous voulez.";
+      }
+      
       // Appliquer les paramètres temporairement pour le test
       localSpeechService.setRate(rate);
       localSpeechService.setPitch(pitch);
@@ -102,15 +107,63 @@ const TestVoiceButton: React.FC<TestVoiceButtonProps> = ({
     }
   };
 
+  // Fonction de test spécifique pour le français
+  const handleTestFrenchVoice = () => {
+    if (!localSpeechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    if (isSpeaking) {
+      toggleSpeaking();
+      return;
+    }
+    
+    // Chercher une voix française
+    const voices = localSpeechService.getAvailableVoices();
+    const frenchVoices = voices.filter(v => v.lang.startsWith('fr'));
+    
+    if (frenchVoices.length > 0) {
+      // Sélectionner la première voix française
+      const frenchVoice = frenchVoices[0];
+      localSpeechService.setVoice(frenchVoice.name);
+      
+      // Texte de test en français
+      const testText = "Test de la voix française. Je suis l'assistant Jarvis et je vous réponds maintenant en français. Comment puis-je vous aider aujourd'hui?";
+      
+      // Appliquer les paramètres actuels
+      localSpeechService.setRate(rate);
+      localSpeechService.setPitch(pitch);
+      localSpeechService.setVolume(volume);
+      
+      // Parler en français
+      speak(testText);
+    } else {
+      // Alerte si aucune voix française n'est disponible
+      alert("Aucune voix française n'est disponible sur votre navigateur.");
+    }
+  };
+
   return (
-    <Button 
-      onClick={handleTestVoice} 
-      variant="outline" 
-      className="w-full flex items-center justify-center gap-2"
-    >
-      <Music className="h-4 w-4" />
-      {isSpeaking ? "Arrêter le test" : "Tester la voix"}
-    </Button>
+    <div className="flex flex-col gap-2">
+      <Button 
+        onClick={handleTestVoice} 
+        variant="outline" 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        <Music className="h-4 w-4" />
+        {isSpeaking ? "Arrêter le test" : "Tester la voix"}
+      </Button>
+      
+      <Button 
+        onClick={handleTestFrenchVoice} 
+        variant="outline" 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        <Flag className="h-4 w-4" />
+        {isSpeaking ? "Arrêter" : "Tester en français"}
+      </Button>
+    </div>
   );
 };
 

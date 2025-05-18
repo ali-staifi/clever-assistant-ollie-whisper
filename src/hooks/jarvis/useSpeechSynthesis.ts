@@ -89,6 +89,35 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
   const getAvailableVoices = () => {
     return speechService ? speechService.getAvailableVoices() : [];
   };
+  
+  // Helper function for testing French voice specifically
+  const testFrenchVoice = () => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    // Get available French voices
+    const voices = getAvailableVoices();
+    const frenchVoices = voices.filter(voice => 
+      voice.lang.startsWith('fr') || 
+      voice.name.toLowerCase().includes('french') ||
+      voice.name.includes('français')
+    );
+    
+    // Select a French voice if available
+    if (frenchVoices.length > 0) {
+      const frenchVoiceName = frenchVoices[0].name;
+      setVoice(frenchVoiceName);
+      
+      // Test with French text
+      speak("Bonjour, je suis votre assistant vocal. Je parle français maintenant. Comment puis-je vous aider aujourd'hui?");
+      return true;
+    } else {
+      console.warn("Aucune voix française n'a été trouvée");
+      return false;
+    }
+  };
 
   return {
     isSpeaking,
@@ -97,6 +126,7 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     stopSpeaking,
     setVoice,
     setVoiceSettings,
-    getAvailableVoices
+    getAvailableVoices,
+    testFrenchVoice // Add new French test function
   };
 };
