@@ -52,30 +52,38 @@ export class SpeechService {
     this.synthesisService.setLanguage(lang);
   }
   
-  // Méthode pour définir la voix
+  // Improved voice setting that properly synchronizes language across all services
   setVoice(voiceName: string) {
-    // Définir d'abord la voix
-    this.synthesisService.setVoice(voiceName);
-    
-    // Obtenir les voix disponibles
+    // First, get the voice details
     const voices = this.getAvailableVoices();
     const selectedVoice = voices.find(voice => voice.name === voiceName);
     
-    // Si une voix correspondante est trouvée, synchroniser la langue
-    if (selectedVoice) {
-      console.log(`Synchronisation de la langue avec la voix sélectionnée: ${selectedVoice.lang}`);
-      
-      // Mettre à jour la langue de synthèse
-      this.synthesisService.setLanguage(selectedVoice.lang);
-      
-      // Adapter la langue de reconnaissance si possible
-      // Note: la reconnaissance a généralement besoin d'un format 'fr-FR', 'en-US', etc.
-      const langParts = selectedVoice.lang.split('-');
-      if (langParts.length >= 2) {
-        const recognitionLang = `${langParts[0]}-${langParts[1].toUpperCase()}`;
-        this.recognitionService.setLanguage(recognitionLang);
-        console.log(`Langue de reconnaissance définie sur: ${recognitionLang}`);
-      }
+    if (!selectedVoice) {
+      console.warn(`Voix non trouvée: ${voiceName}`);
+      return;
+    }
+    
+    // Set the voice in the synthesis service
+    this.synthesisService.setVoice(voiceName);
+    
+    // CRITICAL: Always sync languages across all services when voice changes
+    console.log(`Synchronisation de la langue avec la voix sélectionnée: ${selectedVoice.lang}`);
+    
+    // Update synthesis language to exactly match the voice's language
+    this.synthesisService.setLanguage(selectedVoice.lang);
+    
+    // Format the language code for recognition (which often needs a specific format)
+    const langCode = selectedVoice.lang.split('-')[0];
+    const countryCode = selectedVoice.lang.split('-')[1] || '';
+    
+    // Set recognition language in the format it expects
+    if (countryCode) {
+      const recognitionLang = `${langCode}-${countryCode.toUpperCase()}`;
+      this.recognitionService.setLanguage(recognitionLang);
+      console.log(`Langue de reconnaissance définie sur: ${recognitionLang}`);
+    } else {
+      this.recognitionService.setLanguage(langCode);
+      console.log(`Langue de reconnaissance définie sur: ${langCode}`);
     }
   }
   

@@ -38,25 +38,24 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     }
   };
   
+  const stopSpeaking = () => {
+    if (!speechService) {
+      console.error("Speech service is not available");
+      return;
+    }
+    
+    speechService.stopSpeaking();
+    setIsSpeaking(false);
+  };
+  
   const setVoice = (voiceName: string) => {
     if (!speechService) {
       console.error("Speech service is not available");
       return;
     }
     
-    // Trouver la voix pour obtenir sa langue
-    const voices = speechService.getAvailableVoices();
-    const selectedVoice = voices.find(voice => voice.name === voiceName);
-    
-    // Définir la voix
+    // The setVoice method in SpeechService now handles all language synchronization
     speechService.setVoice(voiceName);
-    
-    // Mettre à jour la langue si une voix est trouvée
-    if (selectedVoice) {
-      // Synchroniser la langue avec celle de la voix
-      speechService.setLanguage(selectedVoice.lang);
-      console.log(`Langue mise à jour en fonction de la voix: ${selectedVoice.lang}`);
-    }
   };
   
   const setVoiceSettings = (settings: VoiceSettings) => {
@@ -66,7 +65,7 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
     }
     
     if (settings.voiceName) {
-      // Utiliser setVoice qui synchronisera aussi la langue
+      // This will handle language synchronization
       setVoice(settings.voiceName);
     }
     
@@ -89,16 +88,6 @@ export const useSpeechSynthesis = (speechService?: SpeechService) => {
   
   const getAvailableVoices = () => {
     return speechService ? speechService.getAvailableVoices() : [];
-  };
-  
-  const stopSpeaking = () => {
-    if (!speechService) {
-      console.error("Speech service is not available");
-      return;
-    }
-    
-    speechService.stopSpeaking();
-    setIsSpeaking(false);
   };
 
   return {

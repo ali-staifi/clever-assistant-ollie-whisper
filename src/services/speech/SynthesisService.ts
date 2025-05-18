@@ -1,4 +1,3 @@
-
 import { BrowserSynthesisService } from './BrowserSynthesisService';
 import { MaryTTSSpeechService } from './MaryTTSSpeechService';
 
@@ -68,9 +67,19 @@ export class SynthesisService {
     return await this.maryTTS.getAvailableVoices(serverUrl);
   }
   
-  // Ajouter les nouveaux paramètres pour la voix
+  // Voice control methods
   setVoice(voiceName: string) {
+    // This will automatically update the language in BrowserSynthesisService
     this.browserSynthesis.setVoice(voiceName);
+    
+    // Get the updated language from browser synthesis to keep everything in sync
+    const voices = this.browserSynthesis.getAvailableVoices();
+    const selectedVoice = voices.find(voice => voice.name === voiceName);
+    
+    if (selectedVoice) {
+      // Update our internal language to match
+      this.lang = selectedVoice.lang;
+    }
   }
   
   setRate(rate: number) {
