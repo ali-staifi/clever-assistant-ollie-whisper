@@ -33,7 +33,7 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
         const responseText = parsedLine.message?.content || '';
         if (responseText) console.log('Standard response token:', responseText);
         return responseText;
-      } else if (parsedLine.content && typeof parsedLine.content === 'string') {
+      } else if (parsedLine.content !== undefined && typeof parsedLine.content === 'string') {
         // Format pour certaines versions d'Ollama
         const responseText = parsedLine.content || '';
         if (responseText) console.log('Content-based token:', responseText);
@@ -49,8 +49,8 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
     // Si rien n'a correspondu, essayer de trouver n'importe quel texte dans la réponse
     const possibleTextFields = ['response', 'content', 'text', 'output'];
     for (const field of possibleTextFields) {
-      if (parsedLine[field] && typeof parsedLine[field] === 'string') {
-        const responseText = parsedLine[field];
+      if (parsedLine[field as keyof ChatOllamaResponse] && typeof parsedLine[field as keyof ChatOllamaResponse] === 'string') {
+        const responseText = parsedLine[field as keyof ChatOllamaResponse] as string;
         console.log(`Found text in field '${field}':`, responseText);
         return responseText;
       }

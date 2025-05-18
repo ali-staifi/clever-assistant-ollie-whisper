@@ -4,6 +4,7 @@ export interface ChatOllamaResponse {
   model: string;
   created_at: string;
   response: string;
+  content?: string;
   done: boolean;
   message?: {
     role: string;
