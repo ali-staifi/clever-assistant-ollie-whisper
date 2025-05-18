@@ -5,6 +5,8 @@ import { SynthesisService } from './speech/SynthesisService';
 export class SpeechService {
   private recognitionService: RecognitionService;
   private synthesisService: SynthesisService;
+  private lastError: string = '';
+  private errorTimeout: number | null = null;
   
   constructor() {
     this.recognitionService = new RecognitionService();
@@ -16,11 +18,32 @@ export class SpeechService {
     onResult?: (text: string) => void,
     onError?: (error: string) => void
   ): boolean {
+    // Clear any previous error timeout
+    if (this.errorTimeout !== null) {
+      window.clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+    
     return this.recognitionService.startListening(
       onInterimResult, 
       onResult, 
       (errorMsg) => {
         console.warn("Speech recognition error:", errorMsg);
+        
+        // Avoid repeating the same error too quickly
+        if (errorMsg === this.lastError && errorMsg.includes('aborted')) {
+          console.log('Ignoring repeated aborted error');
+          return;
+        }
+        
+        this.lastError = errorMsg;
+        
+        // Reset the last error after a delay
+        this.errorTimeout = window.setTimeout(() => {
+          this.lastError = '';
+          this.errorTimeout = null;
+        }, 5000);
+        
         if (onError) onError(errorMsg);
       }
     );

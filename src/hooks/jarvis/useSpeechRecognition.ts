@@ -32,6 +32,9 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
     isListening, 
     noMicrophoneMode
   );
+  
+  // Track abort errors
+  const [abortCount, setAbortCount] = useState(0);
 
   // Run check on mount
   useEffect(() => {
@@ -64,9 +67,29 @@ export const useSpeechRecognition = (speechService: SpeechService, micSensitivit
       (finalText) => {
         setIsListening(false);
         resetErrors(); // Reset errors on success
+        setAbortCount(0); // Reset abort count on successful result
         onFinalResult(finalText);
       },
       (error) => {
+        // Handle aborted error specially
+        if (error.includes("aborted") || error.includes("interrompue")) {
+          setAbortCount(prev => {
+            const newCount = prev + 1;
+            
+            // Only show error after multiple aborts
+            if (newCount > 2) {
+              handleError("La reconnaissance vocale est instable. Essayez de rafraîchir la page ou d'utiliser un autre navigateur.", false);
+              setIsListening(false);
+            } else {
+              // For first few aborts, try to restart without showing error
+              console.log(`Reconnaissance interrompue (${newCount}/3), tentative de reprise...`);
+            }
+            
+            return newCount;
+          });
+          return;
+        }
+        
         // Determine if this is a no-speech error
         const isNoSpeechError = error.includes("no-speech");
         
