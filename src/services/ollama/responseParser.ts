@@ -13,10 +13,25 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
       return '';
     }
     
-    const parsedLine = JSON.parse(line) as ChatOllamaResponse;
-    
-    // Log the entire parsed response for debugging
-    console.log('Parsed response:', parsedLine);
+    // Try to parse JSON response
+    let parsedLine: ChatOllamaResponse;
+    try {
+      parsedLine = JSON.parse(line) as ChatOllamaResponse;
+      console.log('Parsed response:', parsedLine);
+    } catch (e) {
+      console.error('JSON parse error:', e);
+      
+      // Try to salvage content if possible from malformed JSON
+      if (line.includes('"response":"')) {
+        const match = line.match(/"response"\s*:\s*"([^"]*)"/);
+        if (match && match[1]) {
+          console.log('Extracted response from malformed JSON:', match[1]);
+          return match[1];
+        }
+      }
+      
+      return '';
+    }
     
     // Handle response based on API endpoint
     if (isQwenModel) {
@@ -47,16 +62,43 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
         if (responseText) console.log('Alternative response token:', responseText);
         return responseText;
       }
+      // Case 4: Try to find content in the response even if it doesn't match expected structure
+      else {
+        const stringifiedResponse = JSON.stringify(parsedLine);
+        console.log('Searching for content in:', stringifiedResponse);
+        
+        // Look for any string field that might contain content
+        for (const key in parsedLine) {
+          if (typeof parsedLine[key as keyof ChatOllamaResponse] === 'string') {
+            const value = parsedLine[key as keyof ChatOllamaResponse] as string;
+            if (value && value.length > 2) {
+              console.log(`Found potential content in field ${key}:`, value);
+              return value;
+            }
+          }
+        }
+      }
     }
     
     // If none of the expected formats matched, try to find any text in the response
-    const possibleTextFields = ['response', 'content', 'text', 'output'];
+    const possibleTextFields = ['response', 'content', 'text', 'output', 'message'];
     for (const field of possibleTextFields) {
       if (parsedLine[field as keyof ChatOllamaResponse] && 
           typeof parsedLine[field as keyof ChatOllamaResponse] === 'string') {
         const responseText = parsedLine[field as keyof ChatOllamaResponse] as string;
         console.log(`Found text in field '${field}':`, responseText);
         return responseText;
+      }
+      
+      // Check nested message.content
+      if (field === 'message' && 
+          parsedLine[field as keyof ChatOllamaResponse] && 
+          typeof parsedLine[field as keyof ChatOllamaResponse] === 'object') {
+        const message = parsedLine[field as keyof ChatOllamaResponse] as any;
+        if (message.content && typeof message.content === 'string') {
+          console.log('Found text in nested message.content:', message.content);
+          return message.content;
+        }
       }
     }
     
@@ -68,15 +110,35 @@ export function parseStreamedResponse(line: string, isQwenModel: boolean): strin
     console.log('Raw line that failed to parse:', line);
     
     // Try to extract text if JSON is malformed but contains text
-    if (typeof line === 'string' && line.includes('"response":')) {
-      try {
-        const responseMatch = line.match(/"response"\s*:\s*"([^"]*)"/);
-        if (responseMatch && responseMatch[1]) {
-          console.log('Extracted response from malformed JSON:', responseMatch[1]);
-          return responseMatch[1];
+    if (typeof line === 'string') {
+      // Try multiple patterns
+      const patterns = [
+        /"response"\s*:\s*"([^"]*)"/,
+        /"content"\s*:\s*"([^"]*)"/,
+        /"message"\s*:\s*\{\s*"content"\s*:\s*"([^"]*)"/
+      ];
+      
+      for (const pattern of patterns) {
+        try {
+          const match = line.match(pattern);
+          if (match && match[1]) {
+            console.log(`Extracted text using pattern ${pattern}:`, match[1]);
+            return match[1];
+          }
+        } catch (extractError) {
+          console.error('Pattern extraction failed:', extractError);
         }
-      } catch (extractError) {
-        console.error('Failed to extract response from malformed JSON:', extractError);
+      }
+      
+      // Last resort: try to find any quoted text that might be the response
+      try {
+        const quotedTextMatch = line.match(/"([^"]{5,})"/);
+        if (quotedTextMatch && quotedTextMatch[1]) {
+          console.log('Found potential quoted response text:', quotedTextMatch[1]);
+          return quotedTextMatch[1];
+        }
+      } catch (quoteError) {
+        console.error('Quoted text extraction failed:', quoteError);
       }
     }
     

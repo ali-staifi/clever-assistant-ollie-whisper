@@ -3,13 +3,16 @@
 export interface ChatOllamaResponse {
   model: string;
   created_at: string;
-  response: string;
+  response?: string;
   content?: string;
+  text?: string;
+  output?: string;
   done: boolean;
   message?: {
     role: string;
     content: string;
   };
+  [key: string]: any; // Pour gérer des champs dynamiques potentiels
 }
 
 // General Ollama Response
