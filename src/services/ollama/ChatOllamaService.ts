@@ -100,10 +100,21 @@ export class ChatOllamaService {
           options: this.options
         });
       } else {
+        let systemMessage = 'Vous êtes un assistant intelligent et serviable.';
+        
+        // If prompt contains language instructions, use them for system message too
+        if (prompt.includes('réponse doit être en français')) {
+          systemMessage = 'Réponds uniquement en français, quelle que soit la langue de la question.';
+        } else if (prompt.includes('response must be in English')) {
+          systemMessage = 'Always respond in English, regardless of the question language.';
+        } else if (prompt.includes('باللغة العربية')) {
+          systemMessage = 'أجب دائمًا باللغة العربية بغض النظر عن لغة السؤال.';
+        }
+        
         requestBody = JSON.stringify({
           model: this.model,
           messages: [
-            { role: 'system', content: 'Réponds uniquement en français, quelle que soit la langue de la question.' },
+            { role: 'system', content: systemMessage },
             ...formattedMessages
           ],
           stream: true,
@@ -129,10 +140,10 @@ export class ChatOllamaService {
         try {
           const errorData = await response.json();
           if (errorData.error) {
-            errorMsg = `Erreur Ollama: ${errorData.error}`;
+            errorMsg = `Ollama error: ${errorData.error}`;
             
             if (errorData.error.includes('not found') || errorData.error.includes('no model loaded')) {
-              errorMsg += `\nVeuillez installer le modèle "${this.model}" avec la commande: ollama pull ${this.model}`;
+              errorMsg += `\nPlease install model "${this.model}" with command: ollama pull ${this.model}`;
             }
           }
         } catch (e) {
@@ -187,6 +198,11 @@ export class ChatOllamaService {
       
     } catch (error) {
       console.error('Error generating chat response:', error);
+      
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.log('Request was aborted');
+        return;
+      }
       
       const errorMsg = error instanceof Error ? error.message : "Une erreur s'est produite lors de la communication avec Ollama";
       onProgress(`Erreur: ${errorMsg}`);

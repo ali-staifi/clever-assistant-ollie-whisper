@@ -37,14 +37,14 @@ export const useMessageProcessing = (
         `${languageInstruction} ${text}` : text;
       
       console.log('Sending request to Ollama:', promptWithLanguage);
-      console.log('Current messages history:', JSON.stringify(messages));
+      console.log('Current messages history:', JSON.stringify(messages.slice(-3)));
       
-      // Ajout d'un timeout pour abandonner la requête si elle prend trop de temps
+      // Add a timeout promise
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('La requête a pris trop de temps')), 60000);
+        setTimeout(() => reject(new Error('Request timeout after 60 seconds')), 60000);
       });
       
-      // Création d'une promesse pour la génération de réponse
+      // Create response generation promise
       const responsePromise = ollamaService.generateResponse(
         promptWithLanguage,
         messages,
@@ -55,14 +55,16 @@ export const useMessageProcessing = (
         }
       );
       
-      // Utilisation de Promise.race pour limiter le temps d'attente
+      // Race the promises to handle timeouts
       await Promise.race([responsePromise, timeoutPromise]);
       
-      // Si nous arrivons ici, c'est que la requête a abouti
-      console.log('Response completed, full length:', fullResponse.length);
+      // Log success if we get here
+      console.log('Response completed successfully with length:', fullResponse.length);
       
+      // Check for empty response
       if (fullResponse.trim() === '') {
-        throw new Error('La réponse reçue est vide');
+        console.warn('Empty response received from Ollama');
+        fullResponse = "Je suis désolé, je n'ai pas pu générer de réponse. Veuillez réessayer.";
       }
       
       // Save assistant response to messages and speak it
@@ -75,13 +77,14 @@ export const useMessageProcessing = (
       console.error('Error processing with Ollama:', error);
       const errorMsg = error instanceof Error ? error.message : String(error);
       
-      // Afficher l'erreur dans l'interface
-      setResponse(`Désolé, j'ai rencontré une erreur lors du traitement de votre demande: ${errorMsg}`);
+      // Display error in UI
+      const errorResponse = `Désolé, j'ai rencontré une erreur: ${errorMsg}`;
+      setResponse(errorResponse);
       
-      // Enregistrer également cette erreur comme message de l'assistant
-      addAssistantMessage(`Désolé, j'ai rencontré une erreur lors du traitement de votre demande: ${errorMsg}`);
+      // Add error message as assistant message
+      addAssistantMessage(errorResponse);
       
-      // Notification de l'erreur
+      // Show error notification
       toast({
         title: "Erreur de traitement",
         description: errorMsg,

@@ -20,65 +20,68 @@ export const useInputHandling = (
       return;
     }
     
-    // Si nous sommes en mode sans microphone, ajouter un champ de saisie ou déclencher une boîte de dialogue
+    // If in no-microphone mode, add an input field or trigger a dialog
     if (noMicrophoneMode) {
-      // Utiliser un prompt pour obtenir le texte de l'utilisateur de façon synchrone
+      // Use a prompt to get user text synchronously
       const userMessage = prompt("Entrez votre message:");
       
-      // Vérifier que le message n'est pas nul ou vide
+      // Check that the message is not null or empty
       if (userMessage && userMessage.trim() !== '') {
-        console.log("Message utilisateur en mode sans microphone:", userMessage);
+        console.log("User message in no-microphone mode:", userMessage);
         
         setTranscript(userMessage);
         addUserMessage(userMessage);
         
-        // Traiter la réponse avec un petit délai pour permettre l'affichage du message
+        // Process the response with a small delay to allow message display
         setTimeout(() => {
           processOllamaResponse(userMessage, responseLanguage)
-            .catch(err => console.error("Erreur lors du traitement de la réponse:", err));
+            .catch(err => console.error("Error processing response:", err));
         }, 100);
       } else {
-        console.log("L'utilisateur a annulé ou fourni un message vide");
+        console.log("User canceled or provided an empty message");
       }
       return;
     }
     
-    // Vérifier la connexion avant de démarrer l'écoute
+    // Check connection before starting listening
     if (ollamaStatus === 'error') {
-      console.error("Impossible de se connecter à Ollama. Statut actuel:", ollamaStatus);
-      setErrorMessage("Impossible de se connecter à Ollama. Veuillez vérifier les paramètres et réessayer.");
+      console.error("Cannot connect to Ollama. Current status:", ollamaStatus);
+      setErrorMessage("Cannot connect to Ollama. Please check the settings and try again.");
       return;
     }
 
-    console.log("Démarrage de l'écoute...");
+    console.log("Starting listening...");
     
-    // Démarrer l'écoute et traiter le résultat final
+    // Start listening and process final result
     const started = startListening(
-      // Gestionnaire de résultat intermédiaire
+      // Interim result handler
       (interimText) => {
         setTranscript(interimText);
       },
-      // Gestionnaire de résultat final
+      // Final result handler
       async (finalText) => {
-        console.log("Résultat final de la reconnaissance vocale:", finalText);
+        console.log("Final speech recognition result:", finalText);
         
         if (finalText.trim() !== '') {
           setTranscript(finalText);
           addUserMessage(finalText);
           
           try {
+            console.log("Processing Ollama response for: ", finalText);
             await processOllamaResponse(finalText, responseLanguage);
           } catch (error) {
-            console.error("Erreur lors du traitement de la réponse:", error);
+            console.error("Error processing response:", error);
+            setErrorMessage("Error processing your request. Please try again.");
           }
         } else {
-          console.log("Résultat de reconnaissance vocale vide, ignoré");
+          console.log("Empty speech recognition result, ignored");
         }
       }
     );
     
     if (!started) {
-      console.error("Échec du démarrage de la reconnaissance vocale");
+      console.error("Failed to start speech recognition");
+      setErrorMessage("Failed to start speech recognition. Please check your microphone permissions.");
     }
   };
 
