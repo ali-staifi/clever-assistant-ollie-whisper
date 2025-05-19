@@ -1,40 +1,53 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import ChatPage from "./pages/ChatPage";
-import ApiPage from "./pages/ApiPage";
-import NotFound from "./pages/NotFound";
-import Navigation from "./components/Navigation";
-import VoiceSettingsDemo from "./components/VoiceSettingsDemo";
+import React from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-const queryClient = new QueryClient();
+import IndexPage from './pages/Index';
+import ApiPage from './pages/ApiPage';
+import ChatPage from './pages/ChatPage';
+import NotFound from './pages/NotFound';
+import VisionPage from './pages/VisionPage';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+import Navigation from './components/Navigation';
+import './App.css';
+import { ThemeProvider } from 'next-themes';
+import { Toaster } from './components/ui/toaster';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <IndexPage />,
+  },
+  {
+    path: '/api',
+    element: <ApiPage />,
+  },
+  {
+    path: '/chat',
+    element: <ChatPage />,
+  },
+  {
+    path: '/vision',
+    element: <VisionPage />,
+  },
+  {
+    path: '*',
+    element: <NotFound />,
+  },
+]);
+
+function App() {
+  return (
+    <ThemeProvider attribute="class">
+      <div className="flex min-h-screen bg-background">
+        <Navigation />
+        <main className="flex-1 overflow-auto">
+          <RouterProvider router={router} />
+        </main>
+      </div>
       <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="flex flex-col h-screen">
-          <Navigation />
-          <main className="flex-1 overflow-auto">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/api" element={<ApiPage />} />
-              <Route path="/voice-settings" element={<VoiceSettingsDemo />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </ThemeProvider>
+  );
+}
 
 export default App;

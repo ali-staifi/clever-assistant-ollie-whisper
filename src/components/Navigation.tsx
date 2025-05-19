@@ -1,128 +1,63 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Home, MessageSquare, Settings, ServerIcon } from "lucide-react";
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon } from 'lucide-react';
 
 const Navigation = () => {
+  const [activeItem, setActiveItem] = useState('/');
   const location = useLocation();
   
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  // Set the active item based on the current path
+  useEffect(() => {
+    setActiveItem(location.pathname);
+  }, [location.pathname]);
   
+  const toggleJarvisSettings = () => {
+    // Custom event to toggle Jarvis settings
+    document.dispatchEvent(new CustomEvent('toggle-jarvis-settings'));
+  };
+
   return (
-    <nav className="bg-jarvis-darkBlue/90 p-3 border-b border-gray-800">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center">
-          <span className="text-xl font-bold text-jarvis-blue mr-6">J.A.R.V.I.S</span>
-          
-          <div className="hidden md:flex space-x-1">
-            <Button
-              variant={isActive('/') ? "default" : "ghost"}
-              size="sm"
-              asChild
-            >
-              <Link to="/" className="flex items-center">
-                <Home className="h-4 w-4 mr-2" />
-                <span>Accueil</span>
-              </Link>
-            </Button>
-            
-            <Button
-              variant={isActive('/chat') ? "default" : "ghost"}
-              size="sm"
-              asChild
-            >
-              <Link to="/chat" className="flex items-center">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                <span>Chat</span>
-              </Link>
-            </Button>
-            
-            <Button
-              variant={isActive('/api') ? "default" : "ghost"}
-              size="sm"
-              asChild
-            >
-              <Link to="/api" className="flex items-center">
-                <ServerIcon className="h-4 w-4 mr-2" />
-                <span>API</span>
-              </Link>
-            </Button>
-          </div>
+    <div className="w-16 md:w-20 lg:w-24 bg-zinc-900 text-zinc-400 flex flex-col items-center py-6 shadow-lg border-r border-zinc-800 shrink-0">
+      {/* Logo/Home */}
+      <Link to="/" className="mb-8">
+        <div className={`${activeItem === '/' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+          <HomeIcon size={28} />
+        </div>
+      </Link>
+      
+      {/* Navigation Items */}
+      <div className="flex flex-col items-center space-y-6">
+        {/* Settings */}
+        <div
+          onClick={toggleJarvisSettings}
+          className={`cursor-pointer p-2 rounded-lg transition-colors hover:text-white`}
+        >
+          <Settings size={24} />
         </div>
         
-        {/* Settings button on desktop */}
-        <div className="hidden md:block">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="bg-jarvis-blue/10 border-jarvis-blue/30 hover:bg-jarvis-blue/20"
-            onClick={() => {
-              // Show settings for the active component
-              // This will need to be connected to the appropriate state in the parent component
-              const event = new CustomEvent('toggle-jarvis-settings');
-              document.dispatchEvent(event);
-            }}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            <span>Settings</span>
-          </Button>
-        </div>
-        
-        {/* Mobile navigation */}
-        <div className="md:hidden flex justify-center fixed bottom-0 left-0 right-0 p-2 bg-jarvis-darkBlue/90 border-t border-gray-800">
-          <div className="flex space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={isActive('/') ? "bg-jarvis-blue/20" : ""}
-              asChild
-            >
-              <Link to="/">
-                <Home className="h-5 w-5" />
-              </Link>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className={isActive('/chat') ? "bg-jarvis-blue/20" : ""}
-              asChild
-            >
-              <Link to="/chat">
-                <MessageSquare className="h-5 w-5" />
-              </Link>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className={isActive('/api') ? "bg-jarvis-blue/20" : ""}
-              asChild
-            >
-              <Link to="/api">
-                <ServerIcon className="h-5 w-5" />
-              </Link>
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-jarvis-blue/10"
-              onClick={() => {
-                // Show settings for the active component
-                const event = new CustomEvent('toggle-jarvis-settings');
-                document.dispatchEvent(event);
-              }}
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
+        {/* API */}
+        <Link to="/api">
+          <div className={`${activeItem === '/api' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <ServerIcon size={24} />
           </div>
-        </div>
+        </Link>
+        
+        {/* Chat */}
+        <Link to="/chat">
+          <div className={`${activeItem === '/chat' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <MessageSquareText size={24} />
+          </div>
+        </Link>
+        
+        {/* Vision */}
+        <Link to="/vision">
+          <div className={`${activeItem === '/vision' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <ImageIcon size={24} />
+          </div>
+        </Link>
       </div>
-    </nav>
+    </div>
   );
 };
 
