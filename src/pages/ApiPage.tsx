@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ArrowRight, ServerIcon, Key, Search, Globe } from "lucide-react";
+import { ArrowRight, ServerIcon, Key, Search, Globe, Bot, Mic, Volume2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTavily } from "@/hooks/useTavily";
 
 const apiFormSchema = z.object({
   tavilyKey: z.string().optional(),
@@ -76,6 +77,7 @@ const ApiPage = () => {
         <TabsList className="mb-4">
           <TabsTrigger value="settings">Configuration</TabsTrigger>
           <TabsTrigger value="docs">Documentation</TabsTrigger>
+          <TabsTrigger value="features">Fonctionnalités</TabsTrigger>
         </TabsList>
         
         <TabsContent value="settings">
@@ -192,6 +194,17 @@ const ApiPage = () => {
                 </div>
               </Card>
               
+              {/* Espace pour les futures API */}
+              <Card className="p-6 border-2 border-dashed border-gray-300">
+                <div className="flex items-center mb-4">
+                  <ServerIcon className="mr-2 h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-xl font-semibold text-muted-foreground">Nouvelles API (À venir)</h2>
+                </div>
+                <p className="text-muted-foreground">
+                  Cet espace est réservé pour l'intégration de futures API. Restez à l'affût des mises à jour.
+                </p>
+              </Card>
+              
               <div className="flex justify-end">
                 <Button type="submit">
                   Sauvegarder toutes les clés API
@@ -261,6 +274,104 @@ Pour les questions factuelles ou d'actualité, utilise l'outil de recherche avan
                 <Button>
                   Documentation complète <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="features">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Fonctionnalités de Jarvis</h2>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Reconnaissance vocale */}
+              <Card className="p-4 border transition-all hover:shadow-md">
+                <div className="flex items-center mb-2">
+                  <Mic className="h-5 w-5 text-jarvis-blue mr-2" />
+                  <h3 className="font-medium">Reconnaissance Vocale</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Jarvis peut comprendre vos commandes vocales grâce à la reconnaissance vocale intégrée.
+                </p>
+              </Card>
+              
+              {/* Synthèse vocale */}
+              <Card className="p-4 border transition-all hover:shadow-md">
+                <div className="flex items-center mb-2">
+                  <Volume2 className="h-5 w-5 text-jarvis-blue mr-2" />
+                  <h3 className="font-medium">Synthèse Vocale</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Répond vocalement à vos questions en utilisant la synthèse vocale du navigateur ou un service externe comme MaryTTS.
+                </p>
+              </Card>
+              
+              {/* Traitement du langage naturel */}
+              <Card className="p-4 border transition-all hover:shadow-md">
+                <div className="flex items-center mb-2">
+                  <Bot className="h-5 w-5 text-jarvis-blue mr-2" />
+                  <h3 className="font-medium">Traitement du Langage</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Utilise des modèles de langage (via Ollama) pour comprendre et répondre à vos questions intelligemment.
+                </p>
+              </Card>
+              
+              {/* Support multilingue */}
+              <Card className="p-4 border transition-all hover:shadow-md">
+                <div className="flex items-center mb-2">
+                  <Globe className="h-5 w-5 text-jarvis-blue mr-2" />
+                  <h3 className="font-medium">Support Multilingue</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Prend en charge plusieurs langues, notamment le français, l'anglais et l'arabe.
+                </p>
+              </Card>
+              
+              {/* Mode sans microphone */}
+              <Card className="p-4 border transition-all hover:shadow-md">
+                <div className="flex items-center mb-2">
+                  <Key className="h-5 w-5 text-jarvis-blue mr-2" />
+                  <h3 className="font-medium">Mode sans Microphone</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Si vous n'avez pas de microphone ou préférez ne pas l'utiliser, Jarvis propose un mode texte.
+                </p>
+              </Card>
+              
+              {/* Recherche web */}
+              <Card className="p-4 border transition-all hover:shadow-md">
+                <div className="flex items-center mb-2">
+                  <Search className="h-5 w-5 text-jarvis-blue mr-2" />
+                  <h3 className="font-medium">Recherche Web</h3>
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  Jarvis peut utiliser l'API Tavily pour rechercher des informations sur le web et les intégrer dans ses réponses.
+                </p>
+              </Card>
+            </div>
+            
+            <div className="mt-8">
+              <h3 className="text-lg font-medium mb-3">Configuration de la Recherche Web</h3>
+              <div className="bg-muted p-4 rounded-md">
+                <p className="mb-2">Pour activer la recherche web avec Jarvis:</p>
+                <ol className="list-decimal pl-6 space-y-2">
+                  <li>Configurez votre clé API Tavily dans l'onglet "Configuration"</li>
+                  <li>Assurez-vous que votre modèle Ollama est correctement configuré</li>
+                  <li>Posez des questions qui nécessitent des informations factuelles ou d'actualité</li>
+                </ol>
+              </div>
+            </div>
+            
+            <div className="mt-8">
+              <h3 className="text-lg font-medium mb-3">Fonctionnalités à venir</h3>
+              <div className="border-2 border-dashed border-gray-300 p-4 rounded-md">
+                <ul className="space-y-2 text-muted-foreground">
+                  <li>Intégration avec d'autres services d'IA</li>
+                  <li>Support pour la traduction en temps réel</li>
+                  <li>Contrôle d'appareils intelligents</li>
+                  <li>Personnalisation avancée des voix</li>
+                </ul>
               </div>
             </div>
           </Card>
