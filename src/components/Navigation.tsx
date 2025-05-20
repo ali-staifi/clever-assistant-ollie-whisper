@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
@@ -54,6 +54,13 @@ const Navigation = () => {
         <Link to="/vision">
           <div className={`${activeItem === '/vision' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
             <ImageIcon size={24} />
+          </div>
+        </Link>
+        
+        {/* MCP */}
+        <Link to="/mcp">
+          <div className={`${activeItem === '/mcp' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <NetworkIcon size={24} />
           </div>
         </Link>
       </div>

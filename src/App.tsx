@@ -6,6 +6,7 @@ import IndexPage from './pages/Index';
 import ApiPage from './pages/ApiPage';
 import ChatPage from './pages/ChatPage';
 import VisionPage from './pages/VisionPage';
+import MCPPage from './pages/MCPPage';
 import NotFound from './pages/NotFound';
 
 import Navigation from './components/Navigation';
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
       {
         path: 'vision',
         element: <VisionPage />,
+      },
+      {
+        path: 'mcp',
+        element: <MCPPage />,
       },
       {
         path: '*',

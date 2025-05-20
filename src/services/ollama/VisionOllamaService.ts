@@ -16,7 +16,7 @@ export class VisionOllamaService {
   constructor(baseUrl: string = 'http://localhost:11434', model: string = 'llava-llama3') {
     this.baseUrl = baseUrl;
     this.model = model;
-    this.chatService = new ChatOllamaService(baseUrl);
+    this.chatService = new ChatOllamaService(baseUrl, model);
   }
   
   public setBaseUrl(url: string): void {
