@@ -1,5 +1,5 @@
 
-import { OllamaService } from '../ollama';
+import { VisionOllamaService } from '../ollama/VisionOllamaService';
 
 interface LLaVAResponse {
   description: string;
@@ -8,10 +8,10 @@ interface LLaVAResponse {
 }
 
 export class LLaVAService {
-  private ollamaService: OllamaService;
+  private ollamaService: VisionOllamaService;
   private modelName: string;
   
-  constructor(ollamaService: OllamaService, modelName: string = 'llava-llama3') {
+  constructor(ollamaService: VisionOllamaService, modelName: string = 'llava-llama3') {
     this.ollamaService = ollamaService;
     this.modelName = modelName;
   }

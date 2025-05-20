@@ -1,107 +1,96 @@
 
 import { ChatOllamaService } from './chat/ChatOllamaService';
 
+interface VisionResponse {
+  model: string;
+  created_at: string;
+  response: string;
+  done: boolean;
+}
+
 export class VisionOllamaService {
+  private baseUrl: string;
+  private model: string;
   private chatService: ChatOllamaService;
   
-  constructor(baseUrl: string, model: string = 'llava-llama3') {
-    this.chatService = new ChatOllamaService(baseUrl, model);
+  constructor(baseUrl: string = 'http://localhost:11434', model: string = 'llava-llama3') {
+    this.baseUrl = baseUrl;
+    this.model = model;
+    this.chatService = new ChatOllamaService(baseUrl);
   }
   
-  async generateVisionResponse(
-    model: string,
-    prompt: string,
+  public setBaseUrl(url: string): void {
+    this.baseUrl = url;
+    this.chatService.setBaseUrl(url);
+  }
+  
+  public setModel(model: string): void {
+    this.model = model;
+  }
+  
+  public async generateVisionResponse(
+    model: string, 
+    prompt: string, 
     imageBase64: string,
-    onProgress?: (token: string) => void
+    stream: boolean = false,
   ): Promise<string> {
     try {
-      // Déterminer si l'image est déjà encodée en base64
-      const base64String = imageBase64.startsWith('data:image') 
-        ? imageBase64
-        : `data:image/jpeg;base64,${imageBase64}`;
-      
-      // Formatage de la requête pour les modèles de vision
-      // Format compatible avec Llava via Ollama
+      // Formater la requête pour l'API Ollama Vision
       const body = {
-        model: model,
+        model: model || this.model,
         prompt: prompt,
-        stream: true,
-        images: [base64String]
+        images: [imageBase64],
+        stream: stream,
+        options: {
+          temperature: 0.7,
+          top_p: 0.9,
+          top_k: 40
+        }
       };
       
-      console.log(`Envoi de requête vision à Ollama avec le modèle ${model}`);
-      
-      const endpoint = '/api/generate';
-      let result = '';
-      
-      const onToken = (token: string) => {
-        result = token;
-        if (onProgress) onProgress(token);
-      };
-      
-      // Convertir en JSON puis envoyer
-      const requestBody = JSON.stringify(body);
-      
-      // Utiliser une requête directe plutôt que la méthode chat
-      const controller = new AbortController();
-      const response = await fetch(`${this.chatService.getBaseUrl()}${endpoint}`, {
+      // Envoyer la requête à l'API Ollama
+      const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: requestBody,
-        signal: controller.signal
+        body: JSON.stringify(body)
       });
       
       if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
       
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Response body is empty');
-      }
-      
-      const decoder = new TextDecoder();
-      let completeResponse = '';
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        
-        if (done) {
-          break;
-        }
-        
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const parsedData = JSON.parse(line);
-              if (parsedData && parsedData.response) {
-                completeResponse += parsedData.response;
-                if (onProgress) onProgress(completeResponse);
-              }
-            } catch (e) {
-              console.error('Error parsing response line:', e);
-            }
-          }
-        }
-      }
-      
-      return completeResponse;
+      const data: VisionResponse = await response.json();
+      return data.response;
     } catch (error) {
-      console.error('Erreur lors de la génération de réponse vision:', error);
+      console.error('Error generating vision response:', error);
       throw error;
     }
   }
   
-  setModel(model: string) {
-    this.chatService.setModel(model);
-  }
-  
-  getBaseUrl(): string {
-    return this.chatService.getBaseUrl();
+  // Fonction pour récupérer tous les modèles disponibles
+  public async getAvailableModels(): Promise<string[]> {
+    try {
+      // Récupérer la liste des modèles depuis l'API
+      const response = await fetch(`${this.baseUrl}/api/tags`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Filtrer les modèles qui supportent la vision
+      const allModels = data.models.map((model: any) => model.name);
+      // Pour l'instant, retournez tous les modèles car nous ne pouvons pas facilement
+      // déterminer lesquels supportent la vision sans information supplémentaire
+      return allModels;
+    } catch (error) {
+      console.error('Error fetching available models:', error);
+      return [];
+    }
   }
 }
