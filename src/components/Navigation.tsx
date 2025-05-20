@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, PaintBucket } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
@@ -18,7 +18,7 @@ const Navigation = () => {
   };
 
   return (
-    <div className="w-16 md:w-20 lg:w-24 bg-zinc-900 text-zinc-400 flex flex-col items-center py-6 shadow-lg border-r border-zinc-800 shrink-0">
+    <div className="w-16 md:w-20 lg:w-24 backdrop-blur-lg bg-zinc-900/80 text-zinc-400 flex flex-col items-center py-6 shadow-lg border-r border-zinc-800 shrink-0">
       {/* Logo/Home */}
       <Link to="/" className="mb-8">
         <div className={`${activeItem === '/' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
@@ -61,6 +61,13 @@ const Navigation = () => {
         <Link to="/mcp">
           <div className={`${activeItem === '/mcp' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
             <NetworkIcon size={24} />
+          </div>
+        </Link>
+        
+        {/* Wallpaper */}
+        <Link to="/wallpaper">
+          <div className={`${activeItem === '/wallpaper' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <PaintBucket size={24} />
           </div>
         </Link>
       </div>

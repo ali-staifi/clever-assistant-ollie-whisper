@@ -7,22 +7,38 @@ import ApiPage from './pages/ApiPage';
 import ChatPage from './pages/ChatPage';
 import VisionPage from './pages/VisionPage';
 import MCPPage from './pages/MCPPage';
+import WallpaperPage from './pages/WallpaperPage';
 import NotFound from './pages/NotFound';
 
 import Navigation from './components/Navigation';
 import './App.css';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from './components/ui/toaster';
+import { WallpaperProvider } from './contexts/WallpaperContext';
+import DynamicBackground from './components/wallpaper/DynamicBackground';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Layout component that includes Navigation and an outlet for route content
 const Layout = () => {
   return (
-    <div className="flex min-h-screen bg-background">
-      <Navigation />
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
-    </div>
+    <DynamicBackground>
+      <div className="flex min-h-screen">
+        <Navigation />
+        <main className="flex-1 overflow-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              className="h-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+    </DynamicBackground>
   );
 };
 
@@ -53,6 +69,10 @@ const router = createBrowserRouter([
         element: <MCPPage />,
       },
       {
+        path: 'wallpaper',
+        element: <WallpaperPage />,
+      },
+      {
         path: '*',
         element: <NotFound />,
       },
@@ -62,9 +82,11 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <ThemeProvider attribute="class">
-      <RouterProvider router={router} />
-      <Toaster />
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <WallpaperProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </WallpaperProvider>
     </ThemeProvider>
   );
 }
