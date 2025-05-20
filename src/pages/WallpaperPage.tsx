@@ -78,7 +78,7 @@ const WallpaperPage: React.FC = () => {
                     Transparence avec effet d'arrière-plan flou
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch id="mica-effect" />
               </div>
               
               <div className="flex items-center justify-between">
@@ -88,7 +88,7 @@ const WallpaperPage: React.FC = () => {
                     Animations de transition fluides
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch id="animations" />
               </div>
               
               <div className="flex items-center justify-between">
@@ -98,7 +98,7 @@ const WallpaperPage: React.FC = () => {
                     Ombres douces pour les éléments d'interface
                   </p>
                 </div>
-                <Switch defaultChecked />
+                <Switch id="shadows" />
               </div>
             </div>
           </div>
