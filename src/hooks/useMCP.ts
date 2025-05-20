@@ -1,80 +1,82 @@
 
 import { useState } from 'react';
-import { MCPClient, MCPRequest, MCPResponse } from '../services/mcp/MCPClient';
-import { MCPServer } from '../services/mcp/MCPServer';
-import { useToast } from './use-toast';
+import { v4 as uuidv4 } from 'uuid';
+import { MCPServer } from '@/services/mcp/MCPServer';
+import { MCPRequest, MCPResponse } from '@/services/mcp/MCPClient';
 
-// This hook provides a simplified interface to the MCP functionality
-export const useMCP = (serverUrl?: string) => {
+export const useMCP = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [lastResponse, setLastResponse] = useState<MCPResponse | null>(null);
-  const { toast } = useToast();
-  
-  // Create client and server instances
-  // For this example, we're simulating both client and server in the browser
-  // In a real application, the server would be a separate service
-  const mcpClient = new MCPClient(serverUrl || '/api/mcp');
   const mcpServer = new MCPServer();
   
-  // Process a request locally (simulation of client-server interaction)
-  const processLocalRequest = async (type: string, content: any, metadata?: Record<string, any>) => {
+  /**
+   * Process a request through the local MCP server
+   * @param type The type of request to process
+   * @param content The content of the request
+   * @param metadata Optional metadata for the request
+   * @returns The response from the MCP server
+   */
+  const processLocalRequest = async (
+    type: string, 
+    content: any, 
+    metadata?: Record<string, any>
+  ): Promise<MCPResponse> => {
     setIsProcessing(true);
     
     try {
-      // Create a request object
       const request: MCPRequest = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         type,
         content,
         metadata
       };
       
-      // Process the request with the local server
       const response = await mcpServer.processRequest(request);
-      
-      setLastResponse(response);
-      
-      if (response.status === 'error') {
-        toast({
-          title: "MCP Request Failed",
-          description: response.content.error,
-          variant: "destructive",
-        });
-      }
-      
       return response;
     } catch (error) {
       console.error('Error processing MCP request:', error);
-      
-      toast({
-        title: "MCP Error",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
-      
       throw error;
     } finally {
       setIsProcessing(false);
     }
   };
   
-  // Send a request to a remote MCP server
-  const sendRequest = async (type: string, content: any, metadata?: Record<string, any>) => {
+  /**
+   * Send a request to a remote MCP server
+   * @param serverUrl The URL of the MCP server
+   * @param type The type of request to process
+   * @param content The content of the request
+   * @param metadata Optional metadata for the request
+   * @returns The response from the MCP server
+   */
+  const sendRemoteRequest = async (
+    serverUrl: string,
+    type: string,
+    content: any,
+    metadata?: Record<string, any>
+  ): Promise<MCPResponse> => {
     setIsProcessing(true);
     
     try {
-      const response = await mcpClient.sendRequest(type, content, metadata);
-      setLastResponse(response);
-      return response;
-    } catch (error) {
-      console.error('Error sending MCP request:', error);
+      const request: MCPRequest = {
+        id: uuidv4(),
+        type,
+        content,
+        metadata
+      };
       
-      toast({
-        title: "MCP Request Failed",
-        description: error instanceof Error ? error.message : "Failed to send MCP request",
-        variant: "destructive",
+      const response = await fetch(serverUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request)
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending remote MCP request:', error);
       throw error;
     } finally {
       setIsProcessing(false);
@@ -83,21 +85,7 @@ export const useMCP = (serverUrl?: string) => {
   
   return {
     isProcessing,
-    lastResponse,
     processLocalRequest,
-    sendRequest,
-    // Utility methods
-    generateCode: async (prompt: string, language: string, context?: string) => {
-      return processLocalRequest('code_generation', { prompt, language, context });
-    },
-    analyzeImage: async (imageBase64: string, prompt?: string) => {
-      return processLocalRequest('image_analysis', { imageBase64, prompt });
-    },
-    retrieveData: async (query: string, source: string) => {
-      return processLocalRequest('data_retrieval', { query, source });
-    },
-    executeWorkflow: async (workflowId: string, parameters?: any) => {
-      return processLocalRequest('workflow_execution', { workflowId, parameters });
-    }
+    sendRemoteRequest
   };
 };
