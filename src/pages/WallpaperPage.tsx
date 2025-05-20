@@ -3,6 +3,7 @@ import React from 'react';
 import WallpaperManager from '@/components/wallpaper/WallpaperManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Switch } from '@/components/ui/switch';
 import { motion } from "framer-motion";
 
 const WallpaperPage: React.FC = () => {
