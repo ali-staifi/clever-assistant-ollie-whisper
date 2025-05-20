@@ -83,7 +83,8 @@ export class MCPServer {
     }
     
     // Use the Ollama service to generate text
-    const response = await this.ollamaService.generateCompletion(prompt, model);
+    // Changed from generateCompletion to generateResponse to match the OllamaService API
+    const response = await this.ollamaService.generateResponse(prompt, [], undefined);
     
     return {
       text: response,
@@ -105,7 +106,8 @@ ${context ? `\nContext: ${context}` : ''}
 \nPlease provide only the code without explanations.`;
 
     // Use the Ollama service with a model good at code generation
-    const code = await this.ollamaService.generateCompletion(codePrompt, model);
+    // Changed from generateCompletion to generateResponse to match the OllamaService API
+    const code = await this.ollamaService.generateResponse(codePrompt, [], undefined);
     
     return {
       code,
