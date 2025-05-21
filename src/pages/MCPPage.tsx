@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import MCPDemoPanel from '../components/mcp/MCPDemoPanel';
+import BioMCPPanel from '../components/mcp/BioMCPPanel';
+import ApifyMCPPanel from '../components/mcp/ApifyMCPPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -40,63 +42,61 @@ const MCPPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="bio">
-          <Card>
-            <CardHeader>
-              <CardTitle>BioMCP</CardTitle>
-              <CardDescription>
-                Adaptation du protocole MCP pour les applications de génomique, basée sur 
-                <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline ml-1">genomoncology/biomcp</a>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-lg mb-2">Fonctionnalités principales</h3>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Analyse de séquences génomiques et protéiques</li>
-                    <li>Annotation de variants génétiques</li>
-                    <li>Analyse de voies métaboliques</li>
-                    <li>Intégration avec les bases de données biologiques</li>
-                  </ul>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>BioMCP</CardTitle>
+                <CardDescription>
+                  Adaptation du protocole MCP pour les applications de génomique, basée sur 
+                  <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline ml-1">genomoncology/biomcp</a>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Fonctionnalités principales</h3>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Analyse de séquences génomiques et protéiques</li>
+                      <li>Annotation de variants génétiques</li>
+                      <li>Analyse de voies métaboliques</li>
+                      <li>Intégration avec les bases de données biologiques</li>
+                    </ul>
+                  </div>
                 </div>
-                
-                <div className="bg-muted p-4 rounded-md">
-                  <h3 className="font-medium mb-2">État du module</h3>
-                  <p>Le module BioMCP est actuellement en simulation. Pour l'utiliser avec des données réelles, une connexion à des services génomiques est nécessaire.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            <BioMCPPanel />
+          </div>
         </TabsContent>
         
         <TabsContent value="apify">
-          <Card>
-            <CardHeader>
-              <CardTitle>ApifyMCP</CardTitle>
-              <CardDescription>
-                Implementation du protocole MCP pour l'automatisation web, basée sur 
-                <a href="https://mcpservers.org/servers/apify/actors-mcp-server" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline ml-1">Apify Actors MCP Server</a>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium text-lg mb-2">Capacités</h3>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Web scraping de sites dynamiques et statiques</li>
-                    <li>Extraction de données structurées</li>
-                    <li>Automatisation de workflows web complexes</li>
-                    <li>Intégration avec la plateforme Apify</li>
-                  </ul>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>ApifyMCP</CardTitle>
+                <CardDescription>
+                  Implementation du protocole MCP pour l'automatisation web, basée sur 
+                  <a href="https://mcpservers.org/servers/apify/actors-mcp-server" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline ml-1">Apify Actors MCP Server</a>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium text-lg mb-2">Capacités</h3>
+                    <ul className="list-disc pl-6 space-y-1">
+                      <li>Web scraping de sites dynamiques et statiques</li>
+                      <li>Extraction de données structurées</li>
+                      <li>Automatisation de workflows web complexes</li>
+                      <li>Intégration avec la plateforme Apify</li>
+                    </ul>
+                  </div>
                 </div>
-                
-                <div className="bg-muted p-4 rounded-md">
-                  <h3 className="font-medium mb-2">Configuration</h3>
-                  <p>Pour utiliser les fonctionnalités complètes d'ApifyMCP, une clé API Apify est requise. Actuellement, le module fonctionne en mode simulation.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            
+            <ApifyMCPPanel />
+          </div>
         </TabsContent>
         
         <TabsContent value="others">

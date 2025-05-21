@@ -27,6 +27,11 @@ export class ApifyMCPService {
   public async processRequest(request: MCPRequest): Promise<MCPResponse> {
     console.log('Processing ApifyMCP request:', request);
     
+    // Check if an API key is provided in the request metadata
+    if (request.metadata?.apiKey) {
+      this.setApiKey(request.metadata.apiKey);
+    }
+    
     try {
       switch (request.type) {
         case 'web_scraping':
