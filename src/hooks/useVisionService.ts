@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { VisionOllamaService } from '@/services/ollama/VisionOllamaService';
 import { LLaVAService } from '@/services/vision/LLaVAService';
 import { useToast } from '@/hooks/use-toast';
@@ -17,18 +17,52 @@ export const useVisionService = (ollamaUrl = 'http://localhost:11434') => {
   // Gestion du modèle
   const [modelName, setModelName] = useState('llava-llama3');
   
+  // Handle URL changes
+  useEffect(() => {
+    visionServiceRef.current.setBaseUrl(ollamaUrl);
+  }, [ollamaUrl]);
+  
+  // Méthode pour définir le modèle
   const setModel = (model: string) => {
     setModelName(model);
     visionServiceRef.current.setModel(model);
     llavaServiceRef.current.setModel(model);
   };
   
-  // Analyse d'image
+  // Vérifier si un modèle est disponible
+  const checkModelAvailability = async () => {
+    const isAvailable = await llavaServiceRef.current.checkModelAvailability();
+    if (!isAvailable) {
+      // Essayer de trouver un modèle alternatif
+      const alternativeModel = await llavaServiceRef.current.tryAlternativeModels();
+      if (alternativeModel) {
+        toast({
+          title: "Modèle alternatif trouvé",
+          description: `Le modèle ${modelName} n'est pas disponible, utilisation de ${alternativeModel} à la place.`
+        });
+        setModel(alternativeModel);
+        return true;
+      } else {
+        toast({
+          title: "Modèle non disponible",
+          description: `Le modèle ${modelName} n'est pas disponible. Veuillez installer un modèle LLaVA avec Ollama.`,
+          variant: "destructive"
+        });
+        return false;
+      }
+    }
+    return true;
+  };
+  
+  // Analyse d'image avec gestion d'erreurs améliorée
   const analyzeImage = async (imageFile: File | string, prompt?: string): Promise<string> => {
     setIsAnalyzing(true);
     setError(null);
     
     try {
+      // Vérifier la disponibilité du modèle
+      await checkModelAvailability();
+      
       let base64Image: string;
       
       // Convertir le fichier en base64 si nécessaire
@@ -65,13 +99,16 @@ export const useVisionService = (ollamaUrl = 'http://localhost:11434') => {
   };
   
   // Analyse de vidéo (extraction d'images clés)
-  const analyzeVideo = async (videoFile: File, prompt?: string): Promise<string[]> => {
+  const analyzeVideo = async (videoFile: File, prompt?: string, frameCount: number = 5): Promise<string[]> => {
     setIsAnalyzing(true);
     setError(null);
     
     try {
+      // Vérifier la disponibilité du modèle
+      await checkModelAvailability();
+      
       // Extraire des images de la vidéo
-      const frames = await extractVideoFrames(videoFile, 5); // 5 images clés
+      const frames = await extractVideoFrames(videoFile, frameCount);
       
       // Analyser chaque image
       const results = await llavaServiceRef.current.analyzeVideo(frames, prompt);
@@ -142,16 +179,26 @@ export const useVisionService = (ollamaUrl = 'http://localhost:11434') => {
         };
         
         video.onseeked = () => {
-          // Capturer l'image
-          const canvas = document.createElement('canvas');
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const base64Image = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-            frames.push(base64Image);
+          try {
+            // Capturer l'image
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.min(video.videoWidth, 1024); // Limiter la largeur à 1024px max
+            canvas.height = Math.min(video.videoHeight, 1024); // Limiter la hauteur à 1024px max
+            
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              // Dessiner l'image redimensionnée
+              ctx.drawImage(
+                video, 
+                0, 0, video.videoWidth, video.videoHeight, 
+                0, 0, canvas.width, canvas.height
+              );
+              const base64Image = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+              frames.push(base64Image);
+              console.log(`Frame ${currentFrame-1} captured (${canvas.width}x${canvas.height})`);
+            }
+          } catch (err) {
+            console.error("Erreur lors de la capture d'image:", err);
           }
           
           captureFrame();
@@ -160,7 +207,8 @@ export const useVisionService = (ollamaUrl = 'http://localhost:11434') => {
         captureFrame();
       };
       
-      video.onerror = () => {
+      video.onerror = (e) => {
+        console.error("Erreur vidéo:", e);
         URL.revokeObjectURL(url);
         reject(new Error("Erreur lors du chargement de la vidéo"));
       };
@@ -178,6 +226,7 @@ export const useVisionService = (ollamaUrl = 'http://localhost:11434') => {
     error,
     setModel,
     modelName,
+    checkModelAvailability,
     visionService: visionServiceRef.current,
     llavaService: llavaServiceRef.current
   };
