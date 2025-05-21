@@ -68,16 +68,16 @@ const ApifyMCPPanel: React.FC = () => {
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full mb-16">
+      <CardHeader className="pb-2">
         <CardTitle>ApifyMCP Demo</CardTitle>
         <CardDescription>
           Interagissez avec le module ApifyMCP pour l'automatisation web
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+      <CardContent className="pt-2">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-2">
             <Label>Type de requête</Label>
             <RadioGroup 
@@ -100,7 +100,7 @@ const ApifyMCPPanel: React.FC = () => {
             </RadioGroup>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="apiKey">Clé API Apify (optionnel)</Label>
             <Input
               id="apiKey"
@@ -116,7 +116,7 @@ const ApifyMCPPanel: React.FC = () => {
           
           {requestType === 'web_scraping' && (
             <>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="url">URL</Label>
                 <Input
                   id="url"
@@ -125,7 +125,7 @@ const ApifyMCPPanel: React.FC = () => {
                   onChange={(e) => setUrl(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="selectors">Sélecteurs CSS (séparés par des virgules)</Label>
                 <Input
                   id="selectors"
@@ -139,7 +139,7 @@ const ApifyMCPPanel: React.FC = () => {
           
           {requestType === 'data_extraction' && (
             <>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="content">Contenu à analyser</Label>
                 <Textarea
                   id="content"
@@ -149,7 +149,7 @@ const ApifyMCPPanel: React.FC = () => {
                   className="min-h-[100px]"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="format">Format</Label>
                 <Input
                   id="format"
@@ -163,7 +163,7 @@ const ApifyMCPPanel: React.FC = () => {
           
           {requestType === 'automation_workflow' && (
             <>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="workflow">Workflow</Label>
                 <Input
                   id="workflow"
@@ -172,14 +172,14 @@ const ApifyMCPPanel: React.FC = () => {
                   onChange={(e) => setWorkflow(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="parameters">Paramètres (JSON)</Label>
                 <Textarea
                   id="parameters"
                   placeholder='{"param1": "valeur1", "param2": "valeur2"}'
                   value={parameters}
                   onChange={(e) => setParameters(e.target.value)}
-                  className="min-h-[100px]"
+                  className="min-h-[80px]"
                 />
               </div>
             </>
@@ -204,10 +204,10 @@ const ApifyMCPPanel: React.FC = () => {
         </form>
         
         {result && (
-          <div className="mt-6">
+          <div className="mt-4">
             <Label>Résultat</Label>
-            <ScrollArea className="h-[200px] mt-1 rounded-md border">
-              <div className="bg-muted p-4 whitespace-pre-wrap">
+            <ScrollArea className="h-[150px] mt-1 rounded-md border">
+              <div className="bg-muted p-3 whitespace-pre-wrap">
                 {result.error ? (
                   <div className="text-red-500">Erreur: {result.error}</div>
                 ) : (
@@ -219,8 +219,8 @@ const ApifyMCPPanel: React.FC = () => {
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => setResult(null)}>
+      <CardFooter className="pt-0">
+        <Button variant="outline" onClick={() => setResult(null)} size="sm">
           Effacer le résultat
         </Button>
       </CardFooter>

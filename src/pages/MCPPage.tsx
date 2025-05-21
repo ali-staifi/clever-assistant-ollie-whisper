@@ -11,26 +11,10 @@ const MCPPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('standard');
   
   return (
-    <div className="container py-4 h-full overflow-hidden flex flex-col">
-      <h1 className="text-3xl font-bold mb-4">Model Context Protocol (MCP)</h1>
+    <div className="container py-4 min-h-full">
+      <h1 className="text-3xl font-bold mb-6">MCP</h1>
       
-      <div className="mb-4 overflow-y-auto">
-        <p className="text-lg mb-3">
-          Le Model Context Protocol (MCP) permet une interaction dynamique entre les modèles d'IA et les services externes,
-          permettant aux applications de tirer parti des capacités de l'IA tout en maintenant le contexte à travers plusieurs services.
-        </p>
-        
-        <h2 className="text-xl font-semibold mt-4 mb-2">Caractéristiques principales</h2>
-        <ul className="list-disc pl-6 space-y-1">
-          <li>Interaction dynamique des modèles d'IA avec un format de requête/réponse standardisé</li>
-          <li>Intégration avec des services et API externes</li>
-          <li>Traitement contextuel à travers plusieurs requêtes</li>
-          <li>Support pour diverses tâches d'IA: génération de texte, écriture de code, analyse d'images</li>
-          <li>Architecture extensible pour des flux de travail personnalisés</li>
-        </ul>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
         <TabsList className="grid grid-cols-4 mb-4 w-full md:w-[600px]">
           <TabsTrigger value="standard">Standard MCP</TabsTrigger>
           <TabsTrigger value="bio">BioMCP</TabsTrigger>
@@ -38,9 +22,9 @@ const MCPPage: React.FC = () => {
           <TabsTrigger value="others">Autres</TabsTrigger>
         </TabsList>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="mb-20">
           <ScrollArea className="h-full pr-4">
-            <TabsContent value="standard" className="mt-0 h-full">
+            <TabsContent value="standard" className="mt-0">
               <MCPDemoPanel />
             </TabsContent>
             
