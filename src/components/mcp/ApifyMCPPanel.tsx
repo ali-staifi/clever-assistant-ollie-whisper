@@ -8,6 +8,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { ScrollArea } from '../ui/scroll-area';
 
 const ApifyMCPPanel: React.FC = () => {
   const { isProcessing, processLocalRequest } = useMCP();
@@ -205,13 +206,15 @@ const ApifyMCPPanel: React.FC = () => {
         {result && (
           <div className="mt-6">
             <Label>Résultat</Label>
-            <div className="bg-muted p-4 rounded-md mt-1 whitespace-pre-wrap overflow-auto max-h-[300px]">
-              {result.error ? (
-                <div className="text-red-500">Erreur: {result.error}</div>
-              ) : (
-                <pre className="text-sm">{JSON.stringify(result, null, 2)}</pre>
-              )}
-            </div>
+            <ScrollArea className="h-[200px] mt-1 rounded-md border">
+              <div className="bg-muted p-4 whitespace-pre-wrap">
+                {result.error ? (
+                  <div className="text-red-500">Erreur: {result.error}</div>
+                ) : (
+                  <pre className="text-sm">{JSON.stringify(result, null, 2)}</pre>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         )}
       </CardContent>
