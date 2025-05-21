@@ -1,9 +1,10 @@
-
 import { MCPRequest, MCPResponse } from './MCPClient';
 import { v4 as uuidv4 } from 'uuid';
 import { OllamaService } from '../ollama/OllamaService';
 import { LLaVAService } from '../vision/LLaVAService';
 import { VisionOllamaService } from '../ollama/VisionOllamaService';
+import { BioMCPService } from './biomcp/BioMCPService';
+import { ApifyMCPService } from './apify/ApifyMCPService';
 
 // Define handlers for different request types
 type RequestHandler = (request: MCPRequest) => Promise<any>;
@@ -12,12 +13,16 @@ export class MCPServer {
   private handlers: Record<string, RequestHandler>;
   private ollamaService: OllamaService;
   private visionService: LLaVAService;
+  private bioMCPService: BioMCPService;
+  private apifyMCPService: ApifyMCPService;
   
   constructor(ollamaBaseUrl: string = 'http://localhost:11434') {
     // Initialize services
     this.ollamaService = new OllamaService(ollamaBaseUrl);
     const visionOllamaService = new VisionOllamaService(ollamaBaseUrl);
     this.visionService = new LLaVAService(visionOllamaService);
+    this.bioMCPService = new BioMCPService();
+    this.apifyMCPService = new ApifyMCPService();
     
     // Register handlers for different request types
     this.handlers = {
@@ -26,6 +31,16 @@ export class MCPServer {
       'image_analysis': this.handleImageAnalysis.bind(this),
       'data_retrieval': this.handleDataRetrieval.bind(this),
       'workflow_execution': this.handleWorkflowExecution.bind(this),
+      
+      // BioMCP handlers
+      'genomic_sequence_analysis': this.handleBioMCPRequest.bind(this),
+      'variant_annotation': this.handleBioMCPRequest.bind(this),
+      'pathway_analysis': this.handleBioMCPRequest.bind(this),
+      
+      // ApifyMCP handlers
+      'web_scraping': this.handleApifyMCPRequest.bind(this),
+      'data_extraction': this.handleApifyMCPRequest.bind(this),
+      'automation_workflow': this.handleApifyMCPRequest.bind(this),
     };
   }
   
@@ -172,5 +187,17 @@ ${context ? `\nContext: ${context}` : ''}
         output: {}
       }
     };
+  }
+  
+  // Nouveaux handlers pour les services BioMCP et ApifyMCP
+  
+  private async handleBioMCPRequest(request: MCPRequest): Promise<any> {
+    const response = await this.bioMCPService.processRequest(request);
+    return response.content;
+  }
+  
+  private async handleApifyMCPRequest(request: MCPRequest): Promise<any> {
+    const response = await this.apifyMCPService.processRequest(request);
+    return response.content;
   }
 }
