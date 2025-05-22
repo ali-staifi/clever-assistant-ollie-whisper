@@ -6,7 +6,7 @@ import ApifyMCPPanel from '../components/mcp/apify/ApifyMCPPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Cancer, Microscope } from 'lucide-react';
+import { Activity, Microscope } from 'lucide-react';
 
 const MCPPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('standard');
@@ -34,7 +34,7 @@ const MCPPage: React.FC = () => {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Cancer className="h-5 w-5 mr-2 text-red-500" />
+                      <Activity className="h-5 w-5 mr-2 text-red-500" />
                       BioMCP
                     </CardTitle>
                     <CardDescription>

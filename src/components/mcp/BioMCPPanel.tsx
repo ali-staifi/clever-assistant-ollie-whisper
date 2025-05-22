@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Loader2, Cancer, Lungs } from 'lucide-react';
+import { Loader2, Activity, Stethoscope } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -63,9 +63,9 @@ const BioMCPPanel: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           {diseaseType === 'cancer' ? (
-            <Cancer className="h-6 w-6 mr-2 text-red-500" />
+            <Activity className="h-6 w-6 mr-2 text-red-500" />
           ) : (
-            <Lungs className="h-6 w-6 mr-2 text-blue-500" />
+            <Stethoscope className="h-6 w-6 mr-2 text-blue-500" />
           )}
           BioMCP - Recherche Médicale
         </CardTitle>
@@ -86,14 +86,14 @@ const BioMCPPanel: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="cancer" id="cancer" />
                 <Label htmlFor="cancer" className="flex items-center">
-                  <Cancer className="h-4 w-4 mr-2 text-red-500" />
+                  <Activity className="h-4 w-4 mr-2 text-red-500" />
                   Cancérologie
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="pulmonology" id="pulmonology" />
                 <Label htmlFor="pulmonology" className="flex items-center">
-                  <Lungs className="h-4 w-4 mr-2 text-blue-500" />
+                  <Stethoscope className="h-4 w-4 mr-2 text-blue-500" />
                   Pneumologie
                 </Label>
               </div>
