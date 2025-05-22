@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Cancer, Lungs } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const BioMCPPanel: React.FC = () => {
   const { isProcessing, processLocalRequest } = useMCP();
@@ -18,22 +19,29 @@ const BioMCPPanel: React.FC = () => {
   const [genes, setGenes] = useState('');
   const [pathwayDb, setPathwayDb] = useState('KEGG');
   const [result, setResult] = useState<any>(null);
+  const [diseaseType, setDiseaseType] = useState('cancer');
+  const [cancerType, setCancerType] = useState('lung');
+  const [pulmonaryCondition, setPulmonaryCondition] = useState('copd');
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      let content: any = {};
+      let content: any = {
+        diseaseType,
+        cancerType: diseaseType === 'cancer' ? cancerType : undefined,
+        pulmonaryCondition: diseaseType === 'pulmonology' ? pulmonaryCondition : undefined
+      };
       
       switch (analysisType) {
         case 'genomic_sequence_analysis':
-          content = { sequence, analysisType: 'basic' };
+          content = { ...content, sequence, analysisType: 'basic' };
           break;
         case 'variant_annotation':
-          content = { variant, genome };
+          content = { ...content, variant, genome };
           break;
         case 'pathway_analysis':
-          content = { genes: genes.split(',').map(g => g.trim()), pathwayDb };
+          content = { ...content, genes: genes.split(',').map(g => g.trim()), pathwayDb };
           break;
       }
       
@@ -53,14 +61,81 @@ const BioMCPPanel: React.FC = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>BioMCP Demo</CardTitle>
+        <CardTitle className="flex items-center space-x-2">
+          {diseaseType === 'cancer' ? (
+            <Cancer className="h-6 w-6 mr-2 text-red-500" />
+          ) : (
+            <Lungs className="h-6 w-6 mr-2 text-blue-500" />
+          )}
+          BioMCP - Recherche Médicale
+        </CardTitle>
         <CardDescription>
-          Interagissez avec le module BioMCP pour des analyses génomiques
+          Analyses génomiques spécialisées pour la recherche en cancérologie et pneumologie
         </CardDescription>
       </CardHeader>
       
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Domaine médical</Label>
+            <RadioGroup 
+              value={diseaseType} 
+              onValueChange={setDiseaseType}
+              className="flex space-x-4"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="cancer" id="cancer" />
+                <Label htmlFor="cancer" className="flex items-center">
+                  <Cancer className="h-4 w-4 mr-2 text-red-500" />
+                  Cancérologie
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="pulmonology" id="pulmonology" />
+                <Label htmlFor="pulmonology" className="flex items-center">
+                  <Lungs className="h-4 w-4 mr-2 text-blue-500" />
+                  Pneumologie
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          
+          {diseaseType === 'cancer' && (
+            <div className="space-y-2">
+              <Label htmlFor="cancerType">Type de cancer</Label>
+              <Select value={cancerType} onValueChange={setCancerType}>
+                <SelectTrigger id="cancerType">
+                  <SelectValue placeholder="Sélectionner un type de cancer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lung">Cancer du poumon</SelectItem>
+                  <SelectItem value="breast">Cancer du sein</SelectItem>
+                  <SelectItem value="colorectal">Cancer colorectal</SelectItem>
+                  <SelectItem value="prostate">Cancer de la prostate</SelectItem>
+                  <SelectItem value="melanoma">Mélanome</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {diseaseType === 'pulmonology' && (
+            <div className="space-y-2">
+              <Label htmlFor="pulmonaryCondition">Condition pulmonaire</Label>
+              <Select value={pulmonaryCondition} onValueChange={setPulmonaryCondition}>
+                <SelectTrigger id="pulmonaryCondition">
+                  <SelectValue placeholder="Sélectionner une condition pulmonaire" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="copd">BPCO</SelectItem>
+                  <SelectItem value="asthma">Asthme</SelectItem>
+                  <SelectItem value="fibrosis">Fibrose pulmonaire</SelectItem>
+                  <SelectItem value="pneumonia">Pneumonie</SelectItem>
+                  <SelectItem value="tuberculosis">Tuberculose</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="space-y-2">
             <Label>Type d'analyse</Label>
             <RadioGroup 
@@ -88,7 +163,9 @@ const BioMCPPanel: React.FC = () => {
               <Label htmlFor="sequence">Séquence génomique</Label>
               <Textarea
                 id="sequence"
-                placeholder="Entrez une séquence ADN/ARN (ex: ATGCATGCATGC...)"
+                placeholder={diseaseType === 'cancer' 
+                  ? "Entrez une séquence ADN/ARN liée au cancer (ex: ATGCATGCATGC...)" 
+                  : "Entrez une séquence ADN/ARN liée à la pneumologie (ex: ATGCATGCATGC...)"}
                 value={sequence}
                 onChange={(e) => setSequence(e.target.value)}
                 className="min-h-[100px]"
@@ -102,7 +179,9 @@ const BioMCPPanel: React.FC = () => {
                 <Label htmlFor="variant">Variant</Label>
                 <Input
                   id="variant"
-                  placeholder="Ex: rs6025, chr1:g.169519049T>C"
+                  placeholder={diseaseType === 'cancer' 
+                    ? "Ex: EGFR T790M, BRAF V600E" 
+                    : "Ex: CFTR F508del, SERPINA1 E342K"}
                   value={variant}
                   onChange={(e) => setVariant(e.target.value)}
                 />
@@ -125,7 +204,9 @@ const BioMCPPanel: React.FC = () => {
                 <Label htmlFor="genes">Gènes (séparés par des virgules)</Label>
                 <Textarea
                   id="genes"
-                  placeholder="Ex: BRCA1, TP53, KRAS, EGFR"
+                  placeholder={diseaseType === 'cancer' 
+                    ? "Ex: EGFR, TP53, KRAS, BRAF, HER2" 
+                    : "Ex: CFTR, SERPINA1, TNF, IL6, TLR4"}
                   value={genes}
                   onChange={(e) => setGenes(e.target.value)}
                   className="min-h-[100px]"
@@ -133,12 +214,17 @@ const BioMCPPanel: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pathwayDb">Base de données de voies métaboliques</Label>
-                <Input
-                  id="pathwayDb"
-                  placeholder="Ex: KEGG, Reactome"
-                  value={pathwayDb}
-                  onChange={(e) => setPathwayDb(e.target.value)}
-                />
+                <Select value={pathwayDb} onValueChange={setPathwayDb}>
+                  <SelectTrigger id="pathwayDb">
+                    <SelectValue placeholder="Sélectionner une base de données" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="KEGG">KEGG</SelectItem>
+                    <SelectItem value="Reactome">Reactome</SelectItem>
+                    <SelectItem value="WikiPathways">WikiPathways</SelectItem>
+                    <SelectItem value="BioCarta">BioCarta</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </>
           )}
