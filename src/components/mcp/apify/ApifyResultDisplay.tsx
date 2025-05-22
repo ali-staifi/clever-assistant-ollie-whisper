@@ -11,7 +11,7 @@ const ApifyResultDisplay: React.FC<ApifyResultDisplayProps> = ({ result }) => {
   return (
     <div className="mt-4">
       <Label>Résultat</Label>
-      <ScrollArea className="h-[150px] mt-1 rounded-md border">
+      <ScrollArea className="h-[120px] mt-1 rounded-md border">
         <div className="bg-muted p-3 whitespace-pre-wrap">
           {result.error ? (
             <div className="text-red-500">Erreur: {result.error}</div>

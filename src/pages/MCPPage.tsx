@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import MCPDemoPanel from '../components/mcp/MCPDemoPanel';
 import BioMCPPanel from '../components/mcp/BioMCPPanel';
@@ -39,16 +38,9 @@ const MCPPage: React.FC = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-medium text-lg mb-2">Fonctionnalités principales</h3>
-                        <ul className="list-disc pl-6 space-y-1">
-                          <li>Analyse de séquences génomiques et protéiques</li>
-                          <li>Annotation de variants génétiques</li>
-                          <li>Analyse de voies métaboliques</li>
-                          <li>Intégration avec les bases de données biologiques</li>
-                        </ul>
-                      </div>
+                    <div>
+                      <h3 className="font-medium text-lg mb-2">Fonctionnalités principales</h3>
+                      <p className="pl-6">Analyse de séquences génomiques et protéiques, Annotation de variants génétiques, Analyse de voies métaboliques, Intégration avec les bases de données biologiques</p>
                     </div>
                   </CardContent>
                 </Card>
