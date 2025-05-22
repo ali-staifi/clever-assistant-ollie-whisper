@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, PaintBucket } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, PaintBucket, Database } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
@@ -68,6 +68,13 @@ const Navigation = () => {
         <Link to="/wallpaper">
           <div className={`${activeItem === '/wallpaper' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
             <PaintBucket size={24} />
+          </div>
+        </Link>
+        
+        {/* Git & Database */}
+        <Link to="/git-database">
+          <div className={`${activeItem === '/git-database' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <Database size={24} />
           </div>
         </Link>
       </div>

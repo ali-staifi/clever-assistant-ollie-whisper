@@ -8,6 +8,7 @@ import ChatPage from './pages/ChatPage';
 import VisionPage from './pages/VisionPage';
 import MCPPage from './pages/MCPPage';
 import WallpaperPage from './pages/WallpaperPage';
+import GitDatabasePage from './pages/GitDatabasePage';
 import NotFound from './pages/NotFound';
 
 import Navigation from './components/Navigation';
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
       {
         path: 'wallpaper',
         element: <WallpaperPage />,
+      },
+      {
+        path: 'git-database',
+        element: <GitDatabasePage />,
       },
       {
         path: '*',
