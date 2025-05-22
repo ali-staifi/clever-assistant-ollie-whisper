@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import MCPDemoPanel from '../components/mcp/MCPDemoPanel';
 import BioMCPPanel from '../components/mcp/BioMCPPanel';
-import ApifyMCPPanel from '../components/mcp/ApifyMCPPanel';
+import ApifyMCPPanel from '../components/mcp/apify/ApifyMCPPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
