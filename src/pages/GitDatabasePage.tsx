@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Database, GitBranch, GitFork, Server, Bot, Send } from "lucide-react";
+import { Database, GitBranch, GitFork, Server, Bot, Send, Upload, FileText, Brain, Settings } from "lucide-react";
 import { useOllamaConnection } from "@/hooks/useOllamaConnection";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,14 +17,28 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  llmSource?: string;
+}
+
+interface MemoryDocument {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  uploadDate: Date;
+  status: 'processing' | 'ready' | 'error';
 }
 
 const GitDatabasePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('bolt');
+  const [activeTab, setActiveTab] = useState('absolute-zero');
   const [databaseStatus, setDatabaseStatus] = useState('disconnected');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any>(null);
   const [selectedModel, setSelectedModel] = useState('gemma:7b');
+  
+  // Memory/Database state
+  const [memoryDocuments, setMemoryDocuments] = useState<MemoryDocument[]>([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
   
   // Absolute Zero Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -46,25 +61,66 @@ const GitDatabasePage: React.FC = () => {
   const { toast } = useToast();
 
   const handleConnectDatabase = () => {
-    // Simulation of database connection
     setDatabaseStatus('connecting');
     setTimeout(() => {
       setDatabaseStatus('connected');
+      toast({
+        title: "Base de données connectée",
+        description: "Tous les LLMs peuvent maintenant accéder à la mémoire partagée",
+      });
     }, 1500);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingFile(true);
+    
+    for (const file of files) {
+      const newDoc: MemoryDocument = {
+        id: Date.now().toString() + Math.random(),
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        uploadDate: new Date(),
+        status: 'processing'
+      };
+      
+      setMemoryDocuments(prev => [...prev, newDoc]);
+      
+      // Simuler le traitement du document
+      setTimeout(() => {
+        setMemoryDocuments(prev => 
+          prev.map(doc => 
+            doc.id === newDoc.id 
+              ? { ...doc, status: 'ready' } 
+              : doc
+          )
+        );
+        
+        toast({
+          title: "Document traité",
+          description: `${file.name} a été ajouté à la mémoire partagée`,
+        });
+      }, 2000);
+    }
+    
+    setUploadingFile(false);
+    event.target.value = '';
   };
 
   const handleExecuteQuery = () => {
     if (!query.trim()) return;
     
-    // Simulate query execution
     const sampleResults = {
       status: 'success',
       rows: [
-        { id: 1, name: 'Project A', status: 'Active' },
-        { id: 2, name: 'Project B', status: 'Complete' },
-        { id: 3, name: 'Project C', status: 'Pending' }
+        { id: 1, llm: 'Absolute Zero', query: 'Analyse reasoning patterns', response: 'Advanced reasoning detected' },
+        { id: 2, llm: 'Jarvis', query: 'Voice command processing', response: 'Audio processing complete' },
+        { id: 3, llm: 'OpenACI', query: 'System control request', response: 'Permission granted' }
       ],
-      executionTime: '0.023s'
+      executionTime: '0.045s'
     };
     
     setResults(sampleResults);
@@ -86,7 +142,8 @@ const GitDatabasePage: React.FC = () => {
       id: Date.now().toString(),
       role: 'user',
       content: chatInput,
-      timestamp: new Date()
+      timestamp: new Date(),
+      llmSource: 'user'
     };
 
     setChatMessages(prev => [...prev, userMessage]);
@@ -100,7 +157,13 @@ const GitDatabasePage: React.FC = () => {
         content: msg.content
       }));
 
-      const reasoningPrompt = `Tu es Absolute Zero Reasoner, un système de raisonnement automatique avancé développé par LeapLab THU. Tu utilises des techniques de raisonnement sophistiquées pour analyser et résoudre des problèmes complexes. Réponds de manière structurée et logique à cette question: ${chatInput}`;
+      // Enhanced prompt with memory context
+      const memoryContext = memoryDocuments
+        .filter(doc => doc.status === 'ready')
+        .map(doc => `Document: ${doc.name}`)
+        .join(', ');
+      
+      const reasoningPrompt = `Tu es Absolute Zero Reasoner, un système de raisonnement automatique avancé développé par LeapLab THU. Tu as accès à la mémoire partagée contenant: ${memoryContext}. Utilise des techniques de raisonnement sophistiquées pour analyser et résoudre cette question: ${chatInput}`;
 
       await ollamaService.generateChatResponse(
         reasoningPrompt,
@@ -114,7 +177,8 @@ const GitDatabasePage: React.FC = () => {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: currentResponse,
-        timestamp: new Date()
+        timestamp: new Date(),
+        llmSource: 'Absolute Zero'
       };
 
       setChatMessages(prev => [...prev, assistantMessage]);
@@ -132,105 +196,44 @@ const GitDatabasePage: React.FC = () => {
 
   return (
     <div className="container py-4 min-h-full">
-      <h1 className="text-3xl font-bold mb-6">Intégration Git & Base de Données</h1>
+      <h1 className="text-3xl font-bold mb-6">Intégration IA & Base de Données Mémoire</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-20">
-        {/* Git Repositories Section */}
+        {/* Enhanced AI Systems Section */}
         <div className="lg:col-span-2">
           <Card className="h-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Dépôts Git</CardTitle>
-                  <CardDescription>Intégration avec les dépôts Git sélectionnés</CardDescription>
+                  <CardTitle>Systèmes IA Connectés</CardTitle>
+                  <CardDescription>Absolute Zero, Jarvis, OpenACI avec mémoire partagée</CardDescription>
                 </div>
-                <GitBranch className="h-6 w-6 text-muted-foreground" />
+                <Brain className="h-6 w-6 text-muted-foreground" />
               </div>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-2 mb-4">
-                  <TabsTrigger value="bolt">Bolt.new</TabsTrigger>
-                  <TabsTrigger value="zero">Absolute-Zero-Reasoner</TabsTrigger>
+                <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsTrigger value="absolute-zero">Absolute Zero</TabsTrigger>
+                  <TabsTrigger value="connections">Connexions LLM</TabsTrigger>
+                  <TabsTrigger value="memory">Mémoire</TabsTrigger>
                 </TabsList>
                 
-                <ScrollArea className="h-[400px]">
-                  <TabsContent value="bolt" className="space-y-4">
-                    
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-medium">Bolt.new</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Un projet Stackblitz pour le développement web en temps réel
-                        </p>
-                      </div>
-                      <a 
-                        href="https://github.com/stackblitz/bolt.new.git" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline flex items-center"
-                      >
-                        <GitFork className="mr-1 h-4 w-4" />
-                        Voir sur GitHub
-                      </a>
-                    </div>
-
-                    <div className="rounded-md border p-4">
-                      <div className="font-mono text-sm">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <GitBranch className="h-4 w-4" />
-                          <span className="font-semibold">main</span>
-                        </div>
-                        <p>Plateforme de développement web en ligne</p>
-                        <p>Technologies: React, TypeScript, Vite</p>
-                        <div className="mt-3 pt-3 border-t">
-                          <p className="font-semibold">Intégration BDD</p>
-                          <p>Status: {databaseStatus === 'connected' ? 'Connecté' : 'Non connecté'}</p>
-                          {databaseStatus !== 'connected' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={handleConnectDatabase}
-                              disabled={databaseStatus === 'connecting'}
-                              className="mt-2"
-                            >
-                              {databaseStatus === 'connecting' ? 'Connexion...' : 'Connecter à la BDD'}
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Repository details for Bolt */}
-                    <div className="bg-muted/50 rounded-md p-4">
-                      <h4 className="font-medium mb-2">Description</h4>
-                      <p className="text-sm">
-                        Bolt.new est un projet de Stackblitz qui permet de créer rapidement des environnements 
-                        de développement web en ligne. Il s'intègre avec diverses technologies front-end et 
-                        peut se connecter à des bases de données pour des projets fullstack.
-                      </p>
-                      
-                      <h4 className="font-medium mt-4 mb-2">Fonctionnalités</h4>
-                      <ul className="text-sm list-disc pl-5 space-y-1">
-                        <li>Environnement de développement en ligne</li>
-                        <li>Support pour React, Vue, Angular, etc.</li>
-                        <li>Intégration avec GitHub</li>
-                        <li>Partage de projets facilité</li>
-                      </ul>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="zero" className="space-y-4">
+                <ScrollArea className="h-[500px]">
+                  <TabsContent value="absolute-zero" className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-medium">Absolute Zero Reasoner</h3>
                         <p className="text-sm text-muted-foreground">
-                          Un projet de raisonnement automatique par LeapLab THU
+                          Système de raisonnement automatique avancé par LeapLab THU
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"}>
                           {connectionStatus === 'connected' ? "LLM Connecté" : "LLM Déconnecté"}
+                        </Badge>
+                        <Badge variant={databaseStatus === 'connected' ? "default" : "secondary"}>
+                          {databaseStatus === 'connected' ? "BDD Connectée" : "BDD Déconnectée"}
                         </Badge>
                         <a 
                           href="https://github.com/LeapLabTHU/Absolute-Zero-Reasoner.git" 
@@ -239,7 +242,7 @@ const GitDatabasePage: React.FC = () => {
                           className="text-blue-500 hover:underline flex items-center"
                         >
                           <GitFork className="mr-1 h-4 w-4" />
-                          Voir sur GitHub
+                          GitHub
                         </a>
                       </div>
                     </div>
@@ -247,7 +250,7 @@ const GitDatabasePage: React.FC = () => {
                     {/* Ollama Connection Settings */}
                     <div className="rounded-md border p-4 bg-blue-50/50">
                       <h4 className="font-medium mb-3 flex items-center">
-                        <Bot className="h-4 w-4 mr-2" />
+                        <Settings className="h-4 w-4 mr-2" />
                         Configuration Ollama
                       </h4>
                       <div className="grid grid-cols-2 gap-4">
@@ -278,7 +281,7 @@ const GitDatabasePage: React.FC = () => {
                       </Button>
                     </div>
 
-                    {/* Chat Interface */}
+                    {/* Enhanced Chat Interface */}
                     <div className="rounded-md border p-4">
                       <h4 className="font-medium mb-3 flex items-center">
                         <Bot className="h-4 w-4 mr-2" />
@@ -300,9 +303,16 @@ const GitDatabasePage: React.FC = () => {
                                     : 'bg-white border'
                                 }`}>
                                   <p className="text-sm">{message.content}</p>
-                                  <p className="text-xs opacity-70 mt-1">
-                                    {message.timestamp.toLocaleTimeString()}
-                                  </p>
+                                  <div className="flex justify-between items-center mt-1">
+                                    <p className="text-xs opacity-70">
+                                      {message.timestamp.toLocaleTimeString()}
+                                    </p>
+                                    {message.llmSource && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {message.llmSource}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -310,6 +320,9 @@ const GitDatabasePage: React.FC = () => {
                               <div className="flex justify-start">
                                 <div className="max-w-[80%] p-3 rounded-lg bg-white border">
                                   <p className="text-sm">{currentResponse}</p>
+                                  <Badge variant="outline" className="text-xs mt-1">
+                                    Absolute Zero
+                                  </Badge>
                                 </div>
                               </div>
                             )}
@@ -321,10 +334,10 @@ const GitDatabasePage: React.FC = () => {
                         <Textarea
                           value={chatInput}
                           onChange={(e) => setChatInput(e.target.value)}
-                          placeholder="Posez une question à Absolute Zero Reasoner..."
+                          placeholder="Posez une question complexe nécessitant un raisonnement avancé..."
                           className="flex-1"
                           rows={2}
-                          disabled={connectionStatus !== 'connected'}
+                          disabled={connectionStatus !== 'connected' || databaseStatus !== 'connected'}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
@@ -343,20 +356,110 @@ const GitDatabasePage: React.FC = () => {
                     </div>
 
                     <div className="bg-muted/50 rounded-md p-4">
-                      <h4 className="font-medium mb-2">Description</h4>
-                      <p className="text-sm">
-                        Absolute-Zero-Reasoner est un framework développé par LeapLab THU qui se concentre 
-                        sur l'amélioration des capacités de raisonnement des modèles d'IA. Il implémente 
-                        diverses techniques avancées pour le raisonnement automatique.
-                      </p>
-                      
-                      <h4 className="font-medium mt-4 mb-2">Fonctionnalités</h4>
+                      <h4 className="font-medium mb-2">Capacités Avancées</h4>
                       <ul className="text-sm list-disc pl-5 space-y-1">
-                        <li>Techniques de raisonnement avancées pour LLMs</li>
-                        <li>Benchmarks et évaluation de performances</li>
-                        <li>Intégration avec des modèles populaires</li>
-                        <li>Support pour l'entraînement et l'inférence</li>
+                        <li>Raisonnement multi-étapes avec chaînage logique</li>
+                        <li>Accès à la mémoire partagée des documents</li>
+                        <li>Intégration avec Jarvis et OpenACI</li>
+                        <li>Analyse contextuelle approfondie</li>
+                        <li>Génération de preuves et vérification</li>
                       </ul>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="connections" className="space-y-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">Absolute Zero Reasoner</h4>
+                          <Badge variant={connectionStatus === 'connected' ? "default" : "destructive"}>
+                            {connectionStatus === 'connected' ? "Connecté" : "Déconnecté"}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Système de raisonnement automatique</p>
+                      </div>
+                      
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">Jarvis</h4>
+                          <Badge variant="secondary">En attente</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Assistant vocal intelligent</p>
+                      </div>
+                      
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium">OpenACI</h4>
+                          <Badge variant="secondary">En attente</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">Contrôle d'interface automatisé</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-50/50 rounded-md p-4">
+                      <h4 className="font-medium mb-2">Synchronisation</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Tous les LLMs partagent la même base de connaissances et peuvent collaborer
+                      </p>
+                      <Button size="sm" variant="outline">
+                        Configurer la synchronisation
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="memory" className="space-y-4">
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-3">Upload de Documents</h4>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Input
+                          type="file"
+                          multiple
+                          accept=".pdf,.txt,.doc,.docx,.md"
+                          onChange={handleFileUpload}
+                          disabled={uploadingFile}
+                          className="flex-1"
+                        />
+                        <Button disabled={uploadingFile} size="sm">
+                          <Upload className="h-4 w-4 mr-1" />
+                          {uploadingFile ? 'Upload...' : 'Upload'}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Formats supportés: PDF, TXT, DOC, DOCX, MD
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Documents en Mémoire ({memoryDocuments.length})</h4>
+                      {memoryDocuments.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          Aucun document uploadé
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {memoryDocuments.map((doc) => (
+                            <div key={doc.id} className="flex items-center justify-between p-2 border rounded">
+                              <div className="flex items-center space-x-2">
+                                <FileText className="h-4 w-4" />
+                                <div>
+                                  <p className="text-sm font-medium">{doc.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {(doc.size / 1024).toFixed(1)} KB • {doc.uploadDate.toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant={
+                                doc.status === 'ready' ? 'default' : 
+                                doc.status === 'processing' ? 'secondary' : 'destructive'
+                              }>
+                                {doc.status === 'ready' ? 'Prêt' : 
+                                 doc.status === 'processing' ? 'Traitement...' : 'Erreur'}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
                 </ScrollArea>
@@ -365,14 +468,14 @@ const GitDatabasePage: React.FC = () => {
           </Card>
         </div>
         
-        {/* Database Section */}
+        {/* Enhanced Database Section */}
         <div>
           <Card className="h-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Base de Données</CardTitle>
-                  <CardDescription>Exécuter des requêtes et visualiser les résultats</CardDescription>
+                  <CardTitle>Base de Données Mémoire</CardTitle>
+                  <CardDescription>Mémoire partagée pour tous les LLMs</CardDescription>
                 </div>
                 <Database className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -381,7 +484,7 @@ const GitDatabasePage: React.FC = () => {
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Status</Label>
+                  <Label>Status de la Mémoire</Label>
                   <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full mr-2 ${
                       databaseStatus === 'connected' ? 'bg-green-500' : 
@@ -393,7 +496,7 @@ const GitDatabasePage: React.FC = () => {
                 
                 {databaseStatus !== 'connected' && (
                   <Button onClick={handleConnectDatabase} disabled={databaseStatus === 'connecting'}>
-                    {databaseStatus === 'connecting' ? 'Connexion...' : 'Connecter'}
+                    {databaseStatus === 'connecting' ? 'Connexion...' : 'Connecter la Mémoire'}
                   </Button>
                 )}
               </div>
@@ -401,10 +504,10 @@ const GitDatabasePage: React.FC = () => {
               {databaseStatus === 'connected' && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="query">Requête SQL</Label>
+                    <Label htmlFor="query">Requête Mémoire</Label>
                     <Textarea 
                       id="query" 
-                      placeholder="SELECT * FROM projects;" 
+                      placeholder="SELECT * FROM llm_interactions WHERE source='Absolute Zero';" 
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       className="font-mono"
@@ -413,7 +516,7 @@ const GitDatabasePage: React.FC = () => {
                   </div>
                   
                   <Button onClick={handleExecuteQuery} disabled={!query.trim()}>
-                    Exécuter la requête
+                    Interroger la Mémoire
                   </Button>
                   
                   {results && (
@@ -450,18 +553,27 @@ const GitDatabasePage: React.FC = () => {
                   )}
                 </>
               )}
+              
+              <div className="bg-green-50/50 rounded-md p-3 mt-4">
+                <h5 className="text-sm font-medium mb-1">Statistiques Mémoire:</h5>
+                <ul className="text-xs space-y-1">
+                  <li>• Documents: {memoryDocuments.filter(d => d.status === 'ready').length}</li>
+                  <li>• Conversations: {chatMessages.length}</li>
+                  <li>• LLMs connectés: {connectionStatus === 'connected' ? 1 : 0}/3</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </div>
         
-        {/* LLM Integration Section */}
+        {/* Enhanced LLM Integration Section */}
         <div className="lg:col-span-3">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Intégration LLM</CardTitle>
-                  <CardDescription>Connectez les dépôts Git et la base de données avec des modèles d'IA</CardDescription>
+                  <CardTitle>Hub d'Intégration IA Unifiée</CardTitle>
+                  <CardDescription>Orchestration centralisée des systèmes IA avec mémoire partagée</CardDescription>
                 </div>
                 <Server className="h-6 w-6 text-muted-foreground" />
               </div>
@@ -470,56 +582,77 @@ const GitDatabasePage: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2 col-span-1">
-                  <Label htmlFor="model">Modèle LLM</Label>
+                  <Label htmlFor="model">Système IA Actif</Label>
                   <select 
                     id="model"
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
                     className="w-full flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    <option value="gemma:7b">Gemma 7B</option>
-                    <option value="llama3">Llama 3</option>
-                    <option value="mistral">Mistral</option>
-                    <option value="phi-3:mini">Phi-3 Mini</option>
+                    <option value="absolute-zero">Absolute Zero Reasoner</option>
+                    <option value="jarvis">Jarvis</option>
+                    <option value="openaci">OpenACI</option>
+                    <option value="unified">Mode Unifié</option>
                   </select>
                 </div>
                 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="prompt">Commande ou Requête</Label>
+                  <Label htmlFor="prompt">Commande Multi-IA</Label>
                   <div className="flex gap-2">
                     <Input 
                       id="prompt" 
-                      placeholder="Analyse les données du projet et génère un rapport..." 
+                      placeholder="Analysez ce document avec raisonnement avancé et préparez une synthèse vocale..." 
                       className="flex-1"
                     />
-                    <Button>Envoyer</Button>
+                    <Button>Exécuter</Button>
                   </div>
                 </div>
               </div>
               
               <div className="bg-muted rounded-md p-4 min-h-[200px]">
-                <h4 className="font-medium mb-2">Réponse du LLM</h4>
-                <p className="italic text-muted-foreground text-sm">
-                  L'intégration avec {selectedModel} permettra d'analyser les données du projet et de générer des insights basés sur le contenu des dépôts Git et de la base de données.
+                <h4 className="font-medium mb-2">Réponse du Hub IA</h4>
+                <p className="italic text-muted-foreground text-sm mb-4">
+                  Le hub d'intégration permet aux trois systèmes IA (Absolute Zero, Jarvis, OpenACI) de collaborer 
+                  en utilisant la mémoire partagée pour des tâches complexes nécessitant raisonnement, vocal et contrôle système.
                 </p>
                 
-                <div className="bg-background/50 border rounded-md p-3 mt-4">
-                  <h5 className="text-sm font-medium mb-1">Exemples d'utilisation:</h5>
-                  <ul className="text-xs space-y-1 ml-5 list-disc">
-                    <li>Générer de la documentation pour le code des dépôts</li>
-                    <li>Analyser les tendances dans les données de la base de données</li>
-                    <li>Répondre à des questions sur l'architecture du projet</li>
-                    <li>Suggérer des optimisations basées sur le code et les données</li>
-                  </ul>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-background/50 border rounded-md p-3">
+                    <h5 className="text-sm font-medium mb-2 text-blue-600">Absolute Zero</h5>
+                    <ul className="text-xs space-y-1">
+                      <li>• Raisonnement logique complexe</li>
+                      <li>• Analyse de documents</li>
+                      <li>• Génération de preuves</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-background/50 border rounded-md p-3">
+                    <h5 className="text-sm font-medium mb-2 text-green-600">Jarvis</h5>
+                    <ul className="text-xs space-y-1">
+                      <li>• Interface vocale</li>
+                      <li>• Synthèse speech</li>
+                      <li>• Commandes audio</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="bg-background/50 border rounded-md p-3">
+                    <h5 className="text-sm font-medium mb-2 text-purple-600">OpenACI</h5>
+                    <ul className="text-xs space-y-1">
+                      <li>• Contrôle PC</li>
+                      <li>• Automation UI</li>
+                      <li>• Gestion applications</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between border-t pt-4">
               <div className="text-xs text-muted-foreground">
-                Référence: <a href="https://fr.python-3.com/?p=3048" target="_blank" rel="noopener noreferrer" className="underline">Python 3 Documentation</a>
+                Mémoire partagée: {memoryDocuments.filter(d => d.status === 'ready').length} documents • 
+                Status: {databaseStatus}
               </div>
               <Button variant="outline" size="sm">
-                Documentation complète
+                Configuration Avancée
               </Button>
             </CardFooter>
           </Card>
