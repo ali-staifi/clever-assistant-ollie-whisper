@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Database, GitBranch, GitFork, Server } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Database, GitBranch, GitFork, Server, Bot, Send } from "lucide-react";
+import { useOllamaConnection } from "@/hooks/useOllamaConnection";
+import { useToast } from "@/hooks/use-toast";
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
 
 const GitDatabasePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('bolt');
@@ -15,6 +24,26 @@ const GitDatabasePage: React.FC = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any>(null);
   const [selectedModel, setSelectedModel] = useState('gemma:7b');
+  
+  // Absolute Zero Chat state
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentResponse, setCurrentResponse] = useState('');
+  
+  // Ollama connection for Absolute Zero
+  const {
+    ollamaUrl,
+    ollamaModel,
+    connectionStatus,
+    availableModels,
+    ollamaService,
+    setOllamaUrl,
+    setOllamaModel,
+    checkConnection
+  } = useOllamaConnection();
+  
+  const { toast } = useToast();
 
   const handleConnectDatabase = () => {
     // Simulation of database connection
@@ -39,6 +68,66 @@ const GitDatabasePage: React.FC = () => {
     };
     
     setResults(sampleResults);
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !ollamaService || connectionStatus !== 'connected') {
+      if (connectionStatus !== 'connected') {
+        toast({
+          title: "Non connecté",
+          description: "Veuillez connecter Ollama d'abord",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: chatInput,
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+    setIsGenerating(true);
+    setCurrentResponse('');
+
+    try {
+      const messages = chatMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      const reasoningPrompt = `Tu es Absolute Zero Reasoner, un système de raisonnement automatique avancé développé par LeapLab THU. Tu utilises des techniques de raisonnement sophistiquées pour analyser et résoudre des problèmes complexes. Réponds de manière structurée et logique à cette question: ${chatInput}`;
+
+      await ollamaService.generateChatResponse(
+        reasoningPrompt,
+        messages,
+        (token: string) => {
+          setCurrentResponse(prev => prev + token);
+        }
+      );
+
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: currentResponse,
+        timestamp: new Date()
+      };
+
+      setChatMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la génération de la réponse",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+      setCurrentResponse('');
+    }
   };
 
   return (
@@ -67,6 +156,7 @@ const GitDatabasePage: React.FC = () => {
                 
                 <ScrollArea className="h-[400px]">
                   <TabsContent value="bolt" className="space-y-4">
+                    
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-medium">Bolt.new</h3>
@@ -138,44 +228,120 @@ const GitDatabasePage: React.FC = () => {
                           Un projet de raisonnement automatique par LeapLab THU
                         </p>
                       </div>
-                      <a 
-                        href="https://github.com/LeapLabTHU/Absolute-Zero-Reasoner.git" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline flex items-center"
-                      >
-                        <GitFork className="mr-1 h-4 w-4" />
-                        Voir sur GitHub
-                      </a>
-                    </div>
-
-                    <div className="rounded-md border p-4">
-                      <div className="font-mono text-sm">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <GitBranch className="h-4 w-4" />
-                          <span className="font-semibold">main</span>
-                        </div>
-                        <p>Framework de raisonnement IA</p>
-                        <p>Technologies: Python, PyTorch, Transformers</p>
-                        <div className="mt-3 pt-3 border-t">
-                          <p className="font-semibold">Intégration BDD</p>
-                          <p>Status: {databaseStatus === 'connected' ? 'Connecté' : 'Non connecté'}</p>
-                          {databaseStatus !== 'connected' && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={handleConnectDatabase}
-                              disabled={databaseStatus === 'connecting'}
-                              className="mt-2"
-                            >
-                              {databaseStatus === 'connecting' ? 'Connexion...' : 'Connecter à la BDD'}
-                            </Button>
-                          )}
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"}>
+                          {connectionStatus === 'connected' ? "LLM Connecté" : "LLM Déconnecté"}
+                        </Badge>
+                        <a 
+                          href="https://github.com/LeapLabTHU/Absolute-Zero-Reasoner.git" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:underline flex items-center"
+                        >
+                          <GitFork className="mr-1 h-4 w-4" />
+                          Voir sur GitHub
+                        </a>
                       </div>
                     </div>
-                    
-                    {/* Repository details for Absolute-Zero */}
+
+                    {/* Ollama Connection Settings */}
+                    <div className="rounded-md border p-4 bg-blue-50/50">
+                      <h4 className="font-medium mb-3 flex items-center">
+                        <Bot className="h-4 w-4 mr-2" />
+                        Configuration Ollama
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm">URL Ollama</Label>
+                          <Input
+                            value={ollamaUrl}
+                            onChange={(e) => setOllamaUrl(e.target.value)}
+                            placeholder="http://localhost:11434"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-sm">Modèle</Label>
+                          <select 
+                            value={ollamaModel}
+                            onChange={(e) => setOllamaModel(e.target.value)}
+                            className="w-full mt-1 p-2 border rounded text-sm"
+                          >
+                            {availableModels.map(model => (
+                              <option key={model} value={model}>{model}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <Button onClick={checkConnection} size="sm" className="mt-3">
+                        {connectionStatus === 'connecting' ? 'Connexion...' : 'Tester la connexion'}
+                      </Button>
+                    </div>
+
+                    {/* Chat Interface */}
+                    <div className="rounded-md border p-4">
+                      <h4 className="font-medium mb-3 flex items-center">
+                        <Bot className="h-4 w-4 mr-2" />
+                        Chat avec Absolute Zero Reasoner
+                      </h4>
+                      
+                      <ScrollArea className="h-60 border rounded p-3 mb-3 bg-muted/20">
+                        {chatMessages.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8">
+                            Commencez une conversation avec Absolute Zero Reasoner
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {chatMessages.map((message) => (
+                              <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[80%] p-3 rounded-lg ${
+                                  message.role === 'user' 
+                                    ? 'bg-blue-500 text-white' 
+                                    : 'bg-white border'
+                                }`}>
+                                  <p className="text-sm">{message.content}</p>
+                                  <p className="text-xs opacity-70 mt-1">
+                                    {message.timestamp.toLocaleTimeString()}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                            {isGenerating && currentResponse && (
+                              <div className="flex justify-start">
+                                <div className="max-w-[80%] p-3 rounded-lg bg-white border">
+                                  <p className="text-sm">{currentResponse}</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </ScrollArea>
+                      
+                      <div className="flex gap-2">
+                        <Textarea
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          placeholder="Posez une question à Absolute Zero Reasoner..."
+                          className="flex-1"
+                          rows={2}
+                          disabled={connectionStatus !== 'connected'}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                        />
+                        <Button 
+                          onClick={handleSendMessage}
+                          disabled={!chatInput.trim() || connectionStatus !== 'connected' || isGenerating}
+                          size="sm"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
                     <div className="bg-muted/50 rounded-md p-4">
                       <h4 className="font-medium mb-2">Description</h4>
                       <p className="text-sm">
@@ -212,6 +378,7 @@ const GitDatabasePage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Status</Label>
@@ -300,6 +467,7 @@ const GitDatabasePage: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2 col-span-1">
                   <Label htmlFor="model">Modèle LLM</Label>
