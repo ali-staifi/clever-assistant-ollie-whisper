@@ -36,6 +36,7 @@ export class MCPServer {
       'genomic_sequence_analysis': this.handleBioMCPRequest.bind(this),
       'variant_annotation': this.handleBioMCPRequest.bind(this),
       'pathway_analysis': this.handleBioMCPRequest.bind(this),
+      'medical_research': this.handleBioMCPRequest.bind(this),
       
       // ApifyMCP handlers
       'web_scraping': this.handleApifyMCPRequest.bind(this),

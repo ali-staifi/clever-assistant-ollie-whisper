@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useMCP } from '@/hooks/useMCP';
 import { Button } from '../ui/button';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Loader2, Activity, Stethoscope } from 'lucide-react';
+import { Loader2, Activity, Stethoscope, Search, Pill } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -22,6 +21,11 @@ const BioMCPPanel: React.FC = () => {
   const [diseaseType, setDiseaseType] = useState('cancer');
   const [cancerType, setCancerType] = useState('lung');
   const [pulmonaryCondition, setPulmonaryCondition] = useState('copd');
+  
+  // New states for medical research
+  const [pathologyType, setPathologyType] = useState('cancer');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [researchType, setResearchType] = useState('care_protocol');
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +46,14 @@ const BioMCPPanel: React.FC = () => {
           break;
         case 'pathway_analysis':
           content = { ...content, genes: genes.split(',').map(g => g.trim()), pathwayDb };
+          break;
+        case 'medical_research':
+          content = { 
+            pathologyType, 
+            searchQuery, 
+            researchType,
+            analysisType: 'medical_research'
+          };
           break;
       }
       
@@ -70,7 +82,7 @@ const BioMCPPanel: React.FC = () => {
           BioMCP - Recherche Médicale
         </CardTitle>
         <CardDescription>
-          Analyses génomiques spécialisées pour la recherche en cancérologie et pneumologie
+          Analyses génomiques et recherche médicale spécialisées pour la recherche en cancérologie, pneumologie et diabétologie
         </CardDescription>
       </CardHeader>
       
@@ -155,8 +167,79 @@ const BioMCPPanel: React.FC = () => {
                 <RadioGroupItem value="pathway_analysis" id="pathway" />
                 <Label htmlFor="pathway">Analyse de voie métabolique</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="medical_research" id="medical_research" />
+                <Label htmlFor="medical_research" className="flex items-center">
+                  <Search className="h-4 w-4 mr-2 text-green-500" />
+                  Recherche médicale - Protocoles et médicaments
+                </Label>
+              </div>
             </RadioGroup>
           </div>
+          
+          {analysisType === 'medical_research' && (
+            <div className="space-y-4 p-4 border rounded-lg bg-green-50">
+              <div className="space-y-2">
+                <Label htmlFor="pathologyType">Pathologie</Label>
+                <Select value={pathologyType} onValueChange={setPathologyType}>
+                  <SelectTrigger id="pathologyType">
+                    <SelectValue placeholder="Sélectionner une pathologie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cancer">Cancérologie</SelectItem>
+                    <SelectItem value="pneumology">Pneumologie</SelectItem>
+                    <SelectItem value="diabetes">Diabétologie</SelectItem>
+                    <SelectItem value="cardiology">Cardiologie</SelectItem>
+                    <SelectItem value="neurology">Neurologie</SelectItem>
+                    <SelectItem value="nephrology">Néphrologie</SelectItem>
+                    <SelectItem value="hematology">Hématologie</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="researchType">Type de recherche</Label>
+                <RadioGroup 
+                  value={researchType} 
+                  onValueChange={setResearchType}
+                  className="flex flex-col space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="care_protocol" id="care_protocol" />
+                    <Label htmlFor="care_protocol" className="flex items-center">
+                      <Activity className="h-4 w-4 mr-2 text-blue-500" />
+                      Protocoles de soins
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="medications" id="medications" />
+                    <Label htmlFor="medications" className="flex items-center">
+                      <Pill className="h-4 w-4 mr-2 text-purple-500" />
+                      Médicaments et traitements
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="combined" id="combined" />
+                    <Label htmlFor="combined" className="flex items-center">
+                      <Search className="h-4 w-4 mr-2 text-green-500" />
+                      Protocoles complets (soins + médicaments)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="searchQuery">Recherche spécifique</Label>
+                <Textarea
+                  id="searchQuery"
+                  placeholder="Ex: protocole chimiothérapie cancer poumon stade 3, traitement BPCO exacerbation, protocole diabète type 2 avec complications..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+            </div>
+          )}
           
           {analysisType === 'genomic_sequence_analysis' && (
             <div className="space-y-2">
@@ -234,7 +317,8 @@ const BioMCPPanel: React.FC = () => {
             disabled={isProcessing || 
               (analysisType === 'genomic_sequence_analysis' && !sequence) ||
               (analysisType === 'variant_annotation' && !variant) ||
-              (analysisType === 'pathway_analysis' && !genes)
+              (analysisType === 'pathway_analysis' && !genes) ||
+              (analysisType === 'medical_research' && !searchQuery)
             }
             className="w-full"
           >
@@ -243,7 +327,7 @@ const BioMCPPanel: React.FC = () => {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Traitement...
               </>
-            ) : 'Analyser'}
+            ) : analysisType === 'medical_research' ? 'Rechercher' : 'Analyser'}
           </Button>
         </form>
         

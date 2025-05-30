@@ -1,4 +1,3 @@
-
 import { MCPRequest, MCPResponse } from '../MCPClient';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,6 +24,8 @@ export class BioMCPService {
           return await this.handleVariantAnnotation(request);
         case 'pathway_analysis':
           return await this.handlePathwayAnalysis(request);
+        case 'medical_research':
+          return await this.handleMedicalResearch(request);
         default:
           return this.createErrorResponse(request.id, `Unsupported BioMCP request type: ${request.type}`);
       }
@@ -35,6 +36,265 @@ export class BioMCPService {
         error instanceof Error ? error.message : 'Unknown error in BioMCP service'
       );
     }
+  }
+  
+  private async handleMedicalResearch(request: MCPRequest): Promise<MCPResponse> {
+    const { pathologyType, searchQuery, researchType } = request.content;
+    
+    if (!searchQuery) {
+      throw new Error('Search query is required for medical research');
+    }
+    
+    // Simuler une recherche médicale
+    const result = {
+      pathology: pathologyType,
+      researchType,
+      query: searchQuery,
+      protocols: this.getMedicalProtocols(pathologyType, researchType, searchQuery),
+      medications: this.getMedications(pathologyType, researchType, searchQuery),
+      guidelines: this.getClinicalGuidelines(pathologyType, searchQuery),
+      timestamp: new Date().toISOString()
+    };
+    
+    return this.createSuccessResponse(request.id, result);
+  }
+  
+  private getMedicalProtocols(pathologyType: string, researchType: string, query: string): any[] {
+    const baseProtocols = {
+      cancer: [
+        {
+          name: "Protocole FOLFOX",
+          indication: "Cancer colorectal métastatique",
+          phase: "Première ligne",
+          duration: "12 cycles (6 mois)",
+          efficacy: "Taux de réponse: 50-60%",
+          sideEffects: "Neuropathie périphérique, neutropénie"
+        },
+        {
+          name: "Protocole AC-T",
+          indication: "Cancer du sein adjuvant",
+          phase: "Post-chirurgie",
+          duration: "8 cycles (24 semaines)",
+          efficacy: "Réduction du risque de récidive: 35%",
+          sideEffects: "Alopécie, fatigue, cardiotoxicité"
+        },
+        {
+          name: "Immunothérapie anti-PD1",
+          indication: "Cancer du poumon non à petites cellules",
+          phase: "Première ligne (PD-L1 >50%)",
+          duration: "Jusqu'à progression",
+          efficacy: "Survie globale médiane: 30 mois",
+          sideEffects: "Pneumonite, colite, thyroïdite"
+        }
+      ],
+      pneumology: [
+        {
+          name: "Protocole BPCO exacerbation",
+          indication: "Exacerbation aiguë BPCO",
+          phase: "Hospitalisation",
+          duration: "5-7 jours",
+          treatment: "Corticoïdes + bronchodilatateurs + O2",
+          efficacy: "Amélioration symptômes: 80%"
+        },
+        {
+          name: "Réhabilitation respiratoire",
+          indication: "BPCO stable",
+          phase: "Ambulatoire",
+          duration: "8-12 semaines",
+          treatment: "Exercice + éducation + nutrition",
+          efficacy: "Amélioration qualité de vie: 70%"
+        },
+        {
+          name: "Traitement asthme sévère",
+          indication: "Asthme non contrôlé",
+          phase: "Étape 5",
+          duration: "Traitement continu",
+          treatment: "Biothérapie anti-IgE/IL5",
+          efficacy: "Réduction exacerbations: 50%"
+        }
+      ],
+      diabetes: [
+        {
+          name: "Protocole diabète type 2 débutant",
+          indication: "Diabète type 2 nouvellement diagnostiqué",
+          phase: "Première intention",
+          duration: "Traitement à vie",
+          treatment: "Metformine + règles hygiéno-diététiques",
+          target: "HbA1c < 7%"
+        },
+        {
+          name: "Protocole complications diabétiques",
+          indication: "Diabète avec complications",
+          phase: "Traitement intensifié",
+          duration: "Suivi rapproché",
+          treatment: "Insuline + inhibiteurs SGLT2 + statine",
+          target: "HbA1c < 6.5%, LDL < 0.7g/L"
+        }
+      ]
+    };
+    
+    return baseProtocols[pathologyType as keyof typeof baseProtocols] || [];
+  }
+  
+  private getMedications(pathologyType: string, researchType: string, query: string): any[] {
+    const baseMedications = {
+      cancer: [
+        {
+          name: "Bevacizumab (Avastin)",
+          class: "Anticorps monoclonal anti-VEGF",
+          indication: "Cancer colorectal, poumon, rein",
+          dosage: "5-15 mg/kg toutes les 2-3 semaines",
+          contraindications: "Hémorragie active, chirurgie récente",
+          monitoring: "TA, protéinurie, cicatrisation"
+        },
+        {
+          name: "Pembrolizumab (Keytruda)",
+          class: "Inhibiteur de checkpoint PD-1",
+          indication: "Mélanome, cancer poumon, vessie",
+          dosage: "200 mg toutes les 3 semaines",
+          contraindications: "Maladie auto-immune active",
+          monitoring: "Fonction thyroïdienne, hépatique"
+        },
+        {
+          name: "Trastuzumab (Herceptin)",
+          class: "Anticorps monoclonal anti-HER2",
+          indication: "Cancer du sein HER2+",
+          dosage: "6 mg/kg toutes les 3 semaines",
+          contraindications: "Dysfonction cardiaque",
+          monitoring: "FEVG, fonction cardiaque"
+        }
+      ],
+      pneumology: [
+        {
+          name: "Tiotropium (Spiriva)",
+          class: "Bronchodilatateur anticholinergique",
+          indication: "BPCO",
+          dosage: "18 μg/jour inhalation",
+          contraindications: "Glaucome, rétention urinaire",
+          monitoring: "Fonction respiratoire"
+        },
+        {
+          name: "Fluticasone/Salmétérol (Seretide)",
+          class: "Corticoïde + β2-agoniste",
+          indication: "Asthme, BPCO",
+          dosage: "25/250 μg 2 fois/jour",
+          contraindications: "Infection respiratoire non traitée",
+          monitoring: "Croissance (enfant), densité osseuse"
+        },
+        {
+          name: "Omalizumab (Xolair)",
+          class: "Anticorps monoclonal anti-IgE",
+          indication: "Asthme allergique sévère",
+          dosage: "Selon IgE et poids corporel",
+          contraindications: "Hypersensibilité",
+          monitoring: "Réaction anaphylactique"
+        }
+      ],
+      diabetes: [
+        {
+          name: "Metformine",
+          class: "Biguanide",
+          indication: "Diabète type 2",
+          dosage: "500-2000 mg/jour",
+          contraindications: "Insuffisance rénale sévère",
+          monitoring: "Fonction rénale, vitamine B12"
+        },
+        {
+          name: "Empagliflozine (Jardiance)",
+          class: "Inhibiteur SGLT2",
+          indication: "Diabète type 2",
+          dosage: "10-25 mg/jour",
+          contraindications: "Acidocétose, déshydratation",
+          monitoring: "Fonction rénale, infections génitales"
+        },
+        {
+          name: "Liraglutide (Victoza)",
+          class: "Agoniste GLP-1",
+          indication: "Diabète type 2",
+          dosage: "0.6-1.8 mg/jour SC",
+          contraindications: "Pancréatite, cancer thyroïde",
+          monitoring: "Poids, glycémie, lipase"
+        }
+      ]
+    };
+    
+    return baseMedications[pathologyType as keyof typeof baseMedications] || [];
+  }
+  
+  private getClinicalGuidelines(pathologyType: string, query: string): any[] {
+    const guidelines = {
+      cancer: [
+        {
+          organization: "ESMO",
+          title: "European Society for Medical Oncology Guidelines",
+          year: "2023",
+          url: "https://www.esmo.org/guidelines",
+          focus: "Traitement des cancers solides"
+        },
+        {
+          organization: "NCCN",
+          title: "National Comprehensive Cancer Network",
+          year: "2023",
+          url: "https://www.nccn.org/guidelines",
+          focus: "Lignes directrices thérapeutiques"
+        },
+        {
+          organization: "INCa",
+          title: "Institut National du Cancer",
+          year: "2023",
+          url: "https://www.e-cancer.fr",
+          focus: "Recommandations françaises"
+        }
+      ],
+      pneumology: [
+        {
+          organization: "GOLD",
+          title: "Global Initiative for Chronic Obstructive Lung Disease",
+          year: "2023",
+          url: "https://goldcopd.org",
+          focus: "Prise en charge BPCO"
+        },
+        {
+          organization: "GINA",
+          title: "Global Initiative for Asthma",
+          year: "2023",
+          url: "https://ginasthma.org",
+          focus: "Gestion de l'asthme"
+        },
+        {
+          organization: "SPLF",
+          title: "Société de Pneumologie de Langue Française",
+          year: "2023",
+          url: "https://splf.fr",
+          focus: "Recommandations françaises"
+        }
+      ],
+      diabetes: [
+        {
+          organization: "ADA",
+          title: "American Diabetes Association",
+          year: "2023",
+          url: "https://diabetes.org",
+          focus: "Standards of Medical Care"
+        },
+        {
+          organization: "EASD",
+          title: "European Association for the Study of Diabetes",
+          year: "2023",
+          url: "https://easd.org",
+          focus: "Consensus européen"
+        },
+        {
+          organization: "SFD",
+          title: "Société Francophone du Diabète",
+          year: "2023",
+          url: "https://sfdiabete.org",
+          focus: "Recommandations françaises"
+        }
+      ]
+    };
+    
+    return guidelines[pathologyType as keyof typeof guidelines] || [];
   }
   
   private async handleGenomicSequenceAnalysis(request: MCPRequest): Promise<MCPResponse> {
