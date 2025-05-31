@@ -1,13 +1,14 @@
+
 import React, { useState } from 'react';
 import { useMCP } from '@/hooks/useMCP';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Textarea } from '../ui/textarea';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Loader2, Activity, Stethoscope, Search, Pill } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Loader2, Activity, Stethoscope } from 'lucide-react';
+import DiseaseTypeSelector from './biomcp/DiseaseTypeSelector';
+import AnalysisTypeSelector from './biomcp/AnalysisTypeSelector';
+import GenomicAnalysisForm from './biomcp/GenomicAnalysisForm';
+import MedicalResearchForm from './biomcp/MedicalResearchForm';
+import ResultsDisplay from './biomcp/ResultsDisplay';
 
 const BioMCPPanel: React.FC = () => {
   const { isProcessing, processLocalRequest } = useMCP();
@@ -22,7 +23,7 @@ const BioMCPPanel: React.FC = () => {
   const [cancerType, setCancerType] = useState('lung');
   const [pulmonaryCondition, setPulmonaryCondition] = useState('copd');
   
-  // New states for medical research
+  // Medical research states
   const [pathologyType, setPathologyType] = useState('cancer');
   const [searchQuery, setSearchQuery] = useState('');
   const [researchType, setResearchType] = useState('care_protocol');
@@ -69,6 +70,21 @@ const BioMCPPanel: React.FC = () => {
       setResult({ error: error instanceof Error ? error.message : 'Une erreur inconnue est survenue' });
     }
   };
+
+  const isFormValid = () => {
+    switch (analysisType) {
+      case 'genomic_sequence_analysis':
+        return !!sequence;
+      case 'variant_annotation':
+        return !!variant;
+      case 'pathway_analysis':
+        return !!genes;
+      case 'medical_research':
+        return !!searchQuery;
+      default:
+        return false;
+    }
+  };
   
   return (
     <Card className="w-full">
@@ -88,238 +104,49 @@ const BioMCPPanel: React.FC = () => {
       
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Domaine médical</Label>
-            <RadioGroup 
-              value={diseaseType} 
-              onValueChange={setDiseaseType}
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="cancer" id="cancer" />
-                <Label htmlFor="cancer" className="flex items-center">
-                  <Activity className="h-4 w-4 mr-2 text-red-500" />
-                  Cancérologie
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="pulmonology" id="pulmonology" />
-                <Label htmlFor="pulmonology" className="flex items-center">
-                  <Stethoscope className="h-4 w-4 mr-2 text-blue-500" />
-                  Pneumologie
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
+          <DiseaseTypeSelector
+            diseaseType={diseaseType}
+            setDiseaseType={setDiseaseType}
+            cancerType={cancerType}
+            setCancerType={setCancerType}
+            pulmonaryCondition={pulmonaryCondition}
+            setPulmonaryCondition={setPulmonaryCondition}
+          />
           
-          {diseaseType === 'cancer' && (
-            <div className="space-y-2">
-              <Label htmlFor="cancerType">Type de cancer</Label>
-              <Select value={cancerType} onValueChange={setCancerType}>
-                <SelectTrigger id="cancerType">
-                  <SelectValue placeholder="Sélectionner un type de cancer" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="lung">Cancer du poumon</SelectItem>
-                  <SelectItem value="breast">Cancer du sein</SelectItem>
-                  <SelectItem value="colorectal">Cancer colorectal</SelectItem>
-                  <SelectItem value="prostate">Cancer de la prostate</SelectItem>
-                  <SelectItem value="melanoma">Mélanome</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <AnalysisTypeSelector
+            analysisType={analysisType}
+            setAnalysisType={setAnalysisType}
+          />
           
-          {diseaseType === 'pulmonology' && (
-            <div className="space-y-2">
-              <Label htmlFor="pulmonaryCondition">Condition pulmonaire</Label>
-              <Select value={pulmonaryCondition} onValueChange={setPulmonaryCondition}>
-                <SelectTrigger id="pulmonaryCondition">
-                  <SelectValue placeholder="Sélectionner une condition pulmonaire" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="copd">BPCO</SelectItem>
-                  <SelectItem value="asthma">Asthme</SelectItem>
-                  <SelectItem value="fibrosis">Fibrose pulmonaire</SelectItem>
-                  <SelectItem value="pneumonia">Pneumonie</SelectItem>
-                  <SelectItem value="tuberculosis">Tuberculose</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          
-          <div className="space-y-2">
-            <Label>Type d'analyse</Label>
-            <RadioGroup 
-              value={analysisType} 
-              onValueChange={setAnalysisType}
-              className="flex flex-col space-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="genomic_sequence_analysis" id="genomic" />
-                <Label htmlFor="genomic">Analyse de séquence génomique</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="variant_annotation" id="variant" />
-                <Label htmlFor="variant">Annotation de variant</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="pathway_analysis" id="pathway" />
-                <Label htmlFor="pathway">Analyse de voie métabolique</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="medical_research" id="medical_research" />
-                <Label htmlFor="medical_research" className="flex items-center">
-                  <Search className="h-4 w-4 mr-2 text-green-500" />
-                  Recherche médicale - Protocoles et médicaments
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
-          {analysisType === 'medical_research' && (
-            <div className="space-y-4 p-4 border rounded-lg bg-green-50">
-              <div className="space-y-2">
-                <Label htmlFor="pathologyType">Pathologie</Label>
-                <Select value={pathologyType} onValueChange={setPathologyType}>
-                  <SelectTrigger id="pathologyType">
-                    <SelectValue placeholder="Sélectionner une pathologie" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cancer">Cancérologie</SelectItem>
-                    <SelectItem value="pneumology">Pneumologie</SelectItem>
-                    <SelectItem value="diabetes">Diabétologie</SelectItem>
-                    <SelectItem value="cardiology">Cardiologie</SelectItem>
-                    <SelectItem value="neurology">Neurologie</SelectItem>
-                    <SelectItem value="nephrology">Néphrologie</SelectItem>
-                    <SelectItem value="hematology">Hématologie</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="researchType">Type de recherche</Label>
-                <RadioGroup 
-                  value={researchType} 
-                  onValueChange={setResearchType}
-                  className="flex flex-col space-y-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="care_protocol" id="care_protocol" />
-                    <Label htmlFor="care_protocol" className="flex items-center">
-                      <Activity className="h-4 w-4 mr-2 text-blue-500" />
-                      Protocoles de soins
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="medications" id="medications" />
-                    <Label htmlFor="medications" className="flex items-center">
-                      <Pill className="h-4 w-4 mr-2 text-purple-500" />
-                      Médicaments et traitements
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="combined" id="combined" />
-                    <Label htmlFor="combined" className="flex items-center">
-                      <Search className="h-4 w-4 mr-2 text-green-500" />
-                      Protocoles complets (soins + médicaments)
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="searchQuery">Recherche spécifique</Label>
-                <Textarea
-                  id="searchQuery"
-                  placeholder="Ex: protocole chimiothérapie cancer poumon stade 3, traitement BPCO exacerbation, protocole diabète type 2 avec complications..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
-            </div>
-          )}
-          
-          {analysisType === 'genomic_sequence_analysis' && (
-            <div className="space-y-2">
-              <Label htmlFor="sequence">Séquence génomique</Label>
-              <Textarea
-                id="sequence"
-                placeholder={diseaseType === 'cancer' 
-                  ? "Entrez une séquence ADN/ARN liée au cancer (ex: ATGCATGCATGC...)" 
-                  : "Entrez une séquence ADN/ARN liée à la pneumologie (ex: ATGCATGCATGC...)"}
-                value={sequence}
-                onChange={(e) => setSequence(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-          )}
-          
-          {analysisType === 'variant_annotation' && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="variant">Variant</Label>
-                <Input
-                  id="variant"
-                  placeholder={diseaseType === 'cancer' 
-                    ? "Ex: EGFR T790M, BRAF V600E" 
-                    : "Ex: CFTR F508del, SERPINA1 E342K"}
-                  value={variant}
-                  onChange={(e) => setVariant(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="genome">Génome de référence</Label>
-                <Input
-                  id="genome"
-                  placeholder="Ex: GRCh38"
-                  value={genome}
-                  onChange={(e) => setGenome(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-          
-          {analysisType === 'pathway_analysis' && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="genes">Gènes (séparés par des virgules)</Label>
-                <Textarea
-                  id="genes"
-                  placeholder={diseaseType === 'cancer' 
-                    ? "Ex: EGFR, TP53, KRAS, BRAF, HER2" 
-                    : "Ex: CFTR, SERPINA1, TNF, IL6, TLR4"}
-                  value={genes}
-                  onChange={(e) => setGenes(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pathwayDb">Base de données de voies métaboliques</Label>
-                <Select value={pathwayDb} onValueChange={setPathwayDb}>
-                  <SelectTrigger id="pathwayDb">
-                    <SelectValue placeholder="Sélectionner une base de données" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="KEGG">KEGG</SelectItem>
-                    <SelectItem value="Reactome">Reactome</SelectItem>
-                    <SelectItem value="WikiPathways">WikiPathways</SelectItem>
-                    <SelectItem value="BioCarta">BioCarta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
+          {analysisType === 'medical_research' ? (
+            <MedicalResearchForm
+              pathologyType={pathologyType}
+              setPathologyType={setPathologyType}
+              researchType={researchType}
+              setResearchType={setResearchType}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+            />
+          ) : (
+            <GenomicAnalysisForm
+              analysisType={analysisType}
+              sequence={sequence}
+              setSequence={setSequence}
+              variant={variant}
+              setVariant={setVariant}
+              genome={genome}
+              setGenome={setGenome}
+              genes={genes}
+              setGenes={setGenes}
+              pathwayDb={pathwayDb}
+              setPathwayDb={setPathwayDb}
+              diseaseType={diseaseType}
+            />
           )}
           
           <Button 
             type="submit" 
-            disabled={isProcessing || 
-              (analysisType === 'genomic_sequence_analysis' && !sequence) ||
-              (analysisType === 'variant_annotation' && !variant) ||
-              (analysisType === 'pathway_analysis' && !genes) ||
-              (analysisType === 'medical_research' && !searchQuery)
-            }
+            disabled={isProcessing || !isFormValid()}
             className="w-full"
           >
             {isProcessing ? (
@@ -331,18 +158,7 @@ const BioMCPPanel: React.FC = () => {
           </Button>
         </form>
         
-        {result && (
-          <div className="mt-6">
-            <Label>Résultat</Label>
-            <div className="bg-muted p-4 rounded-md mt-1 whitespace-pre-wrap overflow-auto max-h-[300px]">
-              {result.error ? (
-                <div className="text-red-500">Erreur: {result.error}</div>
-              ) : (
-                <pre className="text-sm">{JSON.stringify(result, null, 2)}</pre>
-              )}
-            </div>
-          </div>
-        )}
+        <ResultsDisplay result={result} />
       </CardContent>
       
       <CardFooter className="flex justify-between">
