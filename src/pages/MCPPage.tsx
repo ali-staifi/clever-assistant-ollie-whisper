@@ -6,7 +6,6 @@ import ApifyMCPPanel from '../components/mcp/apify/ApifyMCPPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Activity, Microscope } from 'lucide-react';
 
 const MCPPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('standard');
@@ -30,28 +29,7 @@ const MCPPage: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="bio" className="mt-0">
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Activity className="h-5 w-5 mr-2 text-red-500" />
-                      BioMCP
-                    </CardTitle>
-                    <CardDescription>
-                      Analyse génomique spécialisée pour la recherche en cancérologie et pneumologie, basée sur 
-                      <a href="https://github.com/genomoncology/biomcp" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline ml-1">genomoncology/biomcp</a>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div>
-                      <h3 className="font-medium text-lg mb-2">Fonctionnalités principales</h3>
-                      <p className="pl-6">Analyse de séquences génomiques et protéiques, Annotation de variants génétiques, Analyse de voies métaboliques, Intégration avec les bases de données biologiques</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <BioMCPPanel />
-              </div>
+              <BioMCPPanel />
             </TabsContent>
             
             <TabsContent value="apify" className="mt-0">
