@@ -87,25 +87,25 @@ const BioMCPPanel: React.FC = () => {
   };
   
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-8rem)]">
       {/* Formulaire */}
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+      <Card className="w-full flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center space-x-2 text-lg">
             {diseaseType === 'cancer' ? (
-              <Activity className="h-6 w-6 mr-2 text-red-500" />
+              <Activity className="h-5 w-5 mr-2 text-red-500" />
             ) : (
-              <Stethoscope className="h-6 w-6 mr-2 text-blue-500" />
+              <Stethoscope className="h-5 w-5 mr-2 text-blue-500" />
             )}
             BioMCP - Recherche Médicale
           </CardTitle>
-          <CardDescription>
-            Analyses génomiques et recherche médicale spécialisées pour la recherche en cancérologie, pneumologie et diabétologie
+          <CardDescription className="text-sm">
+            Analyses génomiques et recherche médicale spécialisées
           </CardDescription>
         </CardHeader>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="flex-1 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <DiseaseTypeSelector
               diseaseType={diseaseType}
               setDiseaseType={setDiseaseType}
@@ -149,7 +149,7 @@ const BioMCPPanel: React.FC = () => {
             <Button 
               type="submit" 
               disabled={isProcessing || !isFormValid()}
-              className="w-full"
+              className="w-full h-9"
             >
               {isProcessing ? (
                 <>
@@ -161,27 +161,27 @@ const BioMCPPanel: React.FC = () => {
           </form>
         </CardContent>
         
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => setResult(null)}>
+        <CardFooter className="pt-2">
+          <Button variant="outline" size="sm" onClick={() => setResult(null)}>
             Effacer le résultat
           </Button>
         </CardFooter>
       </Card>
 
       {/* Résultats */}
-      <div className="w-full">
+      <div className="w-full flex flex-col h-full">
         {result ? (
-          <Card className="w-full h-fit">
-            <CardHeader>
-              <CardTitle>Résultats</CardTitle>
+          <Card className="w-full flex flex-col h-full">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Résultats</CardTitle>
             </CardHeader>
-            <CardContent className="max-h-[800px] overflow-y-auto">
+            <CardContent className="flex-1 overflow-y-auto">
               <ResultsDisplay result={result} />
             </CardContent>
           </Card>
         ) : (
-          <Card className="w-full h-fit border-dashed">
-            <CardContent className="pt-6">
+          <Card className="w-full h-full border-dashed flex flex-col">
+            <CardContent className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
                 <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Les résultats apparaîtront ici après avoir lancé une recherche</p>

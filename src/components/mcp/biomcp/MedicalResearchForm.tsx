@@ -34,7 +34,7 @@ const MedicalResearchForm: React.FC<MedicalResearchFormProps> = ({
 
   const quickSearches = [
     {
-      label: "BPCO - Protocoles de soins",
+      label: "BPCO - Protocoles",
       query: "protocole prise en charge BPCO exacerbation hospitalisation",
       type: "care_protocol",
       pathology: "pneumology",
@@ -48,14 +48,14 @@ const MedicalResearchForm: React.FC<MedicalResearchFormProps> = ({
       icon: Pill
     },
     {
-      label: "Cancer poumon - Protocoles complets",
+      label: "Cancer poumon",
       query: "cancer poumon non petites cellules chimiothérapie immunothérapie",
       type: "combined",
       pathology: "cancer",
       icon: Search
     },
     {
-      label: "Diabète type 2 - Soins",
+      label: "Diabète type 2",
       query: "diabète type 2 prise en charge HbA1c complications",
       type: "care_protocol",
       pathology: "diabetes",
@@ -64,59 +64,61 @@ const MedicalResearchForm: React.FC<MedicalResearchFormProps> = ({
   ];
 
   return (
-    <div className="space-y-4 p-4 border rounded-lg bg-green-50">
-      <div className="space-y-2">
-        <Label htmlFor="pathologyType">Pathologie</Label>
-        <Select value={pathologyType} onValueChange={setPathologyType}>
-          <SelectTrigger id="pathologyType">
-            <SelectValue placeholder="Sélectionner une pathologie" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="cancer">Cancérologie</SelectItem>
-            <SelectItem value="pneumology">Pneumologie</SelectItem>
-            <SelectItem value="diabetes">Diabétologie</SelectItem>
-            <SelectItem value="cardiology">Cardiologie</SelectItem>
-            <SelectItem value="neurology">Neurologie</SelectItem>
-            <SelectItem value="nephrology">Néphrologie</SelectItem>
-            <SelectItem value="hematology">Hématologie</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="researchType">Type de recherche</Label>
-        <RadioGroup 
-          value={researchType} 
-          onValueChange={setResearchType}
-          className="grid grid-cols-1 md:grid-cols-3 gap-3"
-        >
-          <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-gray-50">
-            <RadioGroupItem value="care_protocol" id="care_protocol" />
-            <Label htmlFor="care_protocol" className="flex items-center cursor-pointer flex-1">
-              <Activity className="h-4 w-4 mr-2 text-blue-500" />
-              Protocoles de soins
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-gray-50">
-            <RadioGroupItem value="medications" id="medications" />
-            <Label htmlFor="medications" className="flex items-center cursor-pointer flex-1">
-              <Pill className="h-4 w-4 mr-2 text-purple-500" />
-              Médicaments et traitements
-            </Label>
-          </div>
-          <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-gray-50">
-            <RadioGroupItem value="combined" id="combined" />
-            <Label htmlFor="combined" className="flex items-center cursor-pointer flex-1">
-              <Search className="h-4 w-4 mr-2 text-green-500" />
-              Protocoles complets
-            </Label>
-          </div>
-        </RadioGroup>
+    <div className="space-y-3 p-3 border rounded-lg bg-green-50">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="pathologyType" className="text-sm font-medium">Pathologie</Label>
+          <Select value={pathologyType} onValueChange={setPathologyType}>
+            <SelectTrigger id="pathologyType" className="h-8">
+              <SelectValue placeholder="Sélectionner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cancer">Cancérologie</SelectItem>
+              <SelectItem value="pneumology">Pneumologie</SelectItem>
+              <SelectItem value="diabetes">Diabétologie</SelectItem>
+              <SelectItem value="cardiology">Cardiologie</SelectItem>
+              <SelectItem value="neurology">Neurologie</SelectItem>
+              <SelectItem value="nephrology">Néphrologie</SelectItem>
+              <SelectItem value="hematology">Hématologie</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Type de recherche</Label>
+          <RadioGroup 
+            value={researchType} 
+            onValueChange={setResearchType}
+            className="grid grid-cols-3 gap-1"
+          >
+            <div className="flex items-center space-x-1 p-1 border rounded bg-white hover:bg-gray-50">
+              <RadioGroupItem value="care_protocol" id="care_protocol" className="h-3 w-3" />
+              <Label htmlFor="care_protocol" className="text-xs cursor-pointer flex items-center">
+                <Activity className="h-3 w-3 mr-1 text-blue-500" />
+                Protocoles
+              </Label>
+            </div>
+            <div className="flex items-center space-x-1 p-1 border rounded bg-white hover:bg-gray-50">
+              <RadioGroupItem value="medications" id="medications" className="h-3 w-3" />
+              <Label htmlFor="medications" className="text-xs cursor-pointer flex items-center">
+                <Pill className="h-3 w-3 mr-1 text-purple-500" />
+                Médicaments
+              </Label>
+            </div>
+            <div className="flex items-center space-x-1 p-1 border rounded bg-white hover:bg-gray-50">
+              <RadioGroupItem value="combined" id="combined" className="h-3 w-3" />
+              <Label htmlFor="combined" className="text-xs cursor-pointer flex items-center">
+                <Search className="h-3 w-3 mr-1 text-green-500" />
+                Complets
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>Recherches rapides</Label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className="space-y-1">
+        <Label className="text-sm font-medium">Recherches rapides</Label>
+        <div className="grid grid-cols-2 gap-1">
           {quickSearches.map((search, index) => {
             const IconComponent = search.icon;
             return (
@@ -124,28 +126,28 @@ const MedicalResearchForm: React.FC<MedicalResearchFormProps> = ({
                 key={index}
                 variant="outline"
                 size="sm"
-                className="justify-start text-left h-auto p-3"
+                className="justify-start text-left h-8 p-2"
                 onClick={() => handleQuickSearch(search.query, search.type, search.pathology)}
               >
-                <IconComponent className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="text-xs">{search.label}</span>
+                <IconComponent className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="text-xs truncate">{search.label}</span>
               </Button>
             );
           })}
         </div>
       </div>
       
-      <div className="space-y-2">
-        <Label htmlFor="searchQuery">Recherche spécifique</Label>
+      <div className="space-y-1">
+        <Label htmlFor="searchQuery" className="text-sm font-medium">Recherche spécifique</Label>
         <Textarea
           id="searchQuery"
-          placeholder="Ex: protocole chimiothérapie cancer poumon stade 3, traitement BPCO exacerbation, protocole diabète type 2 avec complications..."
+          placeholder="Ex: protocole chimiothérapie cancer poumon stade 3, traitement BPCO exacerbation..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="min-h-[80px]"
+          className="min-h-[60px] text-sm"
         />
         <div className="text-xs text-muted-foreground">
-          Utilisez les boutons de recherche rapide ci-dessus ou tapez votre propre requête
+          Utilisez les boutons de recherche rapide ou tapez votre requête
         </div>
       </div>
     </div>
