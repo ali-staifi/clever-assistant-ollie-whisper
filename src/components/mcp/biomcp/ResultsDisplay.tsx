@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Label } from '../../ui/label';
+import MedicalResearchResults from './MedicalResearchResults';
 
 interface ResultsDisplayProps {
   result: any;
@@ -9,6 +10,17 @@ interface ResultsDisplayProps {
 const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ result }) => {
   if (!result) return null;
 
+  // Check if this is a medical research result
+  const isMedicalResearch = result.analysisType === 'medical_research' || 
+                           result.protocols || 
+                           result.medications || 
+                           result.guidelines;
+
+  if (isMedicalResearch) {
+    return <MedicalResearchResults result={result} />;
+  }
+
+  // For other types of results, show the original JSON display
   return (
     <div className="mt-6">
       <Label>Résultat</Label>
