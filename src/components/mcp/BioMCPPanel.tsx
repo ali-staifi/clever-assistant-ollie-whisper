@@ -87,86 +87,110 @@ const BioMCPPanel: React.FC = () => {
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          {diseaseType === 'cancer' ? (
-            <Activity className="h-6 w-6 mr-2 text-red-500" />
-          ) : (
-            <Stethoscope className="h-6 w-6 mr-2 text-blue-500" />
-          )}
-          BioMCP - Recherche Médicale
-        </CardTitle>
-        <CardDescription>
-          Analyses génomiques et recherche médicale spécialisées pour la recherche en cancérologie, pneumologie et diabétologie
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <DiseaseTypeSelector
-            diseaseType={diseaseType}
-            setDiseaseType={setDiseaseType}
-            cancerType={cancerType}
-            setCancerType={setCancerType}
-            pulmonaryCondition={pulmonaryCondition}
-            setPulmonaryCondition={setPulmonaryCondition}
-          />
-          
-          <AnalysisTypeSelector
-            analysisType={analysisType}
-            setAnalysisType={setAnalysisType}
-          />
-          
-          {analysisType === 'medical_research' ? (
-            <MedicalResearchForm
-              pathologyType={pathologyType}
-              setPathologyType={setPathologyType}
-              researchType={researchType}
-              setResearchType={setResearchType}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-            />
-          ) : (
-            <GenomicAnalysisForm
-              analysisType={analysisType}
-              sequence={sequence}
-              setSequence={setSequence}
-              variant={variant}
-              setVariant={setVariant}
-              genome={genome}
-              setGenome={setGenome}
-              genes={genes}
-              setGenes={setGenes}
-              pathwayDb={pathwayDb}
-              setPathwayDb={setPathwayDb}
-              diseaseType={diseaseType}
-            />
-          )}
-          
-          <Button 
-            type="submit" 
-            disabled={isProcessing || !isFormValid()}
-            className="w-full"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Traitement...
-              </>
-            ) : analysisType === 'medical_research' ? 'Rechercher' : 'Analyser'}
-          </Button>
-        </form>
+    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Formulaire */}
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            {diseaseType === 'cancer' ? (
+              <Activity className="h-6 w-6 mr-2 text-red-500" />
+            ) : (
+              <Stethoscope className="h-6 w-6 mr-2 text-blue-500" />
+            )}
+            BioMCP - Recherche Médicale
+          </CardTitle>
+          <CardDescription>
+            Analyses génomiques et recherche médicale spécialisées pour la recherche en cancérologie, pneumologie et diabétologie
+          </CardDescription>
+        </CardHeader>
         
-        <ResultsDisplay result={result} />
-      </CardContent>
-      
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => setResult(null)}>
-          Effacer le résultat
-        </Button>
-      </CardFooter>
-    </Card>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <DiseaseTypeSelector
+              diseaseType={diseaseType}
+              setDiseaseType={setDiseaseType}
+              cancerType={cancerType}
+              setCancerType={setCancerType}
+              pulmonaryCondition={pulmonaryCondition}
+              setPulmonaryCondition={setPulmonaryCondition}
+            />
+            
+            <AnalysisTypeSelector
+              analysisType={analysisType}
+              setAnalysisType={setAnalysisType}
+            />
+            
+            {analysisType === 'medical_research' ? (
+              <MedicalResearchForm
+                pathologyType={pathologyType}
+                setPathologyType={setPathologyType}
+                researchType={researchType}
+                setResearchType={setResearchType}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+              />
+            ) : (
+              <GenomicAnalysisForm
+                analysisType={analysisType}
+                sequence={sequence}
+                setSequence={setSequence}
+                variant={variant}
+                setVariant={setVariant}
+                genome={genome}
+                setGenome={setGenome}
+                genes={genes}
+                setGenes={setGenes}
+                pathwayDb={pathwayDb}
+                setPathwayDb={setPathwayDb}
+                diseaseType={diseaseType}
+              />
+            )}
+            
+            <Button 
+              type="submit" 
+              disabled={isProcessing || !isFormValid()}
+              className="w-full"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Traitement...
+                </>
+              ) : analysisType === 'medical_research' ? 'Rechercher' : 'Analyser'}
+            </Button>
+          </form>
+        </CardContent>
+        
+        <CardFooter className="flex justify-between">
+          <Button variant="outline" onClick={() => setResult(null)}>
+            Effacer le résultat
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Résultats */}
+      <div className="w-full">
+        {result ? (
+          <Card className="w-full h-fit">
+            <CardHeader>
+              <CardTitle>Résultats</CardTitle>
+            </CardHeader>
+            <CardContent className="max-h-[800px] overflow-y-auto">
+              <ResultsDisplay result={result} />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="w-full h-fit border-dashed">
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Les résultats apparaîtront ici après avoir lancé une recherche</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
   );
 };
 
