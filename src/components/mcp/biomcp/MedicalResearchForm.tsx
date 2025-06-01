@@ -88,27 +88,27 @@ const MedicalResearchForm: React.FC<MedicalResearchFormProps> = ({
         <RadioGroup 
           value={researchType} 
           onValueChange={setResearchType}
-          className="flex flex-col space-y-2"
+          className="grid grid-cols-1 md:grid-cols-3 gap-3"
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-gray-50">
             <RadioGroupItem value="care_protocol" id="care_protocol" />
-            <Label htmlFor="care_protocol" className="flex items-center">
+            <Label htmlFor="care_protocol" className="flex items-center cursor-pointer flex-1">
               <Activity className="h-4 w-4 mr-2 text-blue-500" />
               Protocoles de soins
             </Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-gray-50">
             <RadioGroupItem value="medications" id="medications" />
-            <Label htmlFor="medications" className="flex items-center">
+            <Label htmlFor="medications" className="flex items-center cursor-pointer flex-1">
               <Pill className="h-4 w-4 mr-2 text-purple-500" />
               Médicaments et traitements
             </Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-gray-50">
             <RadioGroupItem value="combined" id="combined" />
-            <Label htmlFor="combined" className="flex items-center">
+            <Label htmlFor="combined" className="flex items-center cursor-pointer flex-1">
               <Search className="h-4 w-4 mr-2 text-green-500" />
-              Protocoles complets (soins + médicaments)
+              Protocoles complets
             </Label>
           </div>
         </RadioGroup>
@@ -142,7 +142,7 @@ const MedicalResearchForm: React.FC<MedicalResearchFormProps> = ({
           placeholder="Ex: protocole chimiothérapie cancer poumon stade 3, traitement BPCO exacerbation, protocole diabète type 2 avec complications..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="min-h-[100px]"
+          className="min-h-[80px]"
         />
         <div className="text-xs text-muted-foreground">
           Utilisez les boutons de recherche rapide ci-dessus ou tapez votre propre requête
