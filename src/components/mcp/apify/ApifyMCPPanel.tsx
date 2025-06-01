@@ -15,15 +15,15 @@ const ApifyMCPPanel: React.FC = () => {
   } = useApifyMCP();
   
   return (
-    <Card className="w-full mb-16">
+    <Card className="w-full mb-4">
       <CardHeader className="pb-2">
-        <CardTitle>ApifyMCP Demo</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-lg">ApifyMCP Demo</CardTitle>
+        <CardDescription className="text-sm">
           Interagissez avec le module ApifyMCP pour l'automatisation web
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="pt-2">
+      <CardContent className="pt-1 space-y-3">
         <ApifyRequestForm 
           onSubmit={handleSubmitRequest}
           isProcessing={isProcessing}
@@ -36,7 +36,7 @@ const ApifyMCPPanel: React.FC = () => {
         )}
       </CardContent>
       
-      <CardFooter className="pt-0">
+      <CardFooter className="pt-2">
         <Button variant="outline" onClick={() => setResult(null)} size="sm">
           Effacer le résultat
         </Button>

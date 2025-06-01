@@ -66,14 +66,14 @@ const ApiPage = () => {
   };
 
   return (
-    <div className="container py-8 mx-auto">
-      <div className="flex items-center mb-6">
-        <ServerIcon className="mr-2 h-6 w-6 text-jarvis-blue" />
-        <h1 className="text-2xl font-bold">API Configuration</h1>
+    <div className="container py-4 mx-auto">
+      <div className="flex items-center mb-4">
+        <ServerIcon className="mr-2 h-5 w-5 text-jarvis-blue" />
+        <h1 className="text-xl font-bold">API Configuration</h1>
       </div>
 
       <Tabs defaultValue="settings">
-        <TabsList className="mb-4">
+        <TabsList className="mb-3">
           <TabsTrigger value="settings">Configuration</TabsTrigger>
           <TabsTrigger value="docs">Documentation</TabsTrigger>
           <TabsTrigger value="features">Fonctionnalités</TabsTrigger>

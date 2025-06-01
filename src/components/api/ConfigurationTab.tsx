@@ -20,13 +20,13 @@ const ConfigurationTab = ({ saveApiKey }: ConfigurationTabProps) => {
       if (values.tavilyKey) localStorage.setItem('tavily-api-key', values.tavilyKey);
       if (values.googleKey) localStorage.setItem('google-api-key', values.googleKey);
       if (values.generalKey) localStorage.setItem('general-api-key', values.generalKey);
-    })} className="grid gap-6">
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">API Externes</h2>
-        <div className="space-y-4">
+    })} className="grid gap-4">
+      <Card className="p-4">
+        <h2 className="text-lg font-semibold mb-3">API Externes</h2>
+        <div className="space-y-3">
           <ApiFormSection 
             title="Générale"
-            icon={<ServerIcon className="mr-2 h-5 w-5 text-jarvis-blue" />}
+            icon={<ServerIcon className="mr-2 h-4 w-4 text-jarvis-blue" />}
             keyName="generalKey"
             description="Pour accéder aux fonctionnalités avancées"
             placeholder="Entrez votre clé API générale"
@@ -37,7 +37,7 @@ const ConfigurationTab = ({ saveApiKey }: ConfigurationTabProps) => {
 
       <ApiFormSection 
         title="Tavily (Recherche Web)"
-        icon={<Search className="mr-2 h-5 w-5 text-jarvis-blue" />}
+        icon={<Search className="mr-2 h-4 w-4 text-jarvis-blue" />}
         keyName="tavilyKey"
         description="Nécessaire pour les fonctionnalités de recherche web."
         placeholder="Entrez votre clé API Tavily"
@@ -47,7 +47,7 @@ const ConfigurationTab = ({ saveApiKey }: ConfigurationTabProps) => {
 
       <ApiFormSection 
         title="Google"
-        icon={<Globe className="mr-2 h-5 w-5 text-jarvis-blue" />}
+        icon={<Globe className="mr-2 h-4 w-4 text-jarvis-blue" />}
         keyName="googleKey"
         description="Pour les services Google (Maps, YouTube, etc.)"
         placeholder="Entrez votre clé API Google"
@@ -55,18 +55,18 @@ const ConfigurationTab = ({ saveApiKey }: ConfigurationTabProps) => {
       />
       
       {/* Espace pour les futures API */}
-      <Card className="p-6 border-2 border-dashed border-gray-300">
-        <div className="flex items-center mb-4">
-          <ServerIcon className="mr-2 h-5 w-5 text-muted-foreground" />
-          <h2 className="text-xl font-semibold text-muted-foreground">Nouvelles API (À venir)</h2>
+      <Card className="p-4 border-2 border-dashed border-gray-300">
+        <div className="flex items-center mb-3">
+          <ServerIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+          <h2 className="text-lg font-semibold text-muted-foreground">Nouvelles API (À venir)</h2>
         </div>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Cet espace est réservé pour l'intégration de futures API. Restez à l'affût des mises à jour.
         </p>
       </Card>
       
-      <div className="flex justify-end">
-        <Button type="submit">
+      <div className="flex justify-end pt-2">
+        <Button type="submit" size="sm">
           Sauvegarder toutes les clés API
         </Button>
       </div>
