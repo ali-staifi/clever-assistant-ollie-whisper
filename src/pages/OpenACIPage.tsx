@@ -20,7 +20,7 @@ import {
   Eye
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { useOllamaConnection } from "@/hooks/useOllamaConnection";
+import { useChatOllama } from "@/hooks/useChatOllama";
 
 interface ACICommand {
   id: string;
@@ -40,27 +40,43 @@ const OpenACIPage: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const { toast } = useToast();
   
-  // Ollama connection for LLM integration
+  // Use the corrected chat hook
   const {
     ollamaUrl,
     ollamaModel,
     connectionStatus,
     availableModels,
-    ollamaService,
+    messages,
+    isGenerating,
+    partialResponse,
     setOllamaUrl,
     setOllamaModel,
-    checkConnection
-  } = useOllamaConnection();
+    checkConnection,
+    sendMessage,
+    clearMessages
+  } = useChatOllama();
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs(prev => [...prev, `[${timestamp}] ${message}`]);
   };
 
+  useEffect(() => {
+    addLog("OpenACI interface initialized");
+    // Auto-check connection on load
+    checkConnection();
+  }, []);
+
   const connectToACI = async () => {
     try {
       addLog("Tentative de connexion à OpenACI...");
-      // Simulation de connexion - à remplacer par l'API réelle d'OpenACI
+      
+      // Check Ollama connection first
+      const connected = await checkConnection();
+      if (!connected) {
+        throw new Error("Impossible de se connecter à Ollama");
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsConnected(true);
       addLog("Connecté à OpenACI avec succès");
@@ -72,7 +88,7 @@ const OpenACIPage: React.FC = () => {
       addLog(`Erreur de connexion: ${error}`);
       toast({
         title: "Erreur de connexion",
-        description: "Impossible de se connecter à OpenACI",
+        description: "Impossible de se connecter à OpenACI. Vérifiez la connexion Ollama.",
         variant: "destructive",
       });
     }
@@ -105,29 +121,21 @@ const OpenACIPage: React.FC = () => {
     setCommands(prev => [newCommand, ...prev]);
     addLog(`Exécution de la commande: ${cmd}`);
 
-    // Simulation d'exécution - à remplacer par l'API réelle d'OpenACI
     try {
-      // Mettre à jour le statut à "executing"
+      // Update status to executing
       setCommands(prev => prev.map(c => 
         c.id === newCommand.id ? { ...c, status: 'executing' } : c
       ));
 
-      // Si Ollama est connecté, utiliser le LLM pour interpréter la commande
-      if (connectionStatus === 'connected' && ollamaService) {
-        const prompt = `Interprète cette commande de contrôle système et génère les actions appropriées pour OpenACI: "${cmd}"`;
-        
-        ollamaService.generateChatResponse(
-          prompt,
-          [],
-          (response) => {
-            addLog(`LLM: ${response}`);
-          }
-        );
+      // Use Ollama to interpret the command if connected
+      if (connectionStatus === 'connected') {
+        addLog("Envoi de la commande au LLM pour interprétation...");
+        await sendMessage(`Interprète cette commande de contrôle système et génère les actions appropriées pour OpenACI: "${cmd}"`);
       }
 
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Marquer comme complété
+      // Mark as completed
       setCommands(prev => prev.map(c => 
         c.id === newCommand.id ? { 
           ...c, 
@@ -168,61 +176,53 @@ const OpenACIPage: React.FC = () => {
   };
 
   return (
-    <div className="container py-4 min-h-full">
-      <div className="flex items-center justify-between mb-6">
+    <div className="container py-2 min-h-full">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold flex items-center">
-            <Monitor className="h-8 w-8 mr-3 text-blue-600" />
+          <h1 className="text-2xl font-bold flex items-center">
+            <Monitor className="h-6 w-6 mr-2 text-blue-600" />
             OpenACI
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Contrôle automatisé du PC et des applications avec IA
+          <p className="text-muted-foreground text-sm">
+            Contrôle automatisé du PC avec IA
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant={isConnected ? "default" : "secondary"}>
             {isConnected ? "Connecté" : "Déconnecté"}
           </Badge>
-          <a 
-            href="https://github.com/simular-ai/OpenACI.git" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700"
-          >
-            <ExternalLink className="h-4 w-4" />
-          </a>
+          <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"}>
+            LLM: {connectionStatus}
+          </Badge>
         </div>
       </div>
 
-      <Tabs defaultValue="control" className="space-y-4">
+      <Tabs defaultValue="control" className="space-y-2">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="control">Contrôle</TabsTrigger>
-          <TabsTrigger value="ollama">Ollama/LLM</TabsTrigger>
+          <TabsTrigger value="ollama">LLM</TabsTrigger>
           <TabsTrigger value="commands">Commandes</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="control" className="space-y-4">
+        <TabsContent value="control" className="space-y-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="h-5 w-5 mr-2" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center">
+                <Settings className="h-4 w-4 mr-2" />
                 Connexion OpenACI
               </CardTitle>
-              <CardDescription>
-                Connectez-vous à OpenACI pour contrôler votre système
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="pt-0">
               <div className="flex space-x-2">
                 {!isConnected ? (
-                  <Button onClick={connectToACI} className="flex items-center">
-                    <Play className="h-4 w-4 mr-2" />
+                  <Button onClick={connectToACI} size="sm" className="flex items-center">
+                    <Play className="h-3 w-3 mr-1" />
                     Se connecter
                   </Button>
                 ) : (
-                  <Button onClick={disconnectFromACI} variant="destructive">
-                    <Square className="h-4 w-4 mr-2" />
+                  <Button onClick={disconnectFromACI} variant="destructive" size="sm">
+                    <Square className="h-3 w-3 mr-1" />
                     Se déconnecter
                   </Button>
                 )}
@@ -231,100 +231,96 @@ const OpenACIPage: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Commandes de contrôle</CardTitle>
-              <CardDescription>
-                Entrez des commandes en langage naturel pour contrôler votre système
-              </CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Commandes de contrôle</CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmitCommand} className="space-y-4">
+            <CardContent className="pt-0">
+              <form onSubmit={handleSubmitCommand} className="space-y-2">
                 <Textarea
                   placeholder="Ex: Ouvre le navigateur web et va sur Google..."
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   disabled={!isConnected}
+                  className="h-16"
                 />
-                <Button type="submit" disabled={!isConnected || !command.trim()}>
-                  <Bot className="h-4 w-4 mr-2" />
+                <Button type="submit" disabled={!isConnected || !command.trim()} size="sm">
+                  <Bot className="h-3 w-3 mr-1" />
                   Exécuter
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center">
-                  <MousePointer className="h-4 w-4 mr-2" />
-                  Contrôle Souris
+                  <MousePointer className="h-3 w-3 mr-1" />
+                  Souris
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <p className="text-xs text-muted-foreground">
-                  Clics, déplacements, défilement automatiques
+                  Clics, déplacements automatiques
                 </p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center">
-                  <Keyboard className="h-4 w-4 mr-2" />
-                  Contrôle Clavier
+                  <Keyboard className="h-3 w-3 mr-1" />
+                  Clavier
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <p className="text-xs text-muted-foreground">
-                  Saisie de texte, raccourcis clavier
+                  Saisie, raccourcis
                 </p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-2">
                 <CardTitle className="text-sm flex items-center">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Vision IA
+                  <Eye className="h-3 w-3 mr-1" />
+                  Vision
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 <p className="text-xs text-muted-foreground">
-                  Reconnaissance d'écran, analyse visuelle
+                  Reconnaissance écran
                 </p>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="ollama" className="space-y-4">
+        <TabsContent value="ollama" className="space-y-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Cpu className="h-5 w-5 mr-2" />
-                Configuration Ollama
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center">
+                <Cpu className="h-4 w-4 mr-2" />
+                Configuration LLM
               </CardTitle>
-              <CardDescription>
-                Configurez la connexion LLM pour l'interprétation des commandes
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="pt-0 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-sm font-medium">URL Ollama</label>
+                  <label className="text-xs font-medium">URL Ollama</label>
                   <Input
                     value={ollamaUrl}
                     onChange={(e) => setOllamaUrl(e.target.value)}
                     placeholder="http://localhost:11434"
+                    className="h-8"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Modèle</label>
+                  <label className="text-xs font-medium">Modèle</label>
                   <select 
                     value={ollamaModel}
                     onChange={(e) => setOllamaModel(e.target.value)}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-1 border rounded text-xs h-8"
                   >
                     {availableModels.map(model => (
                       <option key={model} value={model}>{model}</option>
@@ -333,46 +329,43 @@ const OpenACIPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"}>
+                <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"} className="text-xs">
                   {connectionStatus === 'connected' ? "LLM Connecté" : "LLM Déconnecté"}
                 </Badge>
                 <Button onClick={checkConnection} size="sm">
-                  Tester la connexion
+                  Tester
                 </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="commands" className="space-y-4">
+        <TabsContent value="commands" className="space-y-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Historique des commandes</CardTitle>
-              <CardDescription>
-                Suivez l'exécution de vos commandes OpenACI
-              </CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Historique des commandes</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-96">
-                <div className="space-y-2">
+            <CardContent className="pt-0">
+              <ScrollArea className="h-64">
+                <div className="space-y-1">
                   {commands.map((cmd) => (
-                    <div key={cmd.id} className="flex items-center justify-between p-3 border rounded">
+                    <div key={cmd.id} className="flex items-center justify-between p-2 border rounded text-xs">
                       <div className="flex-1">
                         <div className="font-medium">{cmd.action}</div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground">
                           {cmd.timestamp.toLocaleString()}
                         </div>
                         {cmd.result && (
-                          <div className="text-sm mt-1">{cmd.result}</div>
+                          <div className="mt-1">{cmd.result}</div>
                         )}
                       </div>
-                      <Badge className={getStatusColor(cmd.status)}>
+                      <Badge className={getStatusColor(cmd.status) + " text-xs"}>
                         {cmd.status}
                       </Badge>
                     </div>
                   ))}
                   {commands.length === 0 && (
-                    <div className="text-center text-muted-foreground py-8">
+                    <div className="text-center text-muted-foreground py-4 text-xs">
                       Aucune commande exécutée
                     </div>
                   )}
@@ -382,24 +375,21 @@ const OpenACIPage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="logs" className="space-y-4">
+        <TabsContent value="logs" className="space-y-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Logs du système</CardTitle>
-              <CardDescription>
-                Journal des événements OpenACI
-              </CardDescription>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Logs du système</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-96">
-                <div className="font-mono text-sm space-y-1">
+            <CardContent className="pt-0">
+              <ScrollArea className="h-64">
+                <div className="font-mono text-xs space-y-1">
                   {logs.map((log, index) => (
                     <div key={index} className="text-muted-foreground">
                       {log}
                     </div>
                   ))}
                   {logs.length === 0 && (
-                    <div className="text-center text-muted-foreground py-8">
+                    <div className="text-center text-muted-foreground py-4">
                       Aucun log disponible
                     </div>
                   )}
