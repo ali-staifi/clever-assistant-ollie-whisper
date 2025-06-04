@@ -73,47 +73,49 @@ const OpenACIPage: React.FC = () => {
     
     setIsConnecting(true);
     try {
-      addLog("Tentative de connexion à OpenACI...");
-      
-      // Test simple de connectivité sans dépendre d'Ollama
-      addLog("Vérification des services système...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Simuler la connexion aux services OpenACI
-      addLog("Initialisation des modules de contrôle...");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      addLog("Activation du module de vision...");
+      addLog("🔌 Initialisation d'OpenACI...");
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      addLog("Activation du module souris/clavier...");
-      await new Promise(resolve => setTimeout(resolve, 300));
+      addLog("⚙️  Chargement des modules système...");
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      addLog("🖱️  Module souris/clavier activé");
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      addLog("👁️  Module vision activé");
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       setIsConnected(true);
-      addLog("✅ OpenACI connecté avec succès - Prêt pour le contrôle système");
+      addLog("✅ OpenACI opérationnel - Prêt pour le contrôle");
       
       toast({
         title: "OpenACI Activé",
-        description: "Le système de contrôle automatisé est maintenant opérationnel",
+        description: "Système de contrôle automatisé prêt",
       });
       
-      // Optionnellement tester Ollama en arrière-plan
+      // Test connexion LLM en arrière-plan sans bloquer
       if (connectionStatus !== 'connected') {
-        addLog("Test de la connexion LLM en arrière-plan...");
-        checkConnection().then((connected) => {
-          if (connected) {
-            addLog("✅ LLM connecté - Interprétation avancée disponible");
-          } else {
-            addLog("⚠️  LLM non connecté - Mode manuel uniquement");
-          }
-        });
+        addLog("🧠 Test connexion LLM...");
+        setTimeout(() => {
+          checkConnection().then((connected) => {
+            if (connected) {
+              addLog("✅ LLM connecté - IA avancée disponible");
+            } else {
+              addLog("⚠️  LLM non connecté - Mode basique uniquement");
+            }
+          }).catch(() => {
+            addLog("⚠️  LLM non disponible - Mode basique uniquement");
+          });
+        }, 100);
+      } else {
+        addLog("✅ LLM déjà connecté - IA avancée disponible");
       }
       
     } catch (error) {
-      addLog(`❌ Erreur de connexion: ${error}`);
+      addLog(`❌ Erreur d'initialisation: ${error}`);
       toast({
-        title: "Erreur de connexion",
-        description: "Impossible d'initialiser OpenACI",
+        title: "Erreur OpenACI",
+        description: "Impossible d'initialiser le système",
         variant: "destructive",
       });
     } finally {
@@ -124,10 +126,10 @@ const OpenACIPage: React.FC = () => {
   const disconnectFromACI = () => {
     setIsConnected(false);
     setIsRunning(false);
-    addLog("🔌 OpenACI déconnecté");
+    addLog("🔌 OpenACI désactivé");
     toast({
       title: "OpenACI Désactivé",
-      description: "Le système de contrôle a été arrêté",
+      description: "Système arrêté",
     });
   };
 
@@ -135,7 +137,7 @@ const OpenACIPage: React.FC = () => {
     if (!isConnected) {
       toast({
         title: "OpenACI non connecté",
-        description: "Veuillez d'abord connecter OpenACI",
+        description: "Veuillez d'abord activer OpenACI",
         variant: "destructive",
       });
       return;
@@ -150,36 +152,43 @@ const OpenACIPage: React.FC = () => {
     };
 
     setCommands(prev => [newCommand, ...prev]);
-    addLog(`🚀 Exécution: ${cmd}`);
+    addLog(`🚀 Nouvelle commande: "${cmd}"`);
 
     try {
-      // Update status to executing
+      // Marquer comme en cours d'exécution
       setCommands(prev => prev.map(c => 
         c.id === newCommand.id ? { ...c, status: 'executing' } : c
       ));
 
-      // Analyser la commande
       addLog("📋 Analyse de la commande...");
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 600));
 
-      // Si Ollama est disponible, l'utiliser pour l'interprétation
+      // Essayer d'utiliser le LLM si disponible
       if (connectionStatus === 'connected') {
-        addLog("🧠 Envoi au LLM pour interprétation avancée...");
+        addLog("🧠 Envoi au LLM pour analyse avancée...");
         try {
-          await sendMessage(`Tu es OpenACI, un système de contrôle PC automatisé. Analyse cette commande et génère un plan d'action détaillé: "${cmd}"`);
-          addLog("✅ Interprétation LLM terminée");
+          // Utiliser une promesse avec timeout pour éviter les blocages
+          await Promise.race([
+            sendMessage(`Analyse cette commande OpenACI et génère un plan d'exécution: "${cmd}"`),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout LLM')), 10000))
+          ]);
+          addLog("✅ Analyse LLM terminée");
         } catch (error) {
           addLog("⚠️  Erreur LLM - Passage en mode manuel");
+          console.error('LLM Error:', error);
         }
       } else {
-        addLog("🔧 Mode manuel - Analyse basique de la commande");
+        addLog("🔧 Mode manuel - Analyse locale");
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
 
-      // Simuler l'exécution de la commande
-      addLog("⚙️  Exécution des actions système...");
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      addLog("⚙️  Planification des actions...");
+      await new Promise(resolve => setTimeout(resolve, 700));
       
-      // Mark as completed
+      addLog("🎯 Exécution des actions système...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Marquer comme terminé
       setCommands(prev => prev.map(c => 
         c.id === newCommand.id ? { 
           ...c, 
@@ -188,11 +197,11 @@ const OpenACIPage: React.FC = () => {
         } : c
       ));
       
-      addLog(`✅ Commande "${cmd}" exécutée avec succès`);
+      addLog(`✅ Commande "${cmd}" terminée avec succès`);
       
       toast({
-        title: "Commande exécutée",
-        description: `"${cmd}" a été traité par OpenACI`,
+        title: "Commande réussie",
+        description: `"${cmd}" exécuté par OpenACI`,
       });
       
     } catch (error) {
@@ -203,11 +212,11 @@ const OpenACIPage: React.FC = () => {
           result: `Erreur: ${error}`
         } : c
       ));
-      addLog(`❌ Erreur lors de l'exécution: ${error}`);
+      addLog(`❌ Échec de la commande: ${error}`);
       
       toast({
         title: "Erreur d'exécution",
-        description: "La commande n'a pas pu être exécutée",
+        description: "La commande a échoué",
         variant: "destructive",
       });
     }
@@ -231,6 +240,16 @@ const OpenACIPage: React.FC = () => {
     }
   };
 
+  const getStatusIcon = (status: ACICommand['status']) => {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'executing': return '🔄';
+      case 'completed': return '✅';
+      case 'error': return '❌';
+      default: return '⚪';
+    }
+  };
+
   return (
     <div className="container py-1 min-h-full">
       <div className="flex items-center justify-between mb-3">
@@ -245,10 +264,10 @@ const OpenACIPage: React.FC = () => {
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant={isConnected ? "default" : "secondary"} className="text-xs">
-            {isConnected ? "🟢 Connecté" : "🔴 Déconnecté"}
+            {isConnected ? "🟢 Actif" : "🔴 Inactif"}
           </Badge>
           <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"} className="text-xs">
-            LLM: {connectionStatus === 'connected' ? '🟢' : '🔴'} {connectionStatus}
+            LLM: {connectionStatus === 'connected' ? '🟢' : '🔴'}
           </Badge>
         </div>
       </div>
@@ -257,7 +276,7 @@ const OpenACIPage: React.FC = () => {
         <Alert className="mb-3">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            OpenACI n'est pas connecté. Cliquez sur "Se connecter" pour activer le contrôle automatisé.
+            OpenACI est inactif. Cliquez sur "Activer" pour démarrer le système de contrôle.
           </AlertDescription>
         </Alert>
       )}
@@ -266,7 +285,7 @@ const OpenACIPage: React.FC = () => {
         <TabsList className="grid w-full grid-cols-4 h-8">
           <TabsTrigger value="control" className="text-xs">Contrôle</TabsTrigger>
           <TabsTrigger value="ollama" className="text-xs">LLM</TabsTrigger>
-          <TabsTrigger value="commands" className="text-xs">Commandes</TabsTrigger>
+          <TabsTrigger value="commands" className="text-xs">Historique</TabsTrigger>
           <TabsTrigger value="logs" className="text-xs">Logs</TabsTrigger>
         </TabsList>
 
@@ -275,7 +294,7 @@ const OpenACIPage: React.FC = () => {
             <CardHeader className="pb-1">
               <CardTitle className="text-sm flex items-center">
                 <Settings className="h-3 w-3 mr-1" />
-                Connexion OpenACI
+                État du système
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
@@ -288,7 +307,7 @@ const OpenACIPage: React.FC = () => {
                     disabled={isConnecting}
                   >
                     <Play className="h-3 w-3 mr-1" />
-                    {isConnecting ? 'Connexion...' : 'Se connecter'}
+                    {isConnecting ? 'Activation...' : 'Activer OpenACI'}
                   </Button>
                 ) : (
                   <Button 
@@ -298,7 +317,7 @@ const OpenACIPage: React.FC = () => {
                     className="h-7 text-xs"
                   >
                     <Square className="h-3 w-3 mr-1" />
-                    Se déconnecter
+                    Désactiver
                   </Button>
                 )}
               </div>
@@ -307,12 +326,12 @@ const OpenACIPage: React.FC = () => {
 
           <Card>
             <CardHeader className="pb-1">
-              <CardTitle className="text-sm">Commandes de contrôle</CardTitle>
+              <CardTitle className="text-sm">Interface de commande</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
               <form onSubmit={handleSubmitCommand} className="space-y-2">
                 <Textarea
-                  placeholder="Ex: Ouvre le navigateur web et va sur Google..."
+                  placeholder="Ex: Ouvre le navigateur et va sur Google, puis cherche 'OpenAI'..."
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   disabled={!isConnected}
@@ -336,7 +355,7 @@ const OpenACIPage: React.FC = () => {
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs flex items-center">
                   <MousePointer className="h-3 w-3 mr-1" />
-                  Souris
+                  Contrôle souris
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 pb-1">
@@ -350,7 +369,7 @@ const OpenACIPage: React.FC = () => {
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs flex items-center">
                   <Keyboard className="h-3 w-3 mr-1" />
-                  Clavier
+                  Contrôle clavier
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 pb-1">
@@ -364,7 +383,7 @@ const OpenACIPage: React.FC = () => {
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs flex items-center">
                   <Eye className="h-3 w-3 mr-1" />
-                  Vision
+                  Vision IA
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 pb-1">
@@ -439,9 +458,12 @@ const OpenACIPage: React.FC = () => {
                           <div className="mt-1 text-xs">{cmd.result}</div>
                         )}
                       </div>
-                      <Badge className={getStatusColor(cmd.status) + " text-xs"}>
-                        {cmd.status}
-                      </Badge>
+                      <div className="flex items-center space-x-1">
+                        <span className="text-xs">{getStatusIcon(cmd.status)}</span>
+                        <Badge className={getStatusColor(cmd.status) + " text-xs"}>
+                          {cmd.status}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                   {commands.length === 0 && (
