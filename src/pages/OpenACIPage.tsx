@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,8 @@ import {
   MousePointer,
   Keyboard,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useChatOllama } from "@/hooks/useChatOllama";
@@ -30,7 +30,7 @@ interface ACICommand {
   action: string;
   parameters?: any;
   timestamp: Date;
-  status: 'pending' | 'executing' | 'completed' | 'error';
+  status: 'pending' | 'executing' | 'completed' | 'error' | 'simulated';
   result?: string;
 }
 
@@ -65,7 +65,8 @@ const OpenACIPage: React.FC = () => {
   };
 
   useEffect(() => {
-    addLog("OpenACI interface initialized");
+    addLog("OpenACI interface initialized - MODE SIMULATION UNIQUEMENT");
+    addLog("⚠️  ATTENTION: OpenACI ne peut pas contrôler votre système réel");
   }, []);
 
   const connectToACI = async () => {
@@ -76,39 +77,40 @@ const OpenACIPage: React.FC = () => {
       addLog("🔌 Initialisation d'OpenACI...");
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      addLog("⚙️  Chargement des modules système...");
+      addLog("⚙️  Chargement des modules de simulation...");
       await new Promise(resolve => setTimeout(resolve, 400));
       
-      addLog("🖱️  Module souris/clavier activé");
+      addLog("🖱️  Module simulation souris/clavier activé");
       await new Promise(resolve => setTimeout(resolve, 200));
       
-      addLog("👁️  Module vision activé");
+      addLog("👁️  Module simulation vision activé");
       await new Promise(resolve => setTimeout(resolve, 200));
       
       setIsConnected(true);
-      addLog("✅ OpenACI opérationnel - Prêt pour le contrôle");
+      addLog("✅ OpenACI opérationnel - MODE SIMULATION ACTIVE");
+      addLog("ℹ️  Toutes les commandes seront simulées, aucune action réelle");
       
       toast({
-        title: "OpenACI Activé",
-        description: "Système de contrôle automatisé prêt",
+        title: "OpenACI Activé (Simulation)",
+        description: "Mode simulation - aucune action système réelle",
       });
       
-      // Test connexion LLM en arrière-plan sans bloquer
+      // Test connexion LLM en arrière-plan
       if (connectionStatus !== 'connected') {
         addLog("🧠 Test connexion LLM...");
         setTimeout(() => {
           checkConnection().then((connected) => {
             if (connected) {
-              addLog("✅ LLM connecté - IA avancée disponible");
+              addLog("✅ LLM connecté - Analyse avancée disponible");
             } else {
-              addLog("⚠️  LLM non connecté - Mode basique uniquement");
+              addLog("⚠️  LLM non connecté - Analyse basique uniquement");
             }
           }).catch(() => {
-            addLog("⚠️  LLM non disponible - Mode basique uniquement");
+            addLog("⚠️  LLM non disponible - Analyse basique uniquement");
           });
         }, 100);
       } else {
-        addLog("✅ LLM déjà connecté - IA avancée disponible");
+        addLog("✅ LLM déjà connecté - Analyse avancée disponible");
       }
       
     } catch (error) {
@@ -152,7 +154,7 @@ const OpenACIPage: React.FC = () => {
     };
 
     setCommands(prev => [newCommand, ...prev]);
-    addLog(`🚀 Nouvelle commande: "${cmd}"`);
+    addLog(`🚀 Nouvelle commande reçue: "${cmd}"`);
 
     try {
       // Marquer comme en cours d'exécution
@@ -165,43 +167,42 @@ const OpenACIPage: React.FC = () => {
 
       // Essayer d'utiliser le LLM si disponible
       if (connectionStatus === 'connected') {
-        addLog("🧠 Envoi au LLM pour analyse avancée...");
+        addLog("🧠 Envoi au LLM pour analyse...");
         try {
-          // Utiliser une promesse avec timeout pour éviter les blocages
-          await Promise.race([
-            sendMessage(`Analyse cette commande OpenACI et génère un plan d'exécution: "${cmd}"`),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout LLM')), 10000))
-          ]);
+          await sendMessage(`Analyse cette commande OpenACI et explique ce qu'elle devrait faire (mode simulation): "${cmd}"`);
           addLog("✅ Analyse LLM terminée");
         } catch (error) {
-          addLog("⚠️  Erreur LLM - Passage en mode manuel");
-          console.error('LLM Error:', error);
+          addLog("⚠️  Erreur LLM - Analyse locale");
         }
       } else {
-        addLog("🔧 Mode manuel - Analyse locale");
+        addLog("🔧 Analyse locale en cours...");
         await new Promise(resolve => setTimeout(resolve, 800));
       }
 
-      addLog("⚙️  Planification des actions...");
+      addLog("⚙️  Simulation de la planification...");
       await new Promise(resolve => setTimeout(resolve, 700));
       
-      addLog("🎯 Exécution des actions système...");
+      addLog("🎭 SIMULATION: Exécution fictive des actions...");
+      addLog(`ℹ️  La commande "${cmd}" serait normalement exécutée ici`);
+      addLog("⚠️  AUCUNE ACTION RÉELLE N'EST EFFECTUÉE");
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Marquer comme terminé
+      // Marquer comme simulé
       setCommands(prev => prev.map(c => 
         c.id === newCommand.id ? { 
           ...c, 
-          status: 'completed',
-          result: 'Commande exécutée avec succès'
+          status: 'simulated',
+          result: 'Commande simulée avec succès (aucune action réelle)'
         } : c
       ));
       
-      addLog(`✅ Commande "${cmd}" terminée avec succès`);
+      addLog(`✅ Simulation terminée pour: "${cmd}"`);
+      addLog("❗ Rappel: OpenACI ne peut pas contrôler votre système réel");
       
       toast({
-        title: "Commande réussie",
-        description: `"${cmd}" exécuté par OpenACI`,
+        title: "Commande simulée",
+        description: `"${cmd}" simulé - aucune action réelle`,
+        variant: "default",
       });
       
     } catch (error) {
@@ -209,16 +210,38 @@ const OpenACIPage: React.FC = () => {
         c.id === newCommand.id ? { 
           ...c, 
           status: 'error',
-          result: `Erreur: ${error}`
+          result: `Erreur de simulation: ${error}`
         } : c
       ));
-      addLog(`❌ Échec de la commande: ${error}`);
+      addLog(`❌ Échec de la simulation: ${error}`);
       
       toast({
-        title: "Erreur d'exécution",
-        description: "La commande a échoué",
+        title: "Erreur de simulation",
+        description: "La simulation a échoué",
         variant: "destructive",
       });
+    }
+  };
+
+  const getStatusColor = (status: ACICommand['status']) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-500';
+      case 'executing': return 'bg-blue-500';
+      case 'completed': return 'bg-green-500';
+      case 'simulated': return 'bg-purple-500';
+      case 'error': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusIcon = (status: ACICommand['status']) => {
+    switch (status) {
+      case 'pending': return '⏳';
+      case 'executing': return '🔄';
+      case 'completed': return '✅';
+      case 'simulated': return '🎭';
+      case 'error': return '❌';
+      default: return '⚪';
     }
   };
 
@@ -230,26 +253,6 @@ const OpenACIPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status: ACICommand['status']) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-500';
-      case 'executing': return 'bg-blue-500';
-      case 'completed': return 'bg-green-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusIcon = (status: ACICommand['status']) => {
-    switch (status) {
-      case 'pending': return '⏳';
-      case 'executing': return '🔄';
-      case 'completed': return '✅';
-      case 'error': return '❌';
-      default: return '⚪';
-    }
-  };
-
   return (
     <div className="container py-1 min-h-full">
       <div className="flex items-center justify-between mb-3">
@@ -257,9 +260,10 @@ const OpenACIPage: React.FC = () => {
           <h1 className="text-xl font-bold flex items-center">
             <Monitor className="h-5 w-5 mr-2 text-blue-600" />
             OpenACI
+            <Badge variant="secondary" className="ml-2 text-xs">SIMULATION</Badge>
           </h1>
           <p className="text-muted-foreground text-xs">
-            Contrôle automatisé du PC avec IA
+            Contrôle automatisé simulé du PC avec IA
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -272,11 +276,18 @@ const OpenACIPage: React.FC = () => {
         </div>
       </div>
 
+      <Alert className="mb-3">
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-xs">
+          <strong>MODE SIMULATION:</strong> OpenACI simule uniquement les actions. Aucun contrôle réel du système n'est possible dans un navigateur web pour des raisons de sécurité.
+        </AlertDescription>
+      </Alert>
+
       {!isConnected && (
         <Alert className="mb-3">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            OpenACI est inactif. Cliquez sur "Activer" pour démarrer le système de contrôle.
+            OpenACI est inactif. Cliquez sur "Activer" pour démarrer le mode simulation.
           </AlertDescription>
         </Alert>
       )}
@@ -307,7 +318,7 @@ const OpenACIPage: React.FC = () => {
                     disabled={isConnecting}
                   >
                     <Play className="h-3 w-3 mr-1" />
-                    {isConnecting ? 'Activation...' : 'Activer OpenACI'}
+                    {isConnecting ? 'Activation...' : 'Activer Simulation'}
                   </Button>
                 ) : (
                   <Button 
@@ -326,12 +337,12 @@ const OpenACIPage: React.FC = () => {
 
           <Card>
             <CardHeader className="pb-1">
-              <CardTitle className="text-sm">Interface de commande</CardTitle>
+              <CardTitle className="text-sm">Interface de commande (Simulation)</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
               <form onSubmit={handleSubmitCommand} className="space-y-2">
                 <Textarea
-                  placeholder="Ex: Ouvre le navigateur et va sur Google, puis cherche 'OpenAI'..."
+                  placeholder="Ex: Ouvre le navigateur et va sur Google (sera simulé uniquement)..."
                   value={command}
                   onChange={(e) => setCommand(e.target.value)}
                   disabled={!isConnected}
@@ -344,7 +355,7 @@ const OpenACIPage: React.FC = () => {
                   className="h-7 text-xs"
                 >
                   <Bot className="h-3 w-3 mr-1" />
-                  {isGenerating ? 'Traitement...' : 'Exécuter'}
+                  {isGenerating ? 'Traitement...' : 'Simuler'}
                 </Button>
               </form>
             </CardContent>
@@ -355,12 +366,12 @@ const OpenACIPage: React.FC = () => {
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs flex items-center">
                   <MousePointer className="h-3 w-3 mr-1" />
-                  Contrôle souris
+                  Simulation souris
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 pb-1">
                 <p className="text-xs text-muted-foreground">
-                  Clics, déplacements automatiques
+                  Simulation clics, déplacements
                 </p>
               </CardContent>
             </Card>
@@ -369,12 +380,12 @@ const OpenACIPage: React.FC = () => {
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs flex items-center">
                   <Keyboard className="h-3 w-3 mr-1" />
-                  Contrôle clavier
+                  Simulation clavier
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 pb-1">
                 <p className="text-xs text-muted-foreground">
-                  Saisie, raccourcis
+                  Simulation saisie, raccourcis
                 </p>
               </CardContent>
             </Card>
@@ -383,12 +394,12 @@ const OpenACIPage: React.FC = () => {
               <CardHeader className="pb-1">
                 <CardTitle className="text-xs flex items-center">
                   <Eye className="h-3 w-3 mr-1" />
-                  Vision IA
+                  Simulation vision
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 pb-1">
                 <p className="text-xs text-muted-foreground">
-                  Reconnaissance écran
+                  Simulation reconnaissance écran
                 </p>
               </CardContent>
             </Card>
@@ -442,7 +453,7 @@ const OpenACIPage: React.FC = () => {
         <TabsContent value="commands" className="space-y-1">
           <Card>
             <CardHeader className="pb-1">
-              <CardTitle className="text-sm">Historique des commandes</CardTitle>
+              <CardTitle className="text-sm">Historique des simulations</CardTitle>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
               <ScrollArea className="h-48">
@@ -468,7 +479,7 @@ const OpenACIPage: React.FC = () => {
                   ))}
                   {commands.length === 0 && (
                     <div className="text-center text-muted-foreground py-4 text-xs">
-                      Aucune commande exécutée
+                      Aucune simulation exécutée
                     </div>
                   )}
                 </div>
