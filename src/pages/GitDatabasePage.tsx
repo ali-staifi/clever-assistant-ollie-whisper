@@ -152,10 +152,12 @@ Structure ta réponse ainsi:
           s.id === newSession.id ? { 
             ...s, 
             status: 'completed',
-            reasoning: ['Analyse en cours...', 'Évaluation des contraintes...', 'Génération de la conclusion...'],
-            conclusion: 'Traitement terminé avec succès'
+            reasoning: ['Analyse terminée', 'Contraintes évaluées', 'Hypothèses générées', 'Conclusion formulée'],
+            conclusion: 'Analyse complétée avec succès'
           } : s
         ));
+      } else {
+        throw new Error("LLM non connecté");
       }
       
     } catch (error) {
@@ -276,7 +278,7 @@ Structure ta réponse ainsi:
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={!isActive}
-                  className="h-16"
+                  className="h-16 font-mono text-sm"
                 />
                 <Button 
                   onClick={processQuery} 
@@ -290,16 +292,21 @@ Structure ta réponse ainsi:
             </CardContent>
           </Card>
 
-          {/* Display latest LLM response */}
+          {/* Display latest LLM response with improved formatting */}
           {messages.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Réponse du système</CardTitle>
+                <CardTitle className="text-base flex items-center">
+                  <Brain className="h-4 w-4 mr-2 text-purple-600" />
+                  Réponse du système
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <ScrollArea className="h-32">
-                  <div className="text-sm">
-                    {messages[messages.length - 1]?.content || 'En attente...'}
+                <ScrollArea className="h-64">
+                  <div className="prose prose-sm max-w-none">
+                    <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
+                      {messages[messages.length - 1]?.content || 'En attente de la réponse...'}
+                    </div>
                   </div>
                 </ScrollArea>
               </CardContent>
