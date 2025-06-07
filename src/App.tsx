@@ -17,6 +17,7 @@ import './App.css';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from './components/ui/toaster';
 import { WallpaperProvider } from './contexts/WallpaperContext';
+import { MemoryProvider } from './contexts/MemoryContext';
 import DynamicBackground from './components/wallpaper/DynamicBackground';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -94,8 +95,10 @@ function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <WallpaperProvider>
-        <RouterProvider router={router} />
-        <Toaster />
+        <MemoryProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+        </MemoryProvider>
       </WallpaperProvider>
     </ThemeProvider>
   );

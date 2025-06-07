@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useChatOllama } from "@/hooks/useChatOllama";
+import { useMemoryContext } from '@/hooks/useMemoryContext';
+import MemoryPanel from '@/components/memory/MemoryPanel';
 
 import LumenHeader from './openaci/components/LumenHeader';
 import LumenControl from './openaci/components/LumenControl';
@@ -38,6 +40,8 @@ const OpenACIPage: React.FC = () => {
     sendMessage,
     clearMessages
   } = useChatOllama();
+
+  const memoryContext = useMemoryContext('OpenACI');
 
   useEffect(() => {
     setKnowledgeBase(getInitialKnowledge());
@@ -76,6 +80,14 @@ const OpenACIPage: React.FC = () => {
   const processLumenQuery = async () => {
     if (!isLumenActive || !currentQuery.trim()) return;
 
+    // Store the query in memory
+    await memoryContext.addContextualMemory(
+      `Query Lumen: ${currentQuery.trim()} (Type: ${sessionType})`,
+      'conversation',
+      7,
+      ['lumen', 'query', sessionType]
+    );
+
     const newSession: LumenSession = {
       id: Date.now().toString(),
       type: sessionType,
@@ -90,6 +102,10 @@ const OpenACIPage: React.FC = () => {
     setSessions(prev => [newSession, ...prev]);
 
     try {
+      // Get relevant context from memory
+      const relevantContext = await memoryContext.getPageContext(currentQuery);
+      console.log('Contexte pertinent:', relevantContext);
+
       const lumenPrompt = generateLumenPrompt(sessionType, currentQuery);
 
       if (connectionStatus === 'connected') {
@@ -107,6 +123,14 @@ const OpenACIPage: React.FC = () => {
             response: 'Analyse complétée - voir réponse détaillée ci-dessous'
           } : s
         ));
+
+        // Store the result in memory
+        await memoryContext.addContextualMemory(
+          `Réponse Lumen complétée avec confiance ${confidence}% pour: ${currentQuery}`,
+          'knowledge',
+          8,
+          ['lumen', 'response', 'completed']
+        );
       } else {
         throw new Error("Moteur LLM non connecté");
       }
@@ -119,12 +143,20 @@ const OpenACIPage: React.FC = () => {
           response: `Erreur: ${error}`
         } : s
       ));
+
+      // Store error in memory
+      await memoryContext.addContextualMemory(
+        `Erreur Lumen: ${error} pour query: ${currentQuery}`,
+        'context',
+        6,
+        ['lumen', 'error']
+      );
     }
 
     setCurrentQuery('');
   };
 
-  const addKnowledgeEntry = () => {
+  const addKnowledgeEntry = async () => {
     if (!newConcept.trim() || !conceptDescription.trim()) return;
 
     const newEntry: KnowledgeEntry = {
@@ -137,6 +169,15 @@ const OpenACIPage: React.FC = () => {
     };
 
     setKnowledgeBase(prev => [newEntry, ...prev]);
+    
+    // Store knowledge in memory
+    await memoryContext.addContextualMemory(
+      `Nouveau concept ajouté: ${newConcept.trim()} - ${conceptDescription.trim()}`,
+      'knowledge',
+      9,
+      ['knowledge-base', 'concept', newConcept.trim()]
+    );
+    
     setNewConcept('');
     setConceptDescription('');
     
@@ -162,12 +203,13 @@ const OpenACIPage: React.FC = () => {
       />
 
       <Tabs defaultValue="reasoning" className="space-y-2">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="reasoning">Raisonnement</TabsTrigger>
           <TabsTrigger value="knowledge">Connaissances</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
           <TabsTrigger value="analytics">Analytique</TabsTrigger>
           <TabsTrigger value="config">Configuration</TabsTrigger>
+          <TabsTrigger value="memory">Mémoire</TabsTrigger>
         </TabsList>
 
         <TabsContent value="reasoning" className="space-y-2">
@@ -221,6 +263,10 @@ const OpenACIPage: React.FC = () => {
             onModelChange={setOllamaModel}
             onTestConnection={checkConnection}
           />
+        </TabsContent>
+
+        <TabsContent value="memory" className="space-y-2">
+          <MemoryPanel />
         </TabsContent>
       </Tabs>
     </div>
