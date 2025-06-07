@@ -1,98 +1,103 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Search, Lightbulb, Network, FileText } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Clock, Brain, Target, BookOpen, Trash2 } from 'lucide-react';
 import { LumenSession } from '../types';
 
 interface SessionManagerProps {
   sessions: LumenSession[];
+  onDeleteSession: (id: string) => void;
 }
 
-const SessionManager: React.FC<SessionManagerProps> = ({ sessions }) => {
-  const getSessionTypeIcon = (type: LumenSession['type']) => {
+const SessionManager: React.FC<SessionManagerProps> = ({ sessions, onDeleteSession }) => {
+  const getSessionIcon = (type: string) => {
     switch (type) {
-      case 'reasoning': return Brain;
-      case 'analysis': return Search;
-      case 'learning': return Lightbulb;
-      case 'planning': return Network;
-      default: return FileText;
+      case 'reasoning': return <Brain className="h-4 w-4" />;
+      case 'analysis': return <Target className="h-4 w-4" />;
+      case 'learning': return <BookOpen className="h-4 w-4" />;
+      case 'planning': return <Clock className="h-4 w-4" />;
+      default: return <Brain className="h-4 w-4" />;
     }
   };
 
-  const getSessionTypeColor = (type: LumenSession['type']) => {
-    switch (type) {
-      case 'reasoning': return 'bg-purple-100 text-purple-800';
-      case 'analysis': return 'bg-blue-100 text-blue-800';
-      case 'learning': return 'bg-green-100 text-green-800';
-      case 'planning': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: LumenSession['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'processing': return 'bg-blue-500';
-      case 'completed': return 'bg-green-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'completed': return 'default';
+      case 'processing': return 'secondary';
+      case 'error': return 'destructive';
+      default: return 'secondary';
     }
   };
+
+  if (sessions.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Historique des sessions</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <p className="text-sm text-muted-foreground text-center py-4">
+            Aucune session enregistrée
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Sessions Lumen</CardTitle>
+        <CardTitle className="text-base">Historique des sessions</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
-        <ScrollArea className="h-64">
-          <div className="space-y-1">
-            {sessions.map((session) => {
-              const IconComponent = getSessionTypeIcon(session.type);
-              return (
-                <div key={session.id} className="p-2 border rounded text-xs">
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="flex items-center space-x-1">
-                      <Badge className={getStatusColor(session.status) + " text-xs"}>
-                        {session.status}
-                      </Badge>
-                      <Badge className={getSessionTypeColor(session.type) + " text-xs"}>
-                        <IconComponent className="h-3 w-3 mr-1" />
+        <ScrollArea className="h-48">
+          <div className="space-y-2">
+            {sessions.map((session) => (
+              <div key={session.id} className="flex items-start justify-between p-2 border rounded-lg">
+                <div className="flex items-start space-x-2 flex-1">
+                  <div className="mt-1">
+                    {getSessionIcon(session.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
                         {session.type}
                       </Badge>
-                      {session.confidence > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          {session.confidence}% confiance
-                        </Badge>
+                      <Badge variant={getStatusColor(session.status)} className="text-xs">
+                        {session.status}
+                      </Badge>
+                      {session.confidence && (
+                        <span className="text-xs text-muted-foreground">
+                          {Math.round(session.confidence * 100)}%
+                        </span>
                       )}
                     </div>
-                    <span className="text-muted-foreground">
-                      {session.timestamp.toLocaleString()}
-                    </span>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {session.query}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {session.timestamp.toLocaleTimeString()}
+                    </p>
                   </div>
-                  <div className="mb-1 font-medium">{session.query.substring(0, 100)}...</div>
-                  {session.reasoning_steps.length > 0 && (
-                    <div className="text-muted-foreground mb-1">
-                      Étapes: {session.reasoning_steps.join(' → ')}
-                    </div>
-                  )}
-                  {session.response && (
-                    <div className="text-green-700">{session.response}</div>
-                  )}
                 </div>
-              );
-            })}
-            {sessions.length === 0 && (
-              <div className="text-center text-muted-foreground py-4 text-xs">
-                Aucune session Lumen
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onDeleteSession(session.id)}
+                  className="h-6 w-6 p-0"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
               </div>
-            )}
+            ))}
           </div>
         </ScrollArea>
       </CardContent>
-    );
-  };
+    </Card>
+  );
 };
 
 export default SessionManager;
