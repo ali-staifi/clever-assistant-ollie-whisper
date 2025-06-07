@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -147,6 +146,14 @@ const OpenACIPage: React.FC = () => {
     });
   };
 
+  const deleteSession = (sessionId: string) => {
+    setSessions(prev => prev.filter(session => session.id !== sessionId));
+    toast({
+      title: "Session supprimée",
+      description: "La session a été supprimée avec succès",
+    });
+  };
+
   return (
     <div className="container py-2 min-h-full">
       <LumenHeader 
@@ -195,7 +202,10 @@ const OpenACIPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="sessions" className="space-y-2">
-          <SessionManager sessions={sessions} />
+          <SessionManager 
+            sessions={sessions} 
+            onDeleteSession={deleteSession}
+          />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-2">
