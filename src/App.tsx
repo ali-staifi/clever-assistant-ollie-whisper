@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 
@@ -8,7 +7,6 @@ import ChatPage from './pages/ChatPage';
 import VisionPage from './pages/VisionPage';
 import MCPPage from './pages/MCPPage';
 import OpenACIPage from './pages/OpenACIPage';
-import WallpaperPage from './pages/WallpaperPage';
 import GitDatabasePage from './pages/GitDatabasePage';
 import NotFound from './pages/NotFound';
 
@@ -74,10 +72,6 @@ const router = createBrowserRouter([
       {
         path: 'openaci',
         element: <OpenACIPage />,
-      },
-      {
-        path: 'wallpaper',
-        element: <WallpaperPage />,
       },
       {
         path: 'git-database',

@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, PaintBucket, Database, Monitor } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
@@ -68,13 +67,6 @@ const Navigation = () => {
         <Link to="/openaci">
           <div className={`${activeItem === '/openaci' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
             <Monitor size={24} />
-          </div>
-        </Link>
-        
-        {/* Wallpaper */}
-        <Link to="/wallpaper">
-          <div className={`${activeItem === '/wallpaper' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
-            <PaintBucket size={24} />
           </div>
         </Link>
         
