@@ -5,6 +5,7 @@ import ImageAnalyzer from '@/components/vision/ImageAnalyzer';
 import VideoAnalyzer from '@/components/vision/VideoAnalyzer';
 import AdvancedVoiceSettings from '@/components/voice/AdvancedVoiceSettings';
 import VoiceCommands from '@/components/automation/VoiceCommands';
+import OllamaVoiceIntegration from '@/components/voice/OllamaVoiceIntegration';
 import { useFastSpeech2 } from '@/hooks/jarvis/useFastSpeech2';
 import { useToast } from '@/hooks/use-toast';
 
