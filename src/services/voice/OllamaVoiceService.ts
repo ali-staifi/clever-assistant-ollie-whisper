@@ -4,6 +4,7 @@ export interface OllamaVoiceRequest {
   prompt: string;
   voiceParams: FastSpeech2Params;
   context?: string;
+  voiceGender?: 'male' | 'female';
 }
 
 export interface OllamaVoiceResponse {
@@ -33,7 +34,12 @@ export class OllamaVoiceService {
   async generateVoiceResponse(request: OllamaVoiceRequest): Promise<OllamaVoiceResponse> {
     try {
       // Créer un prompt enrichi avec les paramètres vocaux
-      const enrichedPrompt = this.createEmotionalPrompt(request.prompt, request.voiceParams, request.context);
+      const enrichedPrompt = this.createEmotionalPrompt(
+        request.prompt, 
+        request.voiceParams, 
+        request.context,
+        request.voiceGender
+      );
 
       const response = await fetch(`${this.baseUrl}/api/generate`, {
         method: 'POST',
@@ -64,7 +70,7 @@ export class OllamaVoiceService {
       return {
         text: data.response,
         adjustedParams,
-        emotionalContext: this.getEmotionalContext(request.voiceParams.emotion)
+        emotionalContext: this.getEmotionalContext(request.voiceParams.emotion, request.voiceGender)
       };
     } catch (error) {
       console.error('Erreur lors de la génération avec Ollama:', error);
@@ -72,28 +78,46 @@ export class OllamaVoiceService {
     }
   }
 
-  // Créer un prompt enrichi avec le contexte émotionnel
-  private createEmotionalPrompt(userPrompt: string, voiceParams: FastSpeech2Params, context?: string): string {
+  // Créer un prompt enrichi avec le contexte émotionnel et vocal
+  private createEmotionalPrompt(
+    userPrompt: string, 
+    voiceParams: FastSpeech2Params, 
+    context?: string,
+    voiceGender?: 'male' | 'female'
+  ): string {
     const emotionInstructions = this.getEmotionInstructions(voiceParams.emotion, voiceParams.emotionStrength);
     const speedInstructions = this.getSpeedInstructions(voiceParams.speed);
     const energyInstructions = this.getEnergyInstructions(voiceParams.energy);
+    const genderInstructions = this.getGenderInstructions(voiceGender);
 
-    return `Tu es un assistant vocal intelligent nommé Jarvis. Réponds à la demande suivante en adaptant ton style de réponse selon ces paramètres:
+    return `Tu es Jarvis, un assistant vocal intelligent. Réponds à la demande suivante en adaptant ton style selon ces paramètres:
 
 PARAMÈTRES VOCAUX:
+- Type de voix: ${voiceGender === 'female' ? 'Féminine' : 'Masculine'}
 - Émotion: ${voiceParams.emotion} (intensité: ${Math.round(voiceParams.emotionStrength * 100)}%)
 - Vitesse: ${voiceParams.speed} (${speedInstructions})
 - Énergie: ${voiceParams.energy} (${energyInstructions})
 - Hauteur: ${voiceParams.pitch}
 
-INSTRUCTIONS ÉMOTIONNELLES:
+INSTRUCTIONS VOCALES:
+${genderInstructions}
 ${emotionInstructions}
 
 ${context ? `CONTEXTE ADDITIONNEL: ${context}` : ''}
 
 DEMANDE DE L'UTILISATEUR: ${userPrompt}
 
-Réponds de manière naturelle en français, en adaptant ton ton, ta formulation et ton style selon l'émotion et les paramètres spécifiés. Sois expressif et authentique.`;
+Réponds en français avec un style adapté à la voix ${voiceGender === 'female' ? 'féminine' : 'masculine'} et à l'émotion spécifiée. Sois naturel et expressif.`;
+  }
+
+  // Instructions spécifiques pour chaque genre de voix
+  private getGenderInstructions(gender?: 'male' | 'female'): string {
+    if (gender === 'female') {
+      return `Adopte un style de communication féminin: langage plus expressif, empathique, avec des nuances douces et accueillantes.`;
+    } else if (gender === 'male') {
+      return `Adopte un style de communication masculin: langage direct, confiant, avec un ton ferme et rassurant.`;
+    }
+    return `Utilise un style de communication neutre et professionnel.`;
   }
 
   // Instructions spécifiques pour chaque émotion
@@ -158,14 +182,16 @@ Réponds de manière naturelle en français, en adaptant ton ton, ta formulation
   }
 
   // Obtenir le contexte émotionnel
-  private getEmotionalContext(emotion: FastSpeech2Params['emotion']): string {
+  private getEmotionalContext(emotion: FastSpeech2Params['emotion'], gender?: 'male' | 'female'): string {
+    const genderText = gender === 'female' ? 'féminine' : gender === 'male' ? 'masculine' : 'neutre';
+    
     switch (emotion) {
-      case 'happy': return 'Réponse générée avec un ton joyeux et optimiste';
-      case 'sad': return 'Réponse générée avec un ton compatissant et doux';
-      case 'angry': return 'Réponse générée avec un ton ferme et direct';
-      case 'surprised': return 'Réponse générée avec un ton curieux et étonné';
-      case 'neutral': return 'Réponse générée avec un ton professionnel et équilibré';
-      default: return 'Réponse générée avec les paramètres standards';
+      case 'happy': return `Réponse générée avec un ton joyeux et une voix ${genderText}`;
+      case 'sad': return `Réponse générée avec un ton compatissant et une voix ${genderText}`;
+      case 'angry': return `Réponse générée avec un ton ferme et une voix ${genderText}`;
+      case 'surprised': return `Réponse générée avec un ton curieux et une voix ${genderText}`;
+      case 'neutral': return `Réponse générée avec un ton professionnel et une voix ${genderText}`;
+      default: return `Réponse générée avec une voix ${genderText}`;
     }
   }
 

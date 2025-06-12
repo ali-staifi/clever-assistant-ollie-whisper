@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Zap, CheckCircle, XCircle, Settings } from "lucide-react";
+import { Loader2, Zap, CheckCircle, XCircle, Settings, User, UserCheck } from "lucide-react";
 import { useOllamaVoice } from '@/hooks/jarvis/useOllamaVoice';
 import { FastSpeech2Params } from '@/services/speech/FastSpeech2Service';
 
@@ -24,6 +24,7 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
   const [customPrompt, setCustomPrompt] = useState('');
   const [lastResponse, setLastResponse] = useState<string>('');
   const [showSettings, setShowSettings] = useState(false);
+  const [selectedGender, setSelectedGender] = useState<'male' | 'female'>('female');
   
   const {
     isConnected,
@@ -48,7 +49,13 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
     if (response) {
       setLastResponse(response);
       onVoiceResponse?.(response);
-      onSpeakGenerated?.(response, voiceParams);
+      // Corriger l'erreur TypeScript en fusionnant les paramètres
+      const mergedParams: FastSpeech2Params = {
+        ...voiceParams,
+        // Ajouter la notion de genre à la voix
+        emotion: selectedGender === 'female' ? 'happy' : voiceParams.emotion
+      };
+      onSpeakGenerated?.(response, mergedParams);
     }
   };
 
@@ -59,7 +66,12 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
     if (response) {
       setLastResponse(response.text);
       onVoiceResponse?.(response.text);
-      onSpeakGenerated?.(response.text, response.adjustedParams || voiceParams);
+      // Corriger l'erreur TypeScript en fusionnant les paramètres
+      const mergedParams: FastSpeech2Params = {
+        ...voiceParams,
+        ...(response.adjustedParams || {})
+      };
+      onSpeakGenerated?.(response.text, mergedParams);
     }
   };
 
@@ -77,7 +89,7 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
           <Zap className="h-5 w-5 text-jarvis-blue" />
-          Génération Ollama
+          Génération Ollama avec Voix
         </h3>
         <div className="flex items-center gap-2">
           <StatusIcon className={`h-4 w-4 ${status.color} ${isConnected === null ? 'animate-spin' : ''}`} />
@@ -90,6 +102,29 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
             <Settings className="h-4 w-4" />
           </Button>
         </div>
+      </div>
+
+      {/* Sélection du genre de voix */}
+      <div className="space-y-2">
+        <Label htmlFor="voice-gender">Type de voix</Label>
+        <Select value={selectedGender} onValueChange={(value: 'male' | 'female') => setSelectedGender(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Choisir le type de voix" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="female" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Voix féminine
+            </SelectItem>
+            <SelectItem value="male" className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              Voix masculine
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          La voix {selectedGender === 'female' ? 'féminine' : 'masculine'} influencera le style de génération
+        </p>
       </div>
 
       {showSettings && (
@@ -132,6 +167,9 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">
+            Voix: {selectedGender === 'female' ? 'Féminine' : 'Masculine'}
+          </Badge>
+          <Badge variant="outline">
             Émotion: {voiceParams.emotion}
           </Badge>
           <Badge variant="outline">
@@ -151,7 +189,7 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
             {isGenerating ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : null}
-            Générer test émotionnel
+            Générer test vocal {selectedGender === 'female' ? 'féminin' : 'masculin'}
           </Button>
         </div>
 
@@ -184,9 +222,9 @@ const OllamaVoiceIntegration: React.FC<OllamaVoiceIntegrationProps> = ({
 
       <div className="text-xs text-muted-foreground">
         <p>
-          <strong>Connecté à Ollama:</strong> Les paramètres vocaux influencent maintenant 
-          la génération de contenu par l'IA. L'émotion, l'intensité et la vitesse 
-          affectent le style et le ton des réponses générées.
+          <strong>Assistant vocal connecté:</strong> Ollama génère maintenant des réponses 
+          adaptées au type de voix ({selectedGender === 'female' ? 'féminine' : 'masculine'}) 
+          et aux paramètres émotionnels sélectionnés.
         </p>
       </div>
     </Card>

@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { OllamaVoiceService, OllamaVoiceRequest, OllamaVoiceResponse } from '@/services/voice/OllamaVoiceService';
 import { FastSpeech2Params } from '@/services/speech/FastSpeech2Service';
@@ -62,11 +61,12 @@ export const useOllamaVoice = (initialUrl?: string, initialModel?: string) => {
     serviceRef.current.setModel(newModel);
   };
 
-  // Générer une réponse avec paramètres vocaux
+  // Générer une réponse avec paramètres vocaux et genre
   const generateVoiceResponse = async (
     prompt: string,
     voiceParams: FastSpeech2Params,
-    context?: string
+    context?: string,
+    voiceGender?: 'male' | 'female'
   ): Promise<OllamaVoiceResponse | null> => {
     if (!isConnected) {
       toast({
@@ -83,7 +83,8 @@ export const useOllamaVoice = (initialUrl?: string, initialModel?: string) => {
       const request: OllamaVoiceRequest = {
         prompt,
         voiceParams,
-        context
+        context,
+        voiceGender
       };
 
       const response = await serviceRef.current.generateVoiceResponse(request);
@@ -106,20 +107,34 @@ export const useOllamaVoice = (initialUrl?: string, initialModel?: string) => {
     }
   };
 
-  // Générer un test de voix personnalisé
-  const generateVoiceTest = async (voiceParams: FastSpeech2Params): Promise<string | null> => {
+  // Générer un test de voix personnalisé avec genre
+  const generateVoiceTest = async (
+    voiceParams: FastSpeech2Params, 
+    voiceGender: 'male' | 'female' = 'female'
+  ): Promise<string | null> => {
     const testPrompts = {
-      happy: "Dis-moi quelque chose de joyeux et motivant pour tester ma voix heureuse",
-      sad: "Exprime de la compassion et de la compréhension pour tester ma voix triste",
-      angry: "Exprime de la détermination et de la fermeté pour tester ma voix en colère",
-      surprised: "Exprime de l'étonnement et de la curiosité pour tester ma voix surprise",
-      neutral: "Présente-toi de manière professionnelle pour tester ma voix neutre"
+      happy: voiceGender === 'female' 
+        ? "Dis-moi quelque chose de joyeux et motivant avec une voix féminine chaleureuse"
+        : "Dis-moi quelque chose de motivant et confiant avec une voix masculine énergique",
+      sad: voiceGender === 'female'
+        ? "Exprime de la compassion avec une voix féminine douce et empathique"
+        : "Exprime de la compréhension avec une voix masculine rassurante",
+      angry: voiceGender === 'female'
+        ? "Exprime de la détermination avec une voix féminine ferme mais contrôlée"
+        : "Exprime de la fermeté avec une voix masculine autoritaire",
+      surprised: voiceGender === 'female'
+        ? "Exprime de l'étonnement avec une voix féminine curieuse et expressive"
+        : "Exprime de la surprise avec une voix masculine intriguée",
+      neutral: voiceGender === 'female'
+        ? "Présente-toi de manière professionnelle avec une voix féminine posée"
+        : "Présente-toi de manière professionnelle avec une voix masculine assurée"
     };
 
     const response = await generateVoiceResponse(
       testPrompts[voiceParams.emotion],
       voiceParams,
-      "Test des paramètres vocaux avancés"
+      "Test des paramètres vocaux avec genre spécifique",
+      voiceGender
     );
 
     return response?.text || null;
