@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -132,13 +131,6 @@ const AdvancedVoiceSettings: React.FC<AdvancedVoiceSettingsProps> = ({
           />
           <p className="text-xs text-muted-foreground">Ajustez l'intensité de l'expression émotionnelle</p>
         </div>
-      </div>
-      
-      <div className="pt-4 border-t">
-        <p className="text-xs text-muted-foreground">
-          Ces paramètres avancés sont simulés car ils nécessitent des modèles IA externes comme FastSpeech2. 
-          Dans une implémentation complète, ils seraient connectés à un service de synthèse vocale neuronal.
-        </p>
       </div>
     </Card>
   );

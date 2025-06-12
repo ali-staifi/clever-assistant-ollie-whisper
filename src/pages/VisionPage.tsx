@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ImageAnalyzer from '@/components/vision/ImageAnalyzer';
@@ -204,7 +203,7 @@ const VisionPage = () => {
           <VoiceCommands onCommand={handleVoiceCommand} />
         </div>
         
-        <div>
+        <div className="space-y-6">
           <AdvancedVoiceSettings 
             voiceParams={voiceParams}
             onSpeedChange={setSpeed}
@@ -216,7 +215,20 @@ const VisionPage = () => {
             isSpeaking={isSpeaking}
           />
           
-          <div className="mt-6 p-6 bg-muted rounded-lg">
+          <OllamaVoiceIntegration 
+            voiceParams={voiceParams}
+            onVoiceResponse={(text) => {
+              toast({
+                title: "Réponse Ollama",
+                description: "Texte généré avec succès",
+              });
+            }}
+            onSpeakGenerated={(text, params) => {
+              speak(text);
+            }}
+          />
+          
+          <div className="p-6 bg-muted rounded-lg">
             <h3 className="font-medium mb-4">Comment utiliser Jarvis Vision</h3>
             <ol className="list-decimal pl-5 space-y-2">
               <li>Sélectionnez une image ou une vidéo à analyser</li>
@@ -225,15 +237,6 @@ const VisionPage = () => {
               <li>Une fois l'analyse terminée, vous pouvez écouter la description grâce à la synthèse vocale</li>
               <li>Ajustez les paramètres vocaux pour modifier le ton et l'émotion de la voix</li>
             </ol>
-            
-            <div className="mt-4 p-4 bg-jarvis-blue/10 rounded-lg">
-              <h4 className="font-medium mb-2">Note sur FastSpeech2</h4>
-              <p className="text-sm">
-                L'implémentation actuelle simule le comportement de FastSpeech2. Dans une production réelle,
-                ces paramètres seraient connectés à un service d'IA neuronal pour la synthèse vocale de haute qualité
-                capable d'exprimer des émotions et d'insérer des pauses naturelles.
-              </p>
-            </div>
             
             <div className="mt-4 p-4 bg-amber-500/10 border border-amber-300/20 rounded-lg">
               <h4 className="font-medium text-amber-700 dark:text-amber-400 mb-2">Dépannage LLaVA</h4>
