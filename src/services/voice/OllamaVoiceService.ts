@@ -1,5 +1,4 @@
-
-import { FastSpeech2Params } from './FastSpeech2Service';
+import { FastSpeech2Params } from '../speech/FastSpeech2Service';
 
 export interface OllamaVoiceRequest {
   prompt: string;
