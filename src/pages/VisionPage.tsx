@@ -40,7 +40,11 @@ const VisionPage = () => {
       stopSpeaking();
     } else {
       speak(
-        "Bonjour, je suis Jarvis, votre assistant vocal multimodal. Je peux analyser des images, répondre à vos questions, et exécuter des commandes vocales avec diverses émotions."
+        "Bonjour, je suis Jarvis. Mes paramètres vocaux sont maintenant configurés avec une vitesse de " + voiceParams.speed + 
+        ", une hauteur de " + voiceParams.pitch + 
+        ", une énergie de " + voiceParams.energy + 
+        " et une émotion " + voiceParams.emotion + 
+        " à " + Math.round(voiceParams.emotionStrength * 100) + " pourcent d'intensité."
       );
     }
   };
@@ -51,7 +55,7 @@ const VisionPage = () => {
       description: `Exécution de: ${command}`,
     });
     
-    speak(`J'exécute la commande: ${command}`);
+    speak(`J'exécute la commande: ${command}. Les paramètres vocaux actuels sont appliqués.`);
   };
 
   // Tester la connexion à Ollama
@@ -101,29 +105,29 @@ const VisionPage = () => {
   }, [selectedModel]);
   
   return (
-    <div className="container py-6 mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Jarvis Vision et Synthèse Vocale Avancée</h1>
+    <div className="container py-4 mx-auto max-h-screen overflow-y-auto">
+      <h1 className="text-xl font-bold mb-3">Jarvis Vision et Synthèse Vocale Avancée</h1>
       
-      {/* Statut de connexion et sélection de modèle */}
-      <div className="bg-card border rounded-lg p-4 mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <p className="text-sm font-medium mb-1">Statut d'Ollama:</p>
+      {/* Statut de connexion et sélection de modèle - Version compacte */}
+      <div className="bg-card border rounded-lg p-3 mb-4">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3">
+          <div className="flex-shrink-0">
+            <p className="text-xs font-medium mb-1">Statut d'Ollama:</p>
             <div className="flex items-center">
               {isOllamaConnected === null && !checkingConnection && (
-                <span className="text-muted-foreground">Statut inconnu</span>
+                <span className="text-muted-foreground text-sm">Statut inconnu</span>
               )}
               {checkingConnection && (
-                <span className="text-muted-foreground">Vérification...</span>
+                <span className="text-muted-foreground text-sm">Vérification...</span>
               )}
               {isOllamaConnected === true && !checkingConnection && (
-                <span className="text-green-500 flex items-center">
+                <span className="text-green-500 flex items-center text-sm">
                   <span className="h-2 w-2 bg-green-500 rounded-full mr-2"></span>
-                  Connecté à {ollamaUrl}
+                  Connecté
                 </span>
               )}
               {isOllamaConnected === false && !checkingConnection && (
-                <span className="text-red-500 flex items-center">
+                <span className="text-red-500 flex items-center text-sm">
                   <span className="h-2 w-2 bg-red-500 rounded-full mr-2"></span>
                   Non connecté
                 </span>
@@ -131,20 +135,20 @@ const VisionPage = () => {
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label htmlFor="llava-model" className="text-sm font-medium">
+          <div className="flex gap-2 flex-wrap">
+            <div className="min-w-[200px]">
+              <label htmlFor="llava-model" className="text-xs font-medium">
                 Modèle LLaVA:
               </label>
               <select
                 id="llava-model"
-                className="mt-1 block w-full bg-background border border-input rounded-md px-3 py-2 text-sm"
+                className="mt-1 block w-full bg-background border border-input rounded-md px-2 py-1 text-sm"
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
               >
                 {RECOMMENDED_MODELS.map((model) => (
                   <option key={model.name} value={model.name}>
-                    {model.name} - {model.description}
+                    {model.name}
                   </option>
                 ))}
                 <option value="custom">Autre modèle...</option>
@@ -152,14 +156,14 @@ const VisionPage = () => {
             </div>
             
             {selectedModel === 'custom' && (
-              <div className="flex-1">
-                <label htmlFor="custom-model" className="text-sm font-medium">
+              <div className="min-w-[150px]">
+                <label htmlFor="custom-model" className="text-xs font-medium">
                   Modèle personnalisé:
                 </label>
                 <input
                   type="text"
                   id="custom-model"
-                  className="mt-1 block w-full bg-background border border-input rounded-md px-3 py-2 text-sm"
+                  className="mt-1 block w-full bg-background border border-input rounded-md px-2 py-1 text-sm"
                   placeholder="Nom du modèle"
                   onChange={(e) => setSelectedModel(e.target.value)}
                 />
@@ -167,22 +171,22 @@ const VisionPage = () => {
             )}
             
             <button
-              className="mt-auto py-2 px-4 bg-jarvis-blue text-white rounded-md text-sm"
+              className="mt-auto py-1 px-3 bg-jarvis-blue text-white rounded-md text-sm h-fit"
               onClick={checkOllamaConnection}
               disabled={checkingConnection}
             >
-              {checkingConnection ? 'Vérification...' : 'Tester la connexion'}
+              {checkingConnection ? 'Test...' : 'Tester'}
             </button>
           </div>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <Tabs defaultValue="image">
-            <TabsList className="mb-4">
-              <TabsTrigger value="image">Analyse d'Images</TabsTrigger>
-              <TabsTrigger value="video">Analyse de Vidéos</TabsTrigger>
+            <TabsList className="mb-3">
+              <TabsTrigger value="image">Images</TabsTrigger>
+              <TabsTrigger value="video">Vidéos</TabsTrigger>
             </TabsList>
             
             <TabsContent value="image">
@@ -203,7 +207,7 @@ const VisionPage = () => {
           <VoiceCommands onCommand={handleVoiceCommand} />
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-4">
           <AdvancedVoiceSettings 
             voiceParams={voiceParams}
             onSpeedChange={setSpeed}
@@ -219,35 +223,42 @@ const VisionPage = () => {
             voiceParams={voiceParams}
             onVoiceResponse={(text) => {
               toast({
-                title: "Réponse Ollama",
-                description: "Texte généré avec succès",
+                title: "Réponse Ollama générée",
+                description: "Utilisation des paramètres vocaux configurés",
               });
             }}
             onSpeakGenerated={(text, params) => {
               speak(text);
+              toast({
+                title: "Jarvis parle",
+                description: `Avec les paramètres: ${params.emotion} (${Math.round(params.emotionStrength * 100)}%)`,
+              });
             }}
           />
           
-          <div className="p-6 bg-muted rounded-lg">
-            <h3 className="font-medium mb-4">Comment utiliser Jarvis Vision</h3>
-            <ol className="list-decimal pl-5 space-y-2">
-              <li>Sélectionnez une image ou une vidéo à analyser</li>
-              <li>Entrez des instructions spécifiques (optionnel)</li>
-              <li>Cliquez sur "Analyser" pour lancer le traitement via LLaVA</li>
-              <li>Une fois l'analyse terminée, vous pouvez écouter la description grâce à la synthèse vocale</li>
-              <li>Ajustez les paramètres vocaux pour modifier le ton et l'émotion de la voix</li>
+          <div className="p-4 bg-muted rounded-lg">
+            <h3 className="font-medium mb-2 text-sm">Utilisation rapide</h3>
+            <ol className="list-decimal pl-4 space-y-1 text-xs">
+              <li>Ajustez les paramètres vocaux en haut à droite</li>
+              <li>Testez la voix avec le bouton "Tester la voix"</li>
+              <li>Sélectionnez voix homme/femme dans "Génération Ollama"</li>
+              <li>Analysez des images/vidéos - Jarvis parlera avec vos réglages</li>
             </ol>
             
-            <div className="mt-4 p-4 bg-amber-500/10 border border-amber-300/20 rounded-lg">
-              <h4 className="font-medium text-amber-700 dark:text-amber-400 mb-2">Dépannage LLaVA</h4>
-              <p className="text-sm">
-                Si l'analyse d'image ne fonctionne pas, essayez ces solutions:
+            <div className="mt-3 p-3 bg-green-500/10 border border-green-300/20 rounded-lg">
+              <h4 className="font-medium text-green-700 dark:text-green-400 mb-1 text-xs">✓ Confirmation</h4>
+              <p className="text-xs">
+                Tous les paramètres vocaux (vitesse, hauteur, énergie, émotion) 
+                influencent directement la voix de Jarvis sur cette page.
               </p>
-              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
-                <li>Vérifiez que le serveur Ollama est en cours d'exécution</li>
-                <li>Assurez-vous que le modèle LLaVA est installé (<code>ollama pull llava-llama3</code>)</li>
-                <li>Essayez un modèle alternatif comme llava:7b ou bakllava</li>
-                <li>Réduisez la taille des images (moins de 1024x1024 pixels)</li>
+            </div>
+            
+            <div className="mt-3 p-3 bg-amber-500/10 border border-amber-300/20 rounded-lg">
+              <h4 className="font-medium text-amber-700 dark:text-amber-400 mb-1 text-xs">Dépannage LLaVA</h4>
+              <ul className="list-disc pl-4 space-y-1 text-xs">
+                <li>Vérifiez que le serveur Ollama fonctionne</li>
+                <li>Installez le modèle: <code>ollama pull llava-llama3</code></li>
+                <li>Réduisez la taille des images si nécessaire</li>
               </ul>
             </div>
           </div>
