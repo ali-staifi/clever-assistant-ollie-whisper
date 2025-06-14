@@ -53,6 +53,13 @@ const JarvisCore: React.FC<{
     }
   });
   
+  // Déterminer le texte d'état correct
+  const getStatusText = () => {
+    if (isSpeaking) return 'JARVIS PARLE';
+    if (isListening) return 'ÉCOUTE EN COURS';
+    return 'JARVIS';
+  };
+  
   return (
     <group>
       {/* Cœur de Jarvis */}
@@ -74,7 +81,7 @@ const JarvisCore: React.FC<{
         anchorX="center"
         anchorY="middle"
       >
-        {isSpeaking ? 'JARVIS PARLE' : isListening ? 'ÉCOUTE EN COURS' : 'JARVIS'}
+        {getStatusText()}
       </Text>
     </group>
   );
