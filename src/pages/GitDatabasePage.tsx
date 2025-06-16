@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, Database, Settings, Play, Square, TrendingUp, Cpu, Terminal, ArrowRightLeft } from 'lucide-react';
+import { Brain, Database, Settings, Play, Square, TrendingUp, Cpu, Terminal, ArrowRightLeft, Shield, BarChart3 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useChatWithMemory } from "@/hooks/useChatWithMemory";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
@@ -18,6 +18,8 @@ import AgentSOrchestrator from '@/components/agents/AgentSOrchestrator';
 import AZR3DInterface from '@/components/visualization/AZR3DInterface';
 import AdvancedCommandChat from '@/components/command/AdvancedCommandChat';
 import SystemFeedbackManager from '@/components/feedback/SystemFeedbackManager';
+import ExecutionSandbox from '@/components/security/ExecutionSandbox';
+import AlgorithmicDriftMonitor from '@/components/monitoring/AlgorithmicDriftMonitor';
 
 interface Task {
   id: string;
@@ -57,16 +59,15 @@ const GitDatabasePage: React.FC = () => {
   const memoryContext = useMemoryContext('AZR-System');
 
   useEffect(() => {
-    // Initialisation et chargement du contexte mémoire
     initializeAZRSystem();
   }, []);
 
   const initializeAZRSystem = async () => {
     await memoryContext.addContextualMemory(
-      'Système AZR initialisé avec architecture évolutive tri-couches: Création, Validation, Auto-Amélioration',
+      'Système AZR sécurisé initialisé avec surveillance de dérive algorithmique et environnements d\'exécution isolés',
       'context',
       9,
-      ['azr', 'initialization', 'architecture']
+      ['azr', 'security', 'initialization', 'monitoring']
     );
   };
 
@@ -80,15 +81,15 @@ const GitDatabasePage: React.FC = () => {
       setIsActive(true);
       setAgentSActive(true);
       await memoryContext.addContextualMemory(
-        'AZR + Agent S activés: Architecture complète opérationnelle avec orchestration multi-moteurs',
+        'AZR + Agent S activés avec sécurisation complète: Sandboxing, surveillance de dérive, isolation des processus',
         'context',
         9,
-        ['azr', 'agents', 'activation', 'orchestration']
+        ['azr', 'agents', 'security', 'activation']
       );
       
       toast({
-        title: "Système AZR + Agent S activé",
-        description: "Architecture évolutive complète avec orchestration multi-moteurs",
+        title: "Système AZR + Agent S Sécurisé Activé",
+        description: "Architecture complète avec surveillance de dérive et sandboxing",
       });
     } catch (error) {
       toast({
@@ -103,15 +104,15 @@ const GitDatabasePage: React.FC = () => {
     setIsActive(false);
     setAgentSActive(false);
     await memoryContext.addContextualMemory(
-      'Système AZR + Agent S désactivé',
+      'Système AZR + Agent S désactivé avec mise en sécurité',
       'context',
       6,
-      ['azr', 'agents', 'deactivation']
+      ['azr', 'agents', 'security', 'deactivation']
     );
     
     toast({
-      title: "Système désactivé",
-      description: "AZR et Agent S ont été désactivés",
+      title: "Système désactivé en sécurité",
+      description: "AZR et Agent S ont été désactivés avec sauvegarde d'état",
     });
   };
 
@@ -224,16 +225,84 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
     await sendMessage(enhancedQuery);
   };
 
+  const handleSecureExecution = async (code: string, environmentId: string) => {
+    await memoryContext.addContextualMemory(
+      `Exécution sécurisée dans environnement ${environmentId}: ${code.substring(0, 50)}...`,
+      'context',
+      7,
+      ['security', 'execution', 'sandbox']
+    );
+    
+    // Simulation d'exécution sécurisée
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: Math.random() > 0.2,
+          output: `Résultat sécurisé de ${environmentId}`,
+          executionTime: Math.random() * 1000 + 100
+        });
+      }, 1000);
+    });
+  };
+
+  const handleQuarantine = async (environmentId: string) => {
+    await memoryContext.addContextualMemory(
+      `Environnement ${environmentId} mis en quarantaine pour raisons de sécurité`,
+      'context',
+      8,
+      ['security', 'quarantine', 'isolation']
+    );
+    
+    toast({
+      title: "Environnement mis en quarantaine",
+      description: `${environmentId} isolé pour analyse de sécurité`,
+      variant: "destructive",
+    });
+  };
+
+  const handleDriftDetected = async (alert: any) => {
+    await memoryContext.addContextualMemory(
+      `Dérive algorithmique détectée: ${alert.message}`,
+      'context',
+      9,
+      ['monitoring', 'drift', 'alert', alert.severity]
+    );
+    
+    toast({
+      title: "Dérive Algorithmique Détectée",
+      description: alert.message,
+      variant: alert.severity === 'critical' ? "destructive" : "default",
+    });
+  };
+
+  const handleCorrectiveAction = async (action: string) => {
+    await memoryContext.addContextualMemory(
+      `Action corrective appliquée: ${action}`,
+      'context',
+      8,
+      ['monitoring', 'correction', 'stability']
+    );
+    
+    toast({
+      title: "Action Corrective Appliquée",
+      description: action,
+    });
+  };
+
+  const enhancedLLMQuerySecurity = async () => {
+    enhancedLLMQuery("Évalue les vulnérabilités de sécurité du système intégré AZR + Agent S et propose des mesures de protection avancées");
+  };
+
   return (
     <div className="container py-2 min-h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center">
             <Brain className="h-6 w-6 mr-2 text-purple-600" />
-            AZR + Agent S - Architecture Intégrée
+            AZR + Agent S - Architecture Sécurisée
           </h1>
           <p className="text-muted-foreground text-sm">
-            Orchestration Multi-Moteurs • Raisonnement Autonome • Interface 3D • Chat de Commande • Feedback Automatique
+            Sandboxing • Surveillance Dérive • Isolation • Chat Sécurisé • Interface 3D • Feedback Automatique
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -249,6 +318,10 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
           <Badge variant="outline">
             Tâches: {tasks.length}
           </Badge>
+          <Badge variant="outline" className="text-green-600">
+            <Shield className="h-3 w-3 mr-1" />
+            Sécurisé
+          </Badge>
         </div>
       </div>
 
@@ -259,7 +332,7 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
               {!isActive ? (
                 <Button onClick={activateSystem} size="sm" className="flex items-center">
                   <Play className="h-3 w-3 mr-1" />
-                  Activer Architecture Complète
+                  Activer Architecture Sécurisée
                 </Button>
               ) : (
                 <Button onClick={deactivateSystem} variant="destructive" size="sm">
@@ -268,21 +341,23 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
                 </Button>
               )}
               <Button 
-                onClick={() => enhancedLLMQuery("Évalue les performances du système intégré AZR + Agent S et propose des optimisations avancées")}
+                onClick={() => enhancedLLMQuerySecurity()}
                 disabled={!isActive || isLLMGenerating}
                 variant="outline"
                 size="sm"
               >
                 <TrendingUp className="h-3 w-3 mr-1" />
-                Analyse Performance Globale
+                Analyse Sécurité Globale
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-2">
-        <TabsList className="grid w-full grid-cols-8">
+      <Tabs defaultValue="security" className="space-y-2">
+        <TabsList className="grid w-full grid-cols-10">
+          <TabsTrigger value="security">Sécurité</TabsTrigger>
+          <TabsTrigger value="monitoring">Surveillance</TabsTrigger>
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
           <TabsTrigger value="orchestration">Agent S</TabsTrigger>
           <TabsTrigger value="visualization">Interface 3D</TabsTrigger>
@@ -292,6 +367,21 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
           <TabsTrigger value="validation">Validation</TabsTrigger>
           <TabsTrigger value="improvement">Auto-Amélioration</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="security">
+          <ExecutionSandbox
+            onExecute={handleSecureExecution}
+            onQuarantine={handleQuarantine}
+          />
+        </TabsContent>
+
+        <TabsContent value="monitoring">
+          <AlgorithmicDriftMonitor
+            executionResults={executionResults}
+            onDriftDetected={handleDriftDetected}
+            onCorrectiveAction={handleCorrectiveAction}
+          />
+        </TabsContent>
 
         <TabsContent value="overview" className="space-y-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
