@@ -1,18 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, Database, Settings, Play, Square, TrendingUp } from 'lucide-react';
+import { Brain, Database, Settings, Play, Square, TrendingUp, Cpu, Terminal, ArrowRightLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useChatWithMemory } from "@/hooks/useChatWithMemory";
 import { useMemoryContext } from "@/hooks/useMemoryContext";
 
-// Import des nouvelles couches AZR
+// Import des composants AZR existants
 import CreationLayer from '@/components/azr/CreationLayer';
 import ValidationLayer from '@/components/azr/ValidationLayer';
 import AutoImprovementLayer from '@/components/azr/AutoImprovementLayer';
+
+// Import des nouveaux composants
+import AgentSOrchestrator from '@/components/agents/AgentSOrchestrator';
+import AZR3DInterface from '@/components/visualization/AZR3DInterface';
+import AdvancedCommandChat from '@/components/command/AdvancedCommandChat';
+import SystemFeedbackManager from '@/components/feedback/SystemFeedbackManager';
 
 interface Task {
   id: string;
@@ -34,9 +39,11 @@ interface ExecutionResult {
 
 const GitDatabasePage: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
+  const [agentSActive, setAgentSActive] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [executionResults, setExecutionResults] = useState<ExecutionResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedEngine, setSelectedEngine] = useState<string>('');
   const { toast } = useToast();
   
   const {
@@ -71,16 +78,17 @@ const GitDatabasePage: React.FC = () => {
       }
       
       setIsActive(true);
+      setAgentSActive(true);
       await memoryContext.addContextualMemory(
-        'AZR activé: Début de génération autonome de tâches et auto-amélioration',
+        'AZR + Agent S activés: Architecture complète opérationnelle avec orchestration multi-moteurs',
         'context',
-        8,
-        ['azr', 'activation', 'autonomous']
+        9,
+        ['azr', 'agents', 'activation', 'orchestration']
       );
       
       toast({
-        title: "Absolute Zero Reasoner activé",
-        description: "Architecture évolutive tri-couches opérationnelle",
+        title: "Système AZR + Agent S activé",
+        description: "Architecture évolutive complète avec orchestration multi-moteurs",
       });
     } catch (error) {
       toast({
@@ -93,16 +101,17 @@ const GitDatabasePage: React.FC = () => {
 
   const deactivateSystem = async () => {
     setIsActive(false);
+    setAgentSActive(false);
     await memoryContext.addContextualMemory(
-      'AZR désactivé: Système mis en pause',
+      'Système AZR + Agent S désactivé',
       'context',
       6,
-      ['azr', 'deactivation']
+      ['azr', 'agents', 'deactivation']
     );
     
     toast({
       title: "Système désactivé",
-      description: "Absolute Zero Reasoner a été désactivé",
+      description: "AZR et Agent S ont été désactivés",
     });
   };
 
@@ -137,6 +146,66 @@ const GitDatabasePage: React.FC = () => {
     ));
   };
 
+  const handleEngineSelect = async (engineId: string) => {
+    setSelectedEngine(engineId);
+    await memoryContext.addContextualMemory(
+      `Agent S: Moteur ${engineId} sélectionné pour l'exécution`,
+      'context',
+      7,
+      ['agents', 'engine-selection', 'optimization']
+    );
+  };
+
+  const handleTaskDistribute = async (task: any, engineId: string) => {
+    await memoryContext.addContextualMemory(
+      `Tâche distribuée vers moteur ${engineId}: ${task.description}`,
+      'context',
+      6,
+      ['agents', 'task-distribution', 'orchestration']
+    );
+  };
+
+  const handleAZRCommand = async (command: string) => {
+    await memoryContext.addContextualMemory(
+      `Commande AZR exécutée: ${command}`,
+      'context',
+      7,
+      ['azr', 'command', 'user-control']
+    );
+  };
+
+  const handleAgentSCommand = async (command: string) => {
+    await memoryContext.addContextualMemory(
+      `Commande Agent S exécutée: ${command}`,
+      'context',
+      7,
+      ['agents', 'command', 'user-control']
+    );
+  };
+
+  const handleSystemCommand = async (command: string) => {
+    await memoryContext.addContextualMemory(
+      `Commande système exécutée: ${command}`,
+      'context',
+      6,
+      ['system', 'command', 'user-control']
+    );
+  };
+
+  const handleOptimizationApplied = async (optimization: string) => {
+    await memoryContext.addContextualMemory(
+      `Optimisation automatique appliquée: ${optimization}`,
+      'knowledge',
+      8,
+      ['optimization', 'auto-improvement', 'feedback']
+    );
+    
+    toast({
+      title: "Optimisation appliquée",
+      description: optimization,
+    });
+  };
+
   const enhancedLLMQuery = async (query: string) => {
     // Enrichissement avec contexte AZR
     const relevantContext = await memoryContext.getPageContext(query);
@@ -161,15 +230,18 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
         <div>
           <h1 className="text-2xl font-bold flex items-center">
             <Brain className="h-6 w-6 mr-2 text-purple-600" />
-            Absolute Zero Reasoner
+            AZR + Agent S - Architecture Intégrée
           </h1>
           <p className="text-muted-foreground text-sm">
-            Architecture Évolutive Tri-Couches • Auto-Génération • Validation Python • Auto-Amélioration
+            Orchestration Multi-Moteurs • Raisonnement Autonome • Interface 3D • Chat de Commande • Feedback Automatique
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Système Actif" : "En Veille"}
+            AZR: {isActive ? "Actif" : "En Veille"}
+          </Badge>
+          <Badge variant={agentSActive ? "default" : "secondary"}>
+            Agent S: {agentSActive ? "Actif" : "Inactif"}
           </Badge>
           <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"}>
             LLM: {connectionStatus}
@@ -187,78 +259,93 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
               {!isActive ? (
                 <Button onClick={activateSystem} size="sm" className="flex items-center">
                   <Play className="h-3 w-3 mr-1" />
-                  Activer AZR
+                  Activer Architecture Complète
                 </Button>
               ) : (
                 <Button onClick={deactivateSystem} variant="destructive" size="sm">
                   <Square className="h-3 w-3 mr-1" />
-                  Désactiver
+                  Désactiver Système
                 </Button>
               )}
               <Button 
-                onClick={() => enhancedLLMQuery("Évalue les performances actuelles du système AZR et propose des optimisations")}
+                onClick={() => enhancedLLMQuery("Évalue les performances du système intégré AZR + Agent S et propose des optimisations avancées")}
                 disabled={!isActive || isLLMGenerating}
                 variant="outline"
                 size="sm"
               >
                 <TrendingUp className="h-3 w-3 mr-1" />
-                Analyse Performance
+                Analyse Performance Globale
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Tabs defaultValue="architecture" className="space-y-2">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="architecture">Architecture</TabsTrigger>
-          <TabsTrigger value="creation">Création</TabsTrigger>
+      <Tabs defaultValue="overview" className="space-y-2">
+        <TabsList className="grid w-full grid-cols-8">
+          <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="orchestration">Agent S</TabsTrigger>
+          <TabsTrigger value="visualization">Interface 3D</TabsTrigger>
+          <TabsTrigger value="command">Chat Commande</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="creation">Création AZR</TabsTrigger>
           <TabsTrigger value="validation">Validation</TabsTrigger>
           <TabsTrigger value="improvement">Auto-Amélioration</TabsTrigger>
-          <TabsTrigger value="analysis">Analyse LLM</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="architecture" className="space-y-2">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center">
-                  <Brain className="h-4 w-4 mr-2 text-purple-600" />
-                  Couche Création
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">
-                <p>Génération autonome de tâches de raisonnement (déduction, abduction, induction)</p>
-                <Badge className="mt-2">Auto-Génératif</Badge>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center">
-                  <Play className="h-4 w-4 mr-2 text-green-600" />
-                  Couche Validation
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">
-                <p>Exécution Python simulée avec système de récompenses (learnability + accuracy)</p>
-                <Badge className="mt-2">Validation Python</Badge>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center">
-                  <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
-                  Auto-Amélioration
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm">
-                <p>Mémoire évolutive (STM/LTM), auto-réparation et optimisation continue</p>
-                <Badge className="mt-2">Évolutif</Badge>
-              </CardContent>
-            </Card>
+        <TabsContent value="overview" className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <AZR3DInterface
+              azrActive={isActive}
+              agentSActive={agentSActive}
+              processes={tasks}
+              executionResults={executionResults}
+            />
+            <SystemFeedbackManager
+              azrActive={isActive}
+              agentSActive={agentSActive}
+              executionResults={executionResults}
+              onOptimizationApplied={handleOptimizationApplied}
+            />
           </div>
+        </TabsContent>
+
+        <TabsContent value="orchestration">
+          <AgentSOrchestrator
+            onEngineSelect={handleEngineSelect}
+            onTaskDistribute={handleTaskDistribute}
+          />
+        </TabsContent>
+
+        <TabsContent value="visualization">
+          <AZR3DInterface
+            azrActive={isActive}
+            agentSActive={agentSActive}
+            processes={tasks}
+            executionResults={executionResults}
+          />
+        </TabsContent>
+
+        <TabsContent value="command">
+          <AdvancedCommandChat
+            onAZRCommand={handleAZRCommand}
+            onAgentSCommand={handleAgentSCommand}
+            onSystemCommand={handleSystemCommand}
+            systemStatus={{
+              azrActive: isActive,
+              agentSActive: agentSActive,
+              processCount: tasks.length
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="feedback">
+          <SystemFeedbackManager
+            azrActive={isActive}
+            agentSActive={agentSActive}
+            executionResults={executionResults}
+            onOptimizationApplied={handleOptimizationApplied}
+          />
         </TabsContent>
 
         <TabsContent value="creation">
@@ -280,26 +367,6 @@ Réponds en intégrant l'auto-amélioration, la génération autonome et l'évol
           <AutoImprovementLayer 
             executionResults={executionResults}
           />
-        </TabsContent>
-
-        <TabsContent value="analysis">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Analyse LLM Intégrée</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {messages.length > 0 && (
-                <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
-                  {messages[messages.length - 1]?.content || 'Aucune analyse disponible...'}
-                </div>
-              )}
-              {messages.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  Cliquez sur "Analyse Performance" pour obtenir une évaluation LLM du système AZR
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
