@@ -2,102 +2,85 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Brain, 
-  Database, 
-  Search, 
-  GitBranch, 
-  Code, 
-  FileText,
-  Settings,
-  Play,
-  Square
-} from 'lucide-react';
+import { Brain, Database, Settings, Play, Square, TrendingUp } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { useChatOllama } from "@/hooks/useChatOllama";
+import { useChatWithMemory } from "@/hooks/useChatWithMemory";
+import { useMemoryContext } from "@/hooks/useMemoryContext";
 
-interface ReasoningSession {
+// Import des nouvelles couches AZR
+import CreationLayer from '@/components/azr/CreationLayer';
+import ValidationLayer from '@/components/azr/ValidationLayer';
+import AutoImprovementLayer from '@/components/azr/AutoImprovementLayer';
+
+interface Task {
   id: string;
-  query: string;
-  reasoning: string[];
-  conclusion: string;
+  type: 'deduction' | 'abduction' | 'induction';
+  description: string;
+  code: string;
+  status: 'pending' | 'executing' | 'completed' | 'failed';
   timestamp: Date;
-  status: 'processing' | 'completed' | 'error';
 }
 
-interface MemoryEntry {
-  id: string;
-  content: string;
-  type: 'fact' | 'procedure' | 'concept';
-  tags: string[];
-  timestamp: Date;
+interface ExecutionResult {
+  taskId: string;
+  success: boolean;
+  output: string;
+  learnabilityReward: number;
+  accuracyReward: number;
+  executionTime: number;
 }
 
 const GitDatabasePage: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
-  const [query, setQuery] = useState('');
-  const [sessions, setSessions] = useState<ReasoningSession[]>([]);
-  const [memory, setMemory] = useState<MemoryEntry[]>([]);
-  const [memoryContent, setMemoryContent] = useState('');
-  const [memoryType, setMemoryType] = useState<'fact' | 'procedure' | 'concept'>('fact');
-  const [memoryTags, setMemoryTags] = useState('');
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [executionResults, setExecutionResults] = useState<ExecutionResult[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   
   const {
-    ollamaUrl,
-    ollamaModel,
     connectionStatus,
-    availableModels,
-    messages,
-    isGenerating,
-    setOllamaUrl,
-    setOllamaModel,
     checkConnection,
     sendMessage,
-    clearMessages
-  } = useChatOllama();
+    messages,
+    isGenerating: isLLMGenerating
+  } = useChatWithMemory('AZR-System');
+
+  const memoryContext = useMemoryContext('AZR-System');
 
   useEffect(() => {
-    // Load initial memory
-    const initialMemory: MemoryEntry[] = [
-      {
-        id: '1',
-        content: 'Absolute Zero Reasoner utilise des techniques de raisonnement automatique avancées',
-        type: 'fact',
-        tags: ['système', 'raisonnement'],
-        timestamp: new Date()
-      },
-      {
-        id: '2',
-        content: 'Analyser le problème étape par étape, identifier les contraintes, générer des hypothèses',
-        type: 'procedure',
-        tags: ['méthode', 'analyse'],
-        timestamp: new Date()
-      }
-    ];
-    setMemory(initialMemory);
-    
-    // Auto-check connection
-    checkConnection();
+    // Initialisation et chargement du contexte mémoire
+    initializeAZRSystem();
   }, []);
+
+  const initializeAZRSystem = async () => {
+    await memoryContext.addContextualMemory(
+      'Système AZR initialisé avec architecture évolutive tri-couches: Création, Validation, Auto-Amélioration',
+      'context',
+      9,
+      ['azr', 'initialization', 'architecture']
+    );
+  };
 
   const activateSystem = async () => {
     try {
-      // Check Ollama connection first
       const connected = await checkConnection();
       if (!connected) {
         throw new Error("Impossible de se connecter à Ollama");
       }
       
       setIsActive(true);
+      await memoryContext.addContextualMemory(
+        'AZR activé: Début de génération autonome de tâches et auto-amélioration',
+        'context',
+        8,
+        ['azr', 'activation', 'autonomous']
+      );
+      
       toast({
         title: "Absolute Zero Reasoner activé",
-        description: "Le système de raisonnement automatique est maintenant actif",
+        description: "Architecture évolutive tri-couches opérationnelle",
       });
     } catch (error) {
       toast({
@@ -108,108 +91,68 @@ const GitDatabasePage: React.FC = () => {
     }
   };
 
-  const deactivateSystem = () => {
+  const deactivateSystem = async () => {
     setIsActive(false);
+    await memoryContext.addContextualMemory(
+      'AZR désactivé: Système mis en pause',
+      'context',
+      6,
+      ['azr', 'deactivation']
+    );
+    
     toast({
       title: "Système désactivé",
       description: "Absolute Zero Reasoner a été désactivé",
     });
   };
 
-  const processQuery = async () => {
-    if (!isActive || !query.trim()) return;
-
-    const newSession: ReasoningSession = {
-      id: Date.now().toString(),
-      query: query.trim(),
-      reasoning: [],
-      conclusion: '',
-      timestamp: new Date(),
-      status: 'processing'
-    };
-
-    setSessions(prev => [newSession, ...prev]);
-
-    try {
-      // Create reasoning prompt with memory context
-      const memoryContext = memory.map(m => m.content).join('\n');
-      const reasoningPrompt = `Tu es Absolute Zero Reasoner, un système de raisonnement automatique avancé développé par LeapLab THU. Tu as accès à la mémoire partagée contenant: ${memoryContext}. 
-
-Utilise des techniques de raisonnement sophistiquées pour analyser et résoudre cette question: ${query.trim()}
-
-Structure ta réponse ainsi:
-1. Analyse du problème
-2. Identification des contraintes
-3. Génération d'hypothèses  
-4. Évaluation logique
-5. Conclusion raisonnée`;
-
-      if (connectionStatus === 'connected') {
-        await sendMessage(reasoningPrompt);
-        
-        // Update session status
-        setSessions(prev => prev.map(s => 
-          s.id === newSession.id ? { 
-            ...s, 
-            status: 'completed',
-            reasoning: ['Analyse terminée', 'Contraintes évaluées', 'Hypothèses générées', 'Conclusion formulée'],
-            conclusion: 'Analyse complétée avec succès'
-          } : s
-        ));
-      } else {
-        throw new Error("LLM non connecté");
-      }
-      
-    } catch (error) {
-      setSessions(prev => prev.map(s => 
-        s.id === newSession.id ? { 
-          ...s, 
-          status: 'error',
-          conclusion: `Erreur: ${error}`
-        } : s
-      ));
-    }
-
-    setQuery('');
-  };
-
-  const addMemoryEntry = () => {
-    if (!memoryContent.trim()) return;
-
-    const newEntry: MemoryEntry = {
-      id: Date.now().toString(),
-      content: memoryContent.trim(),
-      type: memoryType,
-      tags: memoryTags.split(',').map(t => t.trim()).filter(t => t),
-      timestamp: new Date()
-    };
-
-    setMemory(prev => [newEntry, ...prev]);
-    setMemoryContent('');
-    setMemoryTags('');
+  const handleTaskGenerated = async (task: Task) => {
+    setTasks(prev => [task, ...prev]);
+    setIsGenerating(true);
     
-    toast({
-      title: "Entrée ajoutée",
-      description: "Nouvelle entrée ajoutée à la mémoire partagée",
-    });
+    await memoryContext.addContextualMemory(
+      `Nouvelle tâche générée (${task.type}): ${task.description}`,
+      'context',
+      7,
+      ['azr', 'task-generation', task.type]
+    );
+    
+    setTimeout(() => setIsGenerating(false), 1000);
   };
 
-  const getStatusColor = (status: ReasoningSession['status']) => {
-    switch (status) {
-      case 'processing': return 'bg-blue-500';
-      case 'completed': return 'bg-green-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
+  const handleTaskExecuted = async (result: ExecutionResult) => {
+    setExecutionResults(prev => [...prev, result]);
+    
+    await memoryContext.addContextualMemory(
+      `Tâche exécutée: ${result.success ? 'Succès' : 'Échec'} - Learnability: ${result.learnabilityReward.toFixed(1)}, Accuracy: ${result.accuracyReward.toFixed(1)}`,
+      'knowledge',
+      result.success ? 8 : 6,
+      ['azr', 'execution', result.success ? 'success' : 'failure']
+    );
   };
 
-  const getTypeColor = (type: MemoryEntry['type']) => {
-    switch (type) {
-      case 'fact': return 'bg-green-100 text-green-800';
-      case 'procedure': return 'bg-blue-100 text-blue-800';
-      case 'concept': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const handleTaskStatusUpdate = (taskId: string, status: Task['status']) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId ? { ...task, status } : task
+    ));
+  };
+
+  const enhancedLLMQuery = async (query: string) => {
+    // Enrichissement avec contexte AZR
+    const relevantContext = await memoryContext.getPageContext(query);
+    const enhancedQuery = `En tant qu'Absolute Zero Reasoner avec architecture tri-couches évolutive:
+
+Contexte mémoire AZR: ${relevantContext}
+
+Tâches actives: ${tasks.length}
+Résultats d'exécution: ${executionResults.length}
+Taux de succès: ${executionResults.length > 0 ? (executionResults.filter(r => r.success).length / executionResults.length * 100).toFixed(1) : 0}%
+
+Question: ${query}
+
+Réponds en intégrant l'auto-amélioration, la génération autonome et l'évolution continue.`;
+
+    await sendMessage(enhancedQuery);
   };
 
   return (
@@ -221,242 +164,140 @@ Structure ta réponse ainsi:
             Absolute Zero Reasoner
           </h1>
           <p className="text-muted-foreground text-sm">
-            Système de raisonnement automatique avancé
+            Architecture Évolutive Tri-Couches • Auto-Génération • Validation Python • Auto-Amélioration
           </p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Actif" : "Inactif"}
+            {isActive ? "Système Actif" : "En Veille"}
           </Badge>
           <Badge variant={connectionStatus === 'connected' ? "default" : "secondary"}>
             LLM: {connectionStatus}
           </Badge>
+          <Badge variant="outline">
+            Tâches: {tasks.length}
+          </Badge>
         </div>
       </div>
 
-      <Tabs defaultValue="reasoning" className="space-y-2">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="reasoning">Raisonnement</TabsTrigger>
-          <TabsTrigger value="memory">Mémoire</TabsTrigger>
-          <TabsTrigger value="llm">LLM Config</TabsTrigger>
-          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+      <div className="mb-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex space-x-2">
+              {!isActive ? (
+                <Button onClick={activateSystem} size="sm" className="flex items-center">
+                  <Play className="h-3 w-3 mr-1" />
+                  Activer AZR
+                </Button>
+              ) : (
+                <Button onClick={deactivateSystem} variant="destructive" size="sm">
+                  <Square className="h-3 w-3 mr-1" />
+                  Désactiver
+                </Button>
+              )}
+              <Button 
+                onClick={() => enhancedLLMQuery("Évalue les performances actuelles du système AZR et propose des optimisations")}
+                disabled={!isActive || isLLMGenerating}
+                variant="outline"
+                size="sm"
+              >
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Analyse Performance
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="architecture" className="space-y-2">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="architecture">Architecture</TabsTrigger>
+          <TabsTrigger value="creation">Création</TabsTrigger>
+          <TabsTrigger value="validation">Validation</TabsTrigger>
+          <TabsTrigger value="improvement">Auto-Amélioration</TabsTrigger>
+          <TabsTrigger value="analysis">Analyse LLM</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="reasoning" className="space-y-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center">
-                <Settings className="h-4 w-4 mr-2" />
-                Contrôle du système
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex space-x-2">
-                {!isActive ? (
-                  <Button onClick={activateSystem} size="sm" className="flex items-center">
-                    <Play className="h-3 w-3 mr-1" />
-                    Activer
-                  </Button>
-                ) : (
-                  <Button onClick={deactivateSystem} variant="destructive" size="sm">
-                    <Square className="h-3 w-3 mr-1" />
-                    Désactiver
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Requête de raisonnement</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2">
-                <Textarea
-                  placeholder="Posez votre question ou décrivez le problème à analyser..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  disabled={!isActive}
-                  className="h-16 font-mono text-sm"
-                />
-                <Button 
-                  onClick={processQuery} 
-                  disabled={!isActive || !query.trim() || isGenerating} 
-                  size="sm"
-                >
-                  <Brain className="h-3 w-3 mr-1" />
-                  {isGenerating ? 'Analyse en cours...' : 'Analyser'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Display latest LLM response with improved formatting */}
-          {messages.length > 0 && (
+        <TabsContent value="architecture" className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center">
                   <Brain className="h-4 w-4 mr-2 text-purple-600" />
-                  Réponse du système
+                  Couche Création
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
-                <ScrollArea className="h-64">
-                  <div className="prose prose-sm max-w-none">
-                    <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-                      {messages[messages.length - 1]?.content || 'En attente de la réponse...'}
-                    </div>
-                  </div>
-                </ScrollArea>
+              <CardContent className="text-sm">
+                <p>Génération autonome de tâches de raisonnement (déduction, abduction, induction)</p>
+                <Badge className="mt-2">Auto-Génératif</Badge>
               </CardContent>
             </Card>
-          )}
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center">
+                  <Play className="h-4 w-4 mr-2 text-green-600" />
+                  Couche Validation
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <p>Exécution Python simulée avec système de récompenses (learnability + accuracy)</p>
+                <Badge className="mt-2">Validation Python</Badge>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center">
+                  <TrendingUp className="h-4 w-4 mr-2 text-blue-600" />
+                  Auto-Amélioration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <p>Mémoire évolutive (STM/LTM), auto-réparation et optimisation continue</p>
+                <Badge className="mt-2">Évolutif</Badge>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="memory" className="space-y-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Ajouter à la mémoire</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-2">
-              <Textarea
-                placeholder="Contenu de la mémoire..."
-                value={memoryContent}
-                onChange={(e) => setMemoryContent(e.target.value)}
-                className="h-16"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <select 
-                  value={memoryType}
-                  onChange={(e) => setMemoryType(e.target.value as any)}
-                  className="p-1 border rounded text-xs h-8"
-                >
-                  <option value="fact">Fait</option>
-                  <option value="procedure">Procédure</option>
-                  <option value="concept">Concept</option>
-                </select>
-                <Input
-                  placeholder="Tags (séparés par virgules)"
-                  value={memoryTags}
-                  onChange={(e) => setMemoryTags(e.target.value)}
-                  className="h-8"
-                />
-              </div>
-              <Button onClick={addMemoryEntry} disabled={!memoryContent.trim()} size="sm">
-                <Database className="h-3 w-3 mr-1" />
-                Ajouter
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Mémoire partagée</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <ScrollArea className="h-48">
-                <div className="space-y-1">
-                  {memory.map((entry) => (
-                    <div key={entry.id} className="p-2 border rounded text-xs">
-                      <div className="flex justify-between items-start mb-1">
-                        <Badge className={getTypeColor(entry.type) + " text-xs"}>
-                          {entry.type}
-                        </Badge>
-                        <span className="text-muted-foreground">
-                          {entry.timestamp.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="mb-1">{entry.content}</div>
-                      {entry.tags.length > 0 && (
-                        <div className="flex gap-1">
-                          {entry.tags.map((tag, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
+        <TabsContent value="creation">
+          <CreationLayer 
+            onTaskGenerated={handleTaskGenerated}
+            isGenerating={isGenerating}
+          />
         </TabsContent>
 
-        <TabsContent value="llm" className="space-y-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Configuration LLM</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs font-medium">URL Ollama</label>
-                  <Input
-                    value={ollamaUrl}
-                    onChange={(e) => setOllamaUrl(e.target.value)}
-                    placeholder="http://localhost:11434"
-                    className="h-8"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Modèle</label>
-                  <select 
-                    value={ollamaModel}
-                    onChange={(e) => setOllamaModel(e.target.value)}
-                    className="w-full p-1 border rounded text-xs h-8"
-                  >
-                    {availableModels.map(model => (
-                      <option key={model} value={model}>{model}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <Button onClick={checkConnection} size="sm">
-                Tester la connexion
-              </Button>
-            </CardContent>
-          </Card>
+        <TabsContent value="validation">
+          <ValidationLayer 
+            tasks={tasks}
+            onTaskExecuted={handleTaskExecuted}
+            onTaskStatusUpdate={handleTaskStatusUpdate}
+          />
         </TabsContent>
 
-        <TabsContent value="sessions" className="space-y-2">
+        <TabsContent value="improvement">
+          <AutoImprovementLayer 
+            executionResults={executionResults}
+          />
+        </TabsContent>
+
+        <TabsContent value="analysis">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Sessions de raisonnement</CardTitle>
+              <CardTitle className="text-base">Analyse LLM Intégrée</CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <ScrollArea className="h-64">
-                <div className="space-y-1">
-                  {sessions.map((session) => (
-                    <div key={session.id} className="p-2 border rounded text-xs">
-                      <div className="flex justify-between items-start mb-1">
-                        <Badge className={getStatusColor(session.status) + " text-xs"}>
-                          {session.status}
-                        </Badge>
-                        <span className="text-muted-foreground">
-                          {session.timestamp.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="font-medium mb-1">{session.query}</div>
-                      {session.reasoning.length > 0 && (
-                        <div className="text-muted-foreground mb-1">
-                          {session.reasoning.join(' → ')}
-                        </div>
-                      )}
-                      {session.conclusion && (
-                        <div className="font-medium">{session.conclusion}</div>
-                      )}
-                    </div>
-                  ))}
-                  {sessions.length === 0 && (
-                    <div className="text-center text-muted-foreground py-4 text-xs">
-                      Aucune session de raisonnement
-                    </div>
-                  )}
+            <CardContent>
+              {messages.length > 0 && (
+                <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">
+                  {messages[messages.length - 1]?.content || 'Aucune analyse disponible...'}
                 </div>
-              </ScrollArea>
+              )}
+              {messages.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  Cliquez sur "Analyse Performance" pour obtenir une évaluation LLM du système AZR
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
