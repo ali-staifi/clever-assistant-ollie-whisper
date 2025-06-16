@@ -45,6 +45,65 @@ const Jarvis3DVisualizer: React.FC<Jarvis3DVisualizerProps> = ({
     : isListening 
     ? micVolume * 0.5 
     : 0.3;
+
+  // Ajouter les styles CSS dans le head
+  useEffect(() => {
+    const styleId = 'jarvis-3d-styles';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+    
+    styleElement.textContent = `
+      @keyframes jarvis-pulse {
+        0% { transform: scale(1); }
+        100% { transform: scale(1.1); }
+      }
+      
+      @keyframes jarvis-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      @keyframes jarvis-float {
+        0%, 100% { transform: translateY(0px); opacity: 0.4; }
+        50% { transform: translateY(-10px); opacity: 0.8; }
+      }
+      
+      .jarvis-pulse {
+        animation: jarvis-pulse 0.5s ease-in-out infinite alternate;
+      }
+      
+      .jarvis-pulse-listening {
+        animation: jarvis-pulse 1s ease-in-out infinite alternate;
+      }
+      
+      .jarvis-spin {
+        animation: jarvis-spin 3s linear infinite;
+      }
+      
+      .jarvis-spin-reverse {
+        animation: jarvis-spin 4s linear infinite reverse;
+      }
+      
+      .jarvis-spin-slow {
+        animation: jarvis-spin 5s linear infinite;
+      }
+      
+      .jarvis-float {
+        animation: jarvis-float 2s ease-in-out infinite;
+      }
+    `;
+    
+    return () => {
+      if (styleElement && styleElement.parentNode) {
+        styleElement.parentNode.removeChild(styleElement);
+      }
+    };
+  }, []);
   
   return (
     <div 
@@ -55,17 +114,14 @@ const Jarvis3DVisualizer: React.FC<Jarvis3DVisualizerProps> = ({
       <div className="relative">
         {/* Sphère principale */}
         <div 
-          className="w-24 h-24 rounded-full border-4 relative transition-all duration-300"
+          className={`w-24 h-24 rounded-full border-4 relative transition-all duration-300 ${
+            isSpeaking ? 'jarvis-pulse' : isListening ? 'jarvis-pulse-listening' : ''
+          }`}
           style={{
             borderColor: coreColor,
             backgroundColor: `${coreColor}20`,
             boxShadow: `0 0 30px ${coreColor}80, inset 0 0 20px ${coreColor}40`,
-            transform: `scale(${1 + intensity * 0.2})`,
-            animation: isSpeaking 
-              ? 'pulse 0.5s ease-in-out infinite alternate' 
-              : isListening 
-              ? 'pulse 1s ease-in-out infinite alternate'
-              : 'none'
+            transform: `scale(${1 + intensity * 0.2})`
           }}
         >
           {/* Effet de pulsation interne */}
@@ -91,18 +147,30 @@ const Jarvis3DVisualizer: React.FC<Jarvis3DVisualizerProps> = ({
         {/* Anneaux orbitaux */}
         {(isSpeaking || isListening) && (
           <div className="absolute inset-0 flex items-center justify-center">
-            {[1, 2, 3].map((ring) => (
-              <div
-                key={ring}
-                className="absolute rounded-full border opacity-30"
-                style={{
-                  width: `${120 + ring * 30}px`,
-                  height: `${120 + ring * 30}px`,
-                  borderColor: coreColor,
-                  animation: `spin ${3 + ring}s linear infinite${ring % 2 === 0 ? ' reverse' : ''}`
-                }}
-              />
-            ))}
+            <div
+              className="absolute rounded-full border opacity-30 jarvis-spin"
+              style={{
+                width: '150px',
+                height: '150px',
+                borderColor: coreColor
+              }}
+            />
+            <div
+              className="absolute rounded-full border opacity-30 jarvis-spin-reverse"
+              style={{
+                width: '180px',
+                height: '180px',
+                borderColor: coreColor
+              }}
+            />
+            <div
+              className="absolute rounded-full border opacity-30 jarvis-spin-slow"
+              style={{
+                width: '210px',
+                height: '210px',
+                borderColor: coreColor
+              }}
+            />
           </div>
         )}
       </div>
@@ -120,35 +188,16 @@ const Jarvis3DVisualizer: React.FC<Jarvis3DVisualizerProps> = ({
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 rounded-full opacity-40"
+            className="absolute w-1 h-1 rounded-full opacity-40 jarvis-float"
             style={{
               backgroundColor: coreColor,
               left: `${20 + (i % 4) * 20}%`,
               top: `${30 + Math.floor(i / 4) * 40}%`,
-              animation: `float ${2 + i * 0.3}s ease-in-out infinite`,
               animationDelay: `${i * 0.2}s`
             }}
           />
         ))}
       </div>
-      
-      {/* Styles d'animation intégrés */}
-      <style jsx>{`
-        @keyframes pulse {
-          0% { transform: scale(1); }
-          100% { transform: scale(1.1); }
-        }
-        
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) opacity(0.4); }
-          50% { transform: translateY(-10px) opacity(0.8); }
-        }
-      `}</style>
     </div>
   );
 };
