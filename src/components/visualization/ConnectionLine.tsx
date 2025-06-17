@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Line } from '@react-three/drei';
-import * as THREE from 'three';
 
 interface ConnectionLineProps {
   start: [number, number, number];
@@ -11,12 +10,9 @@ interface ConnectionLineProps {
 }
 
 const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, secure }) => {
-  // Créer les points pour la ligne
+  // Créer les points pour la ligne (format attendu par Line)
   const points = React.useMemo(() => {
-    return [
-      new THREE.Vector3(start[0], start[1], start[2]),
-      new THREE.Vector3(end[0], end[1], end[2])
-    ];
+    return [start, end];
   }, [start, end]);
   
   // Déterminer la couleur

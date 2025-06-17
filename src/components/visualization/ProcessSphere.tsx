@@ -75,7 +75,7 @@ const ProcessSphere: React.FC<ProcessSphereProps> = ({ node, onClick }) => {
         />
       </Sphere>
       
-      {/* Anneau de sécurité avec mesh simple */}
+      {/* Anneau de sécurité avec géométrie simple */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.7, 0.05, 8, 32]} />
         <meshBasicMaterial color={getSecurityRing()} transparent opacity={0.7} />
