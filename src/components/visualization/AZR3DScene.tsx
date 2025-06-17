@@ -21,16 +21,28 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
   onNodeClick, 
   getActiveConnections 
 }) => {
-  const connections = getActiveConnections();
+  const connections = React.useMemo(() => {
+    try {
+      return getActiveConnections();
+    } catch (error) {
+      console.error('Erreur lors de la récupération des connexions:', error);
+      return [];
+    }
+  }, [getActiveConnections]);
 
   return (
     <div className="h-64 w-full border rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-      <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
+      <Canvas 
+        camera={{ position: [0, 0, 8], fov: 60 }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#000000');
+        }}
+      >
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={0.8} />
         <pointLight position={[-10, -10, -10]} intensity={0.4} color="#4444ff" />
         
-        {processNodes.map((node) => (
+        {processNodes && processNodes.length > 0 && processNodes.map((node) => (
           <ProcessSphere
             key={node.id}
             node={node}
@@ -38,9 +50,9 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
           />
         ))}
         
-        {connections.map((connection, index) => (
+        {connections && connections.length > 0 && connections.map((connection, index) => (
           <ConnectionLine
-            key={index}
+            key={`connection-${index}`}
             start={connection.start}
             end={connection.end}
             active={connection.active}
@@ -48,7 +60,13 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
           />
         ))}
         
-        <OrbitControls enableZoom enablePan enableRotate />
+        <OrbitControls 
+          enableZoom 
+          enablePan 
+          enableRotate 
+          maxDistance={15}
+          minDistance={3}
+        />
       </Canvas>
     </div>
   );
