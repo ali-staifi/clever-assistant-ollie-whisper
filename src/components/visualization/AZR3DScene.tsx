@@ -13,7 +13,7 @@ interface AZR3DSceneProps {
     end: [number, number, number];
     active: boolean;
     secure: boolean;
-  } | null>;
+  }>;
 }
 
 const AZR3DScene: React.FC<AZR3DSceneProps> = ({ 
@@ -21,6 +21,8 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
   onNodeClick, 
   getActiveConnections 
 }) => {
+  const connections = getActiveConnections();
+
   return (
     <div className="h-64 w-full border rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 to-black">
       <Canvas camera={{ position: [0, 0, 8], fov: 60 }}>
@@ -36,17 +38,15 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
           />
         ))}
         
-        {getActiveConnections().map((connection, index) => 
-          connection && (
-            <ConnectionLine
-              key={index}
-              start={connection.start}
-              end={connection.end}
-              active={connection.active}
-              secure={connection.secure}
-            />
-          )
-        )}
+        {connections.map((connection, index) => (
+          <ConnectionLine
+            key={index}
+            start={connection.start}
+            end={connection.end}
+            active={connection.active}
+            secure={connection.secure}
+          />
+        ))}
         
         <OrbitControls enableZoom enablePan enableRotate />
       </Canvas>

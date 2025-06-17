@@ -61,14 +61,14 @@ const AZR3DInterface: React.FC<AZR3DInterfaceProps> = ({
     // Surveillance de dérive algorithmique
     const driftDetection = () => {
       const errorRate = executionResults.length > 0 ? 
-        executionResults.filter(r => !r.success).length / executionResults.length : 0;
+        executionResults.filter((r: any) => !r.success).length / executionResults.length : 0;
       
       if (errorRate > 0.5) {
         setSecurityAlert(true);
         // Isolation automatique en cas de dérive
         setProcessNodes(prev => prev.map(node => ({
           ...node,
-          securityLevel: node.type === 'orchestration' ? 'isolated' : 'monitored',
+          securityLevel: node.type === 'orchestration' ? 'isolated' : 'monitored' as const,
           status: errorRate > 0.7 ? 'error' : node.status
         })));
       } else {
@@ -85,19 +85,19 @@ const AZR3DInterface: React.FC<AZR3DInterfaceProps> = ({
       if (node.type === 'orchestration') {
         return { 
           ...node, 
-          status: agentSActive ? 'active' : 'idle',
-          securityLevel: agentSActive ? 'isolated' : 'safe'
+          status: agentSActive ? 'active' : 'idle' as const,
+          securityLevel: agentSActive ? 'isolated' : 'safe' as const
         };
       }
       if (azrActive) {
         const hasActivity = processes.length > 0;
         return { 
           ...node, 
-          status: hasActivity ? 'processing' : 'active',
-          securityLevel: hasActivity ? 'monitored' : 'safe'
+          status: hasActivity ? 'processing' : 'active' as const,
+          securityLevel: hasActivity ? 'monitored' : 'safe' as const
         };
       }
-      return { ...node, status: 'idle', securityLevel: 'safe' };
+      return { ...node, status: 'idle' as const, securityLevel: 'safe' as const };
     }));
   }, [azrActive, agentSActive, processes.length, executionResults]);
 
@@ -119,7 +119,12 @@ const AZR3DInterface: React.FC<AZR3DInterfaceProps> = ({
           active: node.status === 'processing' || node.status === 'active',
           secure: node.securityLevel === 'safe' && targetNode.securityLevel === 'safe'
         };
-      }).filter(Boolean);
+      }).filter(Boolean) as Array<{
+        start: [number, number, number];
+        end: [number, number, number];
+        active: boolean;
+        secure: boolean;
+      }>;
     });
   };
 
