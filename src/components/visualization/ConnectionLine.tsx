@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 interface ConnectionLineProps {
@@ -10,6 +11,8 @@ interface ConnectionLineProps {
 }
 
 const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, secure }) => {
+  const lineRef = useRef<THREE.Line>(null);
+
   const lineColor = React.useMemo(() => {
     if (secure) {
       return active ? "#00ff88" : "#00aa44";
@@ -18,27 +21,42 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, sec
     }
   }, [active, secure]);
 
-  const geometry = React.useMemo(() => {
-    const geometry = new THREE.BufferGeometry();
-    const points = new Float32Array([
-      start[0], start[1], start[2],
-      end[0], end[1], end[2]
-    ]);
-    geometry.setAttribute('position', new THREE.BufferAttribute(points, 3));
-    return geometry;
-  }, [start, end]);
-
-  const material = React.useMemo(() => {
-    return new THREE.LineBasicMaterial({
-      color: lineColor,
-      linewidth: active ? 3 : 1,
-      transparent: true,
-      opacity: active ? 0.8 : 0.5
-    });
-  }, [lineColor, active]);
+  useEffect(() => {
+    if (lineRef.current) {
+      // Update geometry
+      const positions = new Float32Array([
+        start[0], start[1], start[2],
+        end[0], end[1], end[2]
+      ]);
+      lineRef.current.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      // Update material
+      if (lineRef.current.material instanceof THREE.LineBasicMaterial) {
+        lineRef.current.material.color.set(lineColor);
+        lineRef.current.material.opacity = active ? 0.8 : 0.5;
+      }
+    }
+  }, [start, end, lineColor, active]);
 
   return (
-    <primitive object={new THREE.Line(geometry, material)} />
+    <line ref={lineRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={2}
+          array={new Float32Array([
+            start[0], start[1], start[2],
+            end[0], end[1], end[2]
+          ])}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <lineBasicMaterial
+        color={lineColor}
+        transparent
+        opacity={active ? 0.8 : 0.5}
+      />
+    </line>
   );
 };
 
