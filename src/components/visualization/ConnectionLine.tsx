@@ -38,7 +38,7 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, sec
   }, [lineColor, active]);
 
   return (
-    <line geometry={geometry} material={material} />
+    <primitive object={new THREE.Line(geometry, material)} />
   );
 };
 
