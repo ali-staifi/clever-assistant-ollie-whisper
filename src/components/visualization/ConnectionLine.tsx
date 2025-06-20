@@ -23,25 +23,17 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, sec
     new THREE.Vector3(end[0], end[1], end[2])
   ], [start, end]);
 
+  const geometry = React.useMemo(() => {
+    const geom = new THREE.BufferGeometry().setFromPoints(points);
+    return geom;
+  }, [points]);
+
   return (
-    <line>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={2}
-          array={new Float32Array([
-            start[0], start[1], start[2],
-            end[0], end[1], end[2]
-          ])}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <lineBasicMaterial
-        color={lineColor}
-        transparent
-        opacity={active ? 0.8 : 0.5}
-      />
-    </line>
+    <primitive object={new THREE.Line(geometry, new THREE.LineBasicMaterial({
+      color: lineColor,
+      transparent: true,
+      opacity: active ? 0.8 : 0.5
+    }))} />
   );
 };
 
