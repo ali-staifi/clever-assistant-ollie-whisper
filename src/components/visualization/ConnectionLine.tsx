@@ -26,9 +26,7 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, sec
     <Line
       points={points}
       color={lineColor}
-      lineWidth={active ? 3 : 1}
-      transparent={true}
-      opacity={active ? 0.8 : 0.3}
+      linewidth={active ? 3 : 1}
     />
   );
 };
