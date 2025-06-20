@@ -27,21 +27,35 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
         return [];
       }
       const result = getActiveConnections();
-      return Array.isArray(result) ? result : [];
+      if (!Array.isArray(result)) {
+        return [];
+      }
+      return result.filter(conn => 
+        conn && 
+        Array.isArray(conn.start) && 
+        Array.isArray(conn.end) &&
+        conn.start.length === 3 && 
+        conn.end.length === 3
+      );
     } catch (error) {
       console.error('Erreur lors de la récupération des connexions:', error);
       return [];
     }
   }, [getActiveConnections]);
 
-  // Vérifier que processNodes est valide
   const validProcessNodes = React.useMemo(() => {
-    return Array.isArray(processNodes) ? processNodes.filter(node => 
+    if (!Array.isArray(processNodes)) {
+      return [];
+    }
+    return processNodes.filter(node => 
       node && 
       node.id && 
       Array.isArray(node.position) && 
-      node.position.length === 3
-    ) : [];
+      node.position.length === 3 &&
+      typeof node.position[0] === 'number' &&
+      typeof node.position[1] === 'number' &&
+      typeof node.position[2] === 'number'
+    );
   }, [processNodes]);
 
   return (
@@ -60,33 +74,42 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
         <pointLight position={[10, 10, 10]} intensity={0.8} />
         <pointLight position={[-10, -10, -10]} intensity={0.4} color="#4444ff" />
         
-        {validProcessNodes.map((node) => (
-          <ProcessSphere
-            key={node.id}
-            node={node}
-            onClick={() => onNodeClick(node.id)}
-          />
-        ))}
-        
-        {connections.map((connection, index) => {
-          if (!connection || !Array.isArray(connection.start) || !Array.isArray(connection.end)) {
+        {validProcessNodes.map((node) => {
+          try {
+            return (
+              <ProcessSphere
+                key={node.id}
+                node={node}
+                onClick={() => onNodeClick(node.id)}
+              />
+            );
+          } catch (error) {
+            console.error('Erreur lors du rendu du nœud:', node.id, error);
             return null;
           }
-          return (
-            <ConnectionLine
-              key={`connection-${index}`}
-              start={connection.start}
-              end={connection.end}
-              active={connection.active || false}
-              secure={connection.secure || false}
-            />
-          );
+        })}
+        
+        {connections.map((connection, index) => {
+          try {
+            return (
+              <ConnectionLine
+                key={`connection-${index}`}
+                start={connection.start}
+                end={connection.end}
+                active={Boolean(connection.active)}
+                secure={Boolean(connection.secure)}
+              />
+            );
+          } catch (error) {
+            console.error('Erreur lors du rendu de la connexion:', index, error);
+            return null;
+          }
         })}
         
         <OrbitControls 
-          enableZoom 
-          enablePan 
-          enableRotate 
+          enableZoom={true}
+          enablePan={true}
+          enableRotate={true}
           maxDistance={15}
           minDistance={3}
         />

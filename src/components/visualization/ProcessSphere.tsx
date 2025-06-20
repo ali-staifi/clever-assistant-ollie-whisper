@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Sphere, Text } from '@react-three/drei';
+import * as THREE from 'three';
 
 interface ProcessNode {
   id: string;
@@ -17,7 +18,8 @@ interface ProcessSphereProps {
 }
 
 const ProcessSphere: React.FC<ProcessSphereProps> = ({ node, onClick }) => {
-  const meshRef = useRef<any>();
+  const meshRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
   
   useEffect(() => {
     if (node.status === 'processing' && meshRef.current) {
@@ -63,22 +65,25 @@ const ProcessSphere: React.FC<ProcessSphereProps> = ({ node, onClick }) => {
     <group position={node.position}>
       <Sphere
         ref={meshRef}
-        args={[0.5, 32, 32]}
+        args={[0.5, 16, 16]}
         onClick={onClick}
       >
         <meshStandardMaterial
           color={getColor()}
-          transparent
+          transparent={true}
           opacity={getOpacity()}
           emissive={node.status === 'processing' ? getColor() : '#000000'}
           emissiveIntensity={node.status === 'processing' ? 0.2 : 0}
         />
       </Sphere>
       
-      {/* Anneau de sécurité avec géométrie simple */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.7, 0.05, 8, 32]} />
-        <meshBasicMaterial color={getSecurityRing()} transparent opacity={0.7} />
+      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.7, 0.05, 8, 16]} />
+        <meshBasicMaterial 
+          color={getSecurityRing()} 
+          transparent={true} 
+          opacity={0.7} 
+        />
       </mesh>
       
       <Text
