@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useChatOllama, ChatMessage } from '@/hooks/useChatOllama';
+import { useJarvisServices } from '@/hooks/useJarvisServices';
 import OllamaConnectionSetup from './OllamaConnectionSetup';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessages from './chat/ChatMessages';
@@ -33,8 +34,16 @@ const ChatInterface = () => {
     clearMessages
   } = useChatOllama();
 
+  // Utilisation du service vocal global
+  const {
+    speechService,
+    globalVoiceSettings,
+    updateGlobalVoiceSettings,
+    selectVoiceByGender
+  } = useJarvisServices();
+
   const [isUploading, setIsUploading] = useState(false);
-  const [showConnectionSetup, setShowConnectionSetup] = useState(true); // Montrer par défaut
+  const [showConnectionSetup, setShowConnectionSetup] = useState(true);
   const { toast } = useToast();
   
   // Convert Ollama messages to UI messages with attachments
@@ -98,6 +107,28 @@ const ChatInterface = () => {
     setIsUploading(false);
   };
 
+  // Fonction pour parler une réponse avec les paramètres vocaux globaux
+  const speakResponse = async (text: string) => {
+    if (speechService && globalVoiceSettings) {
+      // Appliquer les paramètres vocaux globaux
+      speechService.setRate(globalVoiceSettings.rate);
+      speechService.setPitch(globalVoiceSettings.pitch);
+      speechService.setVolume(globalVoiceSettings.volume);
+      speechService.setRoboticEffect(globalVoiceSettings.roboticEffect);
+      
+      await speechService.speak(text);
+    }
+  };
+
+  // Surveiller les nouvelles réponses de l'assistant pour les lire automatiquement
+  useEffect(() => {
+    const lastMessage = localMessages[localMessages.length - 1];
+    if (lastMessage && lastMessage.role === 'assistant' && !lastMessage.pending) {
+      // Lire automatiquement la réponse de l'assistant
+      speakResponse(lastMessage.content);
+    }
+  }, [localMessages]);
+
   return (
     <div className="flex flex-col h-full bg-jarvis-darkBlue/10 rounded-lg overflow-hidden">
       {/* Connection header */}
@@ -135,6 +166,8 @@ const ChatInterface = () => {
         onSendMessage={sendMessage}
         onFileUpload={handleFileUpload}
         isGenerating={isGenerating}
+        speechService={speechService}
+        globalVoiceSettings={globalVoiceSettings}
       />
     </div>
   );

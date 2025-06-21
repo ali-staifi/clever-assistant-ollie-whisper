@@ -4,27 +4,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Paperclip, Send, Mic, MicOff } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-
-interface FileAttachment {
-  type: 'image' | 'video';
-  url: string;
-  name: string;
-}
+import { SpeechService } from '@/services/SpeechService';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => Promise<void>;
   onFileUpload: (file: File) => void;
   isGenerating: boolean;
+  speechService?: SpeechService;
+  globalVoiceSettings?: {
+    roboticEffect: number;
+    rate: number;
+    pitch: number;
+    volume: number;
+    voiceGender: 'male' | 'female' | 'neutral';
+  };
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   onFileUpload,
-  isGenerating
+  isGenerating,
+  speechService,
+  globalVoiceSettings
 }) => {
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
 
   const handleSendMessage = async () => {
@@ -58,14 +64,27 @@ const ChatInput: React.FC<ChatInputProps> = ({
     try {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
       
-      recognition.lang = 'fr-FR';
+      // Utiliser les paramètres vocaux globaux pour la reconnaissance si disponibles
+      recognition.lang = globalVoiceSettings?.voiceGender === 'male' ? 'fr-FR' : 
+                        globalVoiceSettings?.voiceGender === 'female' ? 'fr-FR' : 'fr-FR';
       recognition.continuous = false;
       recognition.interimResults = true;
       
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setInput(transcript);
+        
+        // Si c'est un résultat final, envoyer automatiquement
+        if (event.results[0].isFinal) {
+          setTimeout(() => {
+            if (transcript.trim()) {
+              onSendMessage(transcript);
+              setInput('');
+            }
+          }, 500);
+        }
       };
       
       recognition.onerror = (event) => {
@@ -80,6 +99,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       
       recognition.onend = () => {
         setIsListening(false);
+        recognitionRef.current = null;
       };
       
       recognition.start();
@@ -102,12 +122,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const stopListening = () => {
-    try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.stop();
-    } catch (e) {
-      console.error("Erreur lors de l'arrêt de la reconnaissance vocale:", e);
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
     }
     setIsListening(false);
   };
@@ -145,7 +162,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onClick={toggleListening}
           variant="ghost"
           size="icon"
-          className={isListening ? "text-red-500" : "text-gray-400 hover:text-white"}
+          className={isListening ? "text-red-500 animate-pulse" : "text-gray-400 hover:text-white"}
           disabled={isGenerating}
         >
           {isListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
@@ -154,19 +171,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
         {/* Text input */}
         <div className="flex-1 mx-2">
           <Input
-            placeholder="Tapez un message..."
+            placeholder={isListening ? "Je vous écoute..." : "Tapez un message..."}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             className="bg-gray-800 border-gray-700 text-white"
-            disabled={isGenerating}
+            disabled={isGenerating || isListening}
           />
         </div>
 
         {/* Send button */}
         <Button 
           onClick={handleSendMessage} 
-          disabled={!input.trim() || isGenerating}
+          disabled={!input.trim() || isGenerating || isListening}
           variant="ghost"
           size="icon"
           className="text-jarvis-blue hover:text-jarvis-blue/80"
@@ -174,6 +191,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <Send className="h-5 w-5" />
         </Button>
       </div>
+      
+      {/* Status indicator */}
+      {isListening && (
+        <div className="mt-2 text-center">
+          <span className="text-xs text-jarvis-blue animate-pulse">
+            🎤 Reconnaissance vocale active - Parlez maintenant
+          </span>
+        </div>
+      )}
     </div>
   );
 };
