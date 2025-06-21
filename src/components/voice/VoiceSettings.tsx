@@ -13,6 +13,7 @@ interface VoiceSettingsProps {
   setPitch: (value: number) => void;
   volume: number;
   setVolume: (value: number) => void;
+  onTestVoice?: () => void;
 }
 
 const VoiceSettings: React.FC<VoiceSettingsProps> = ({
@@ -23,7 +24,8 @@ const VoiceSettings: React.FC<VoiceSettingsProps> = ({
   pitch,
   setPitch,
   volume,
-  setVolume
+  setVolume,
+  onTestVoice
 }) => {
   return (
     <div className="space-y-6">
@@ -85,6 +87,17 @@ const VoiceSettings: React.FC<VoiceSettingsProps> = ({
           onValueChange={(values) => setVolume(values[0])}
         />
       </div>
+      
+      {onTestVoice && (
+        <div className="mt-4">
+          <button
+            onClick={onTestVoice}
+            className="w-full px-4 py-2 bg-jarvis-blue text-white rounded hover:bg-jarvis-blue/80 transition-colors"
+          >
+            Tester la voix avec ces paramètres
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MicrophoneSettings from "@/components/settings/MicrophoneSettings";
+import VoiceSettings from "@/components/voice/VoiceSettings";
 import { useMicrophoneTesting } from "@/hooks/useMicrophoneTesting";
 import { useMicSensitivity } from "@/hooks/jarvis/useMicSensitivity";
 import { useMaryTTS } from "@/hooks/jarvis/useMaryTTS";
@@ -20,11 +21,20 @@ import { SpeechService } from '@/services/SpeechService';
 interface VoiceSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  globalVoiceSettings?: {
+    roboticEffect: number;
+    rate: number;
+    pitch: number;
+    volume: number;
+  };
+  onUpdateGlobalVoiceSettings?: (settings: any) => void;
 }
 
 const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
   open,
-  onOpenChange
+  onOpenChange,
+  globalVoiceSettings,
+  onUpdateGlobalVoiceSettings
 }) => {
   // Get microphone sensitivity settings
   const { micSensitivity, setMicSensitivity } = useMicSensitivity();
@@ -73,6 +83,19 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
     }
   };
   
+  // Handle voice test
+  const handleTestVoice = async () => {
+    if (speechService && globalVoiceSettings) {
+      // Appliquer les paramètres avant le test
+      speechService.setRate(globalVoiceSettings.rate);
+      speechService.setPitch(globalVoiceSettings.pitch);
+      speechService.setVolume(globalVoiceSettings.volume);
+      speechService.setRoboticEffect(globalVoiceSettings.roboticEffect);
+      
+      await speechService.speak("Bonjour, ceci est un test des paramètres vocaux avancés. La vitesse, la hauteur, le volume et l'effet robotique sont maintenant configurés selon vos préférences.");
+    }
+  };
+  
   // Handle MaryTTS test
   const handleTestMaryTTS = async () => {
     if (isSpeaking) {
@@ -95,11 +118,28 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
             <DialogTitle>Paramètres vocaux</DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="microphone" className="w-full">
-            <TabsList className="grid grid-cols-2">
+          <Tabs defaultValue="advanced" className="w-full">
+            <TabsList className="grid grid-cols-3">
+              <TabsTrigger value="advanced">Paramètres avancés</TabsTrigger>
               <TabsTrigger value="microphone">Microphone</TabsTrigger>
               <TabsTrigger value="tts">Synthèse vocale</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="advanced" className="py-4 space-y-6">
+              {globalVoiceSettings && onUpdateGlobalVoiceSettings && (
+                <VoiceSettings
+                  roboticEffect={globalVoiceSettings.roboticEffect}
+                  setRoboticEffect={(value) => onUpdateGlobalVoiceSettings({ roboticEffect: value })}
+                  rate={globalVoiceSettings.rate}
+                  setRate={(value) => onUpdateGlobalVoiceSettings({ rate: value })}
+                  pitch={globalVoiceSettings.pitch}
+                  setPitch={(value) => onUpdateGlobalVoiceSettings({ pitch: value })}
+                  volume={globalVoiceSettings.volume}
+                  setVolume={(value) => onUpdateGlobalVoiceSettings({ volume: value })}
+                  onTestVoice={handleTestVoice}
+                />
+              )}
+            </TabsContent>
             
             <TabsContent value="microphone" className="py-4 space-y-6">
               <MicrophoneSettings 

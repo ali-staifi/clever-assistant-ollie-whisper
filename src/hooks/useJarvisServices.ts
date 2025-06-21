@@ -22,7 +22,7 @@ export const useJarvisServices = () => {
     checkOllamaConnection
   } = useOllamaService();
 
-  // Set up speech service
+  // Set up speech service avec paramètres vocaux avancés
   const {
     isListening,
     isSpeaking,
@@ -44,7 +44,9 @@ export const useJarvisServices = () => {
     configureMaryTTS,
     testMaryTTSConnection,
     setLanguage,
-    speechService
+    speechService,
+    globalVoiceSettings,
+    updateGlobalVoiceSettings
   } = useSpeechService();
 
   // Set up conversation state
@@ -130,7 +132,10 @@ export const useJarvisServices = () => {
     testMaryTTSConnection,
     speechService,
     responseLanguage,
-    changeResponseLanguage
+    changeResponseLanguage,
+    // Nouveaux exports pour les paramètres vocaux avancés
+    globalVoiceSettings,
+    updateGlobalVoiceSettings
   };
 };
 

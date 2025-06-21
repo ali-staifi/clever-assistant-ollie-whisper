@@ -1,3 +1,4 @@
+
 import { useRef, useEffect, useState } from 'react';
 import { SpeechService } from '@/services/SpeechService';
 import { useAudioMonitoring } from './useAudioMonitoring';
@@ -8,6 +9,14 @@ import { useSpeechSynthesis } from './useSpeechSynthesis';
 export const useSpeechService = () => {
   const speechService = useRef(new SpeechService()).current;
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  
+  // Paramètres vocaux avancés globaux
+  const [globalVoiceSettings, setGlobalVoiceSettings] = useState({
+    roboticEffect: 0.3,
+    rate: 1.0,
+    pitch: 1.0,
+    volume: 1.0
+  });
   
   // Get microphone sensitivity settings
   const { micSensitivity, setMicSensitivity } = useMicSensitivity();
@@ -34,13 +43,39 @@ export const useSpeechService = () => {
   // Setup speech synthesis
   const { 
     isSpeaking, 
-    speak, 
+    speak: basSpeak, 
     toggleSpeaking,
     setVoice,
-    setLanguage, // We need to expose this function
+    setLanguage,
     setVoiceSettings,
     getAvailableVoices
   } = useSpeechSynthesis(speechService);
+  
+  // Fonction speak améliorée qui utilise les paramètres globaux
+  const speak = async (text: string): Promise<boolean> => {
+    // Appliquer les paramètres vocaux avancés avant de parler
+    speechService.setRate(globalVoiceSettings.rate);
+    speechService.setPitch(globalVoiceSettings.pitch);
+    speechService.setVolume(globalVoiceSettings.volume);
+    speechService.setRoboticEffect(globalVoiceSettings.roboticEffect);
+    
+    return await basSpeak(text);
+  };
+  
+  // Fonctions pour mettre à jour les paramètres vocaux globaux
+  const updateGlobalVoiceSettings = (settings: Partial<typeof globalVoiceSettings>) => {
+    setGlobalVoiceSettings(prev => {
+      const newSettings = { ...prev, ...settings };
+      
+      // Appliquer immédiatement au service vocal
+      speechService.setRate(newSettings.rate);
+      speechService.setPitch(newSettings.pitch);
+      speechService.setVolume(newSettings.volume);
+      speechService.setRoboticEffect(newSettings.roboticEffect);
+      
+      return newSettings;
+    });
+  };
   
   // Load available voices
   useEffect(() => {
@@ -126,6 +161,9 @@ export const useSpeechService = () => {
     setVoiceSettings,
     availableVoices,
     speechService,
-    setLanguage // Make sure to include setLanguage in the returned object
+    setLanguage,
+    // Nouveaux exports pour les paramètres vocaux avancés
+    globalVoiceSettings,
+    updateGlobalVoiceSettings
   };
 };

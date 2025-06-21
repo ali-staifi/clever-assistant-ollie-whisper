@@ -4,9 +4,13 @@ import ChatInterface from "@/components/chatbot/ChatInterface";
 import { Button } from "@/components/ui/button";
 import { ServerIcon, Settings, Mic } from "lucide-react";
 import VoiceSettingsDialog from "@/components/dialogs/VoiceSettingsDialog";
+import { useSpeechService } from "@/hooks/jarvis/useSpeechService";
 
 const ChatPage = () => {
   const [voiceSettingsOpen, setVoiceSettingsOpen] = React.useState(false);
+  
+  // Utiliser le service vocal global pour connecter les paramètres
+  const { globalVoiceSettings, updateGlobalVoiceSettings } = useSpeechService();
   
   return (
     <div className="flex flex-col h-screen p-4">
@@ -47,6 +51,8 @@ const ChatPage = () => {
       <VoiceSettingsDialog
         open={voiceSettingsOpen}
         onOpenChange={setVoiceSettingsOpen}
+        globalVoiceSettings={globalVoiceSettings}
+        onUpdateGlobalVoiceSettings={updateGlobalVoiceSettings}
       />
     </div>
   );
