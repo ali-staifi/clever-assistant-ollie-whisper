@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -26,6 +25,7 @@ interface VoiceSettingsDialogProps {
     rate: number;
     pitch: number;
     volume: number;
+    voiceGender: 'male' | 'female' | 'neutral';
   };
   onUpdateGlobalVoiceSettings?: (settings: any) => void;
 }
@@ -92,7 +92,10 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
       speechService.setVolume(globalVoiceSettings.volume);
       speechService.setRoboticEffect(globalVoiceSettings.roboticEffect);
       
-      await speechService.speak("Bonjour, ceci est un test des paramètres vocaux avancés. La vitesse, la hauteur, le volume et l'effet robotique sont maintenant configurés selon vos préférences.");
+      const genderText = globalVoiceSettings.voiceGender === 'female' ? 'féminine' : 
+                        globalVoiceSettings.voiceGender === 'male' ? 'masculine' : 'neutre';
+      
+      await speechService.speak(`Bonjour, ceci est un test des paramètres vocaux avancés avec une voix ${genderText}. La vitesse, la hauteur, le volume et l'effet robotique sont maintenant configurés selon vos préférences.`);
     }
   };
   
@@ -136,6 +139,8 @@ const VoiceSettingsDialog: React.FC<VoiceSettingsDialogProps> = ({
                   setPitch={(value) => onUpdateGlobalVoiceSettings({ pitch: value })}
                   volume={globalVoiceSettings.volume}
                   setVolume={(value) => onUpdateGlobalVoiceSettings({ volume: value })}
+                  voiceGender={globalVoiceSettings.voiceGender}
+                  setVoiceGender={(gender) => onUpdateGlobalVoiceSettings({ voiceGender: gender })}
                   onTestVoice={handleTestVoice}
                 />
               )}

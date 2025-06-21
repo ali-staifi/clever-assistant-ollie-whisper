@@ -46,7 +46,8 @@ export const useJarvisServices = () => {
     setLanguage,
     speechService,
     globalVoiceSettings,
-    updateGlobalVoiceSettings
+    updateGlobalVoiceSettings,
+    selectVoiceByGender
   } = useSpeechService();
 
   // Set up conversation state
@@ -133,9 +134,10 @@ export const useJarvisServices = () => {
     speechService,
     responseLanguage,
     changeResponseLanguage,
-    // Nouveaux exports pour les paramètres vocaux avancés
+    // Nouveaux exports pour les paramètres vocaux avancés avec genre
     globalVoiceSettings,
-    updateGlobalVoiceSettings
+    updateGlobalVoiceSettings,
+    selectVoiceByGender
   };
 };
 

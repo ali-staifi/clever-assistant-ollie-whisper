@@ -2,7 +2,8 @@
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Volume2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Volume2, User, Users } from "lucide-react";
 
 interface VoiceSettingsProps {
   roboticEffect: number;
@@ -13,6 +14,8 @@ interface VoiceSettingsProps {
   setPitch: (value: number) => void;
   volume: number;
   setVolume: (value: number) => void;
+  voiceGender?: 'male' | 'female' | 'neutral';
+  setVoiceGender?: (gender: 'male' | 'female' | 'neutral') => void;
   onTestVoice?: () => void;
 }
 
@@ -25,10 +28,32 @@ const VoiceSettings: React.FC<VoiceSettingsProps> = ({
   setPitch,
   volume,
   setVolume,
+  voiceGender = 'female',
+  setVoiceGender,
   onTestVoice
 }) => {
   return (
     <div className="space-y-6">
+      {setVoiceGender && (
+        <div className="space-y-2">
+          <div className="flex justify-between items-center">
+            <Label htmlFor="voice-gender">Type de voix</Label>
+            <User className="h-4 w-4" />
+          </div>
+          <Select value={voiceGender} onValueChange={setVoiceGender}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="female">Voix féminine</SelectItem>
+              <SelectItem value="male">Voix masculine</SelectItem>
+              <SelectItem value="neutral">Voix neutre</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Sélectionne automatiquement une voix correspondante</p>
+        </div>
+      )}
+      
       <div className="space-y-2">
         <div className="flex justify-between">
           <Label htmlFor="robotic-effect">Effet Jarvis: {Math.round(roboticEffect * 100)}%</Label>
