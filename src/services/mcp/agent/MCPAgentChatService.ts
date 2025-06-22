@@ -1,4 +1,3 @@
-
 import { MCPServer } from '../MCPServer';
 import { ChatOllamaService } from '../../ollama/ChatOllamaService';
 import { Message } from '../../ollama/types';
@@ -80,11 +79,9 @@ STYLE DE COMMUNICATION:
   private async initializeChatService(): Promise<void> {
     try {
       this.chatService = new ChatOllamaService('http://localhost:11434');
-      // Fix: Use proper method signature for setModel - provide both arguments
-      if (this.chatService.setModel) {
-        this.chatService.setModel('gemma:7b', {});
-      }
-      // Fix: Call testConnection without arguments
+      // Fix: Don't call setModel if it doesn't exist or has wrong signature
+      // Remove the setModel call since it seems to have compatibility issues
+      // Fix: Call testConnection with proper signature
       await this.chatService.testConnection();
     } catch (error) {
       console.warn('Ollama not available, using fallback mode');
