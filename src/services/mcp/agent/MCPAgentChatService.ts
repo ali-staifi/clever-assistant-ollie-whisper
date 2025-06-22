@@ -1,3 +1,4 @@
+
 import { MCPServer } from '../MCPServer';
 import { ChatOllamaService } from '../../ollama/ChatOllamaService';
 import { Message } from '../../ollama/types';
@@ -79,9 +80,9 @@ STYLE DE COMMUNICATION:
   private async initializeChatService(): Promise<void> {
     try {
       this.chatService = new ChatOllamaService('http://localhost:11434');
-      // Fix: Use proper method signature for setModel - only pass model name
+      // Fix: Use proper method signature for setModel - provide both arguments
       if (this.chatService.setModel) {
-        this.chatService.setModel('gemma:7b');
+        this.chatService.setModel('gemma:7b', {});
       }
       // Fix: Call testConnection without arguments
       await this.chatService.testConnection();
