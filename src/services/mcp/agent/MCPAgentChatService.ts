@@ -77,10 +77,13 @@ STYLE DE COMMUNICATION:
 - Intègre les paramètres vocaux globaux pour les réponses parlées`;
   }
 
-  private async initializeChatService() {
+  private async initializeChatService(): Promise<void> {
     try {
       this.chatService = new ChatOllamaService('http://localhost:11434');
-      this.chatService.setModel('gemma:7b');
+      // Fix: Use proper method signature for setModel
+      if (this.chatService.setModel) {
+        this.chatService.setModel('gemma:7b', {});
+      }
       await this.chatService.testConnection();
     } catch (error) {
       console.warn('Ollama not available, using fallback mode');
@@ -167,7 +170,7 @@ Réponds en tenant compte de l'état système actuel et propose des actions conc
     };
   }
 
-  private async analyzeConnections() {
+  private async analyzeConnections(): Promise<{[key: string]: {status: string; quality: number; latency: number}}> {
     const services = ['BioMCP', 'ApifyMCP', 'VoiceService', 'OllamaService'];
     const connections: any = {};
     
@@ -277,7 +280,8 @@ Réponds en tenant compte de l'état système actuel et propose des actions conc
     return `Je suis votre Agent IA MCP. Système: ${analysis.systemHealth}% santé. Comment puis-je optimiser votre expérience aujourd'hui?`;
   }
 
-  private async getSystemStatus(): string {
+  // Fix: Add proper return type annotation
+  private async getSystemStatus(): Promise<string> {
     const analysis = await this.analyzeSystemState();
     return `${analysis.systemHealth}% santé, ${Object.keys(analysis.connections).length} services`;
   }
