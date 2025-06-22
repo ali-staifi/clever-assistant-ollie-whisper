@@ -1,3 +1,4 @@
+
 import { MCPServer } from '../MCPServer';
 import { ChatOllamaService } from '../../ollama/ChatOllamaService';
 import { Message } from '../../ollama/types';
@@ -81,8 +82,11 @@ STYLE DE COMMUNICATION:
       this.chatService = new ChatOllamaService('http://localhost:11434');
       // Fix: Don't call setModel if it doesn't exist or has wrong signature
       // Remove the setModel call since it seems to have compatibility issues
-      // Fix: Call testConnection with proper signature
-      await this.chatService.testConnection();
+      // Fix: Call testConnection with proper signature - use the instance method that returns a promise
+      const connectionResult = await this.chatService.testConnection();
+      if (!connectionResult.success) {
+        console.warn('Ollama connection test failed:', connectionResult.error);
+      }
     } catch (error) {
       console.warn('Ollama not available, using fallback mode');
     }
