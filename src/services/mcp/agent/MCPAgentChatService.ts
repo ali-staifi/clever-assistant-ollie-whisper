@@ -1,4 +1,3 @@
-
 import { MCPServer } from '../MCPServer';
 import { ChatOllamaService } from '../../ollama/ChatOllamaService';
 import { Message } from '../../ollama/types';
@@ -80,10 +79,11 @@ STYLE DE COMMUNICATION:
   private async initializeChatService(): Promise<void> {
     try {
       this.chatService = new ChatOllamaService('http://localhost:11434');
-      // Fix: Use proper method signature for setModel
+      // Fix: Use proper method signature for setModel - only pass model name
       if (this.chatService.setModel) {
-        this.chatService.setModel('gemma:7b', {});
+        this.chatService.setModel('gemma:7b');
       }
+      // Fix: Call testConnection without arguments
       await this.chatService.testConnection();
     } catch (error) {
       console.warn('Ollama not available, using fallback mode');
@@ -170,11 +170,13 @@ Réponds en tenant compte de l'état système actuel et propose des actions conc
     };
   }
 
-  private async analyzeConnections(): Promise<{[key: string]: {status: string; quality: number; latency: number}}> {
+  private async analyzeConnections(): Promise<{[key: string]: {status: 'connected' | 'disconnected' | 'error'; quality: number; latency: number}}> {
     const services = ['BioMCP', 'ApifyMCP', 'VoiceService', 'OllamaService'];
-    const connections: any = {};
+    const connections: {[key: string]: {status: 'connected' | 'disconnected' | 'error'; quality: number; latency: number}} = {};
     
     for (const service of services) {
+      // Fix: Use proper union type for status
+      const statusOptions: ('connected' | 'disconnected' | 'error')[] = ['connected', 'disconnected', 'error'];
       connections[service] = {
         status: Math.random() > 0.1 ? 'connected' : 'error',
         quality: Math.random() * 40 + 60, // 60-100%
@@ -280,7 +282,6 @@ Réponds en tenant compte de l'état système actuel et propose des actions conc
     return `Je suis votre Agent IA MCP. Système: ${analysis.systemHealth}% santé. Comment puis-je optimiser votre expérience aujourd'hui?`;
   }
 
-  // Fix: Add proper return type annotation
   private async getSystemStatus(): Promise<string> {
     const analysis = await this.analyzeSystemState();
     return `${analysis.systemHealth}% santé, ${Object.keys(analysis.connections).length} services`;
