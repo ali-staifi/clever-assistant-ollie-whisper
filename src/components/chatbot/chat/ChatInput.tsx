@@ -1,10 +1,10 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Paperclip, Send, Mic, MicOff } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { SpeechService } from '@/services/SpeechService';
+import { SpeechRecognition, SpeechRecognitionEvent, SpeechRecognitionErrorEvent } from '@/services/speech/types';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => Promise<void>;
@@ -62,8 +62,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const startListening = () => {
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognitionClass();
       recognitionRef.current = recognition;
       
       // Utiliser les paramètres vocaux globaux pour la reconnaissance si disponibles
@@ -72,7 +72,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       recognition.continuous = false;
       recognition.interimResults = true;
       
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript;
         setInput(transcript);
         
@@ -87,7 +87,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         }
       };
       
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error', event.error);
         toast({
           title: "Erreur de reconnaissance vocale",
