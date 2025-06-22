@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Database, Globe, Zap } from 'lucide-react';
 
 const MCPPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('bio');
+  const [activeTab, setActiveTab] = useState('agent');
   
   return (
     <div className="container py-4 min-h-full">
@@ -24,6 +24,17 @@ const MCPPage: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-purple-600" />
+                <span className="font-medium">Agent AI</span>
+                <Badge variant="outline">Intelligence</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Assistant intelligent intégré</p>
+            </CardContent>
+          </Card>
+          
           <Card className="border-l-4 border-l-green-500">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -45,29 +56,22 @@ const MCPPage: React.FC = () => {
               <p className="text-sm text-muted-foreground mt-1">Automatisation web intelligente</p>
             </CardContent>
           </Card>
-          
-          <Card className="border-l-4 border-l-purple-500">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-purple-600" />
-                <span className="font-medium">Agent AI</span>
-                <Badge variant="outline">Intelligence</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">Assistant intelligent intégré</p>
-            </CardContent>
-          </Card>
         </div>
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
         <TabsList className="grid grid-cols-3 mb-4 w-full md:w-[600px]">
+          <TabsTrigger value="agent">Agent AI</TabsTrigger>
           <TabsTrigger value="bio">BioMCP</TabsTrigger>
           <TabsTrigger value="apify">ApifyMCP</TabsTrigger>
-          <TabsTrigger value="agent">Agent AI</TabsTrigger>
         </TabsList>
         
         <div className="mb-20">
           <ScrollArea className="h-full pr-4">
+            <TabsContent value="agent" className="mt-0">
+              <MCPAgentAssistant />
+            </TabsContent>
+            
             <TabsContent value="bio" className="mt-0">
               <BioMCPPanel />
             </TabsContent>
@@ -133,10 +137,6 @@ const MCPPage: React.FC = () => {
                 
                 <ApifyMCPPanel />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="agent" className="mt-0">
-              <MCPAgentAssistant />
             </TabsContent>
           </ScrollArea>
         </div>
