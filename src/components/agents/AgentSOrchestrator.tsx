@@ -1,211 +1,164 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Cpu, Zap, Database, Globe, Settings, Activity } from 'lucide-react';
-import { useMemoryContext } from '@/hooks/useMemoryContext';
-
-interface ExecutionEngine {
-  id: string;
-  name: string;
-  type: 'subprocess' | 'pyexecjs' | 'webcontainer' | 'supabase' | 'netlify';
-  status: 'active' | 'idle' | 'overloaded' | 'error';
-  performance: number;
-  taskCount: number;
-  lastActivity: Date;
-}
-
-interface ResourceMetrics {
-  cpuUsage: number;
-  memoryUsage: number;
-  networkLatency: number;
-  taskQueue: number;
-}
+import { Cpu, Activity, Zap, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { AgentSService, AgentEngine } from '../../services/agents/AgentSService';
 
 interface AgentSOrchestratorProps {
-  onEngineSelect: (engineId: string) => void;
-  onTaskDistribute: (task: any, engineId: string) => void;
+  onEngineSelect?: (engineId: string) => void;
+  onTaskDistribute?: (task: any, engineId: string) => void;
 }
 
 const AgentSOrchestrator: React.FC<AgentSOrchestratorProps> = ({
   onEngineSelect,
   onTaskDistribute
 }) => {
-  const [engines, setEngines] = useState<ExecutionEngine[]>([
-    {
-      id: 'subprocess-1',
-      name: 'Subprocess Engine',
-      type: 'subprocess',
-      status: 'active',
-      performance: 85,
-      taskCount: 3,
-      lastActivity: new Date()
-    },
-    {
-      id: 'pyexecjs-1',
-      name: 'PyExecJS Engine',
-      type: 'pyexecjs',
-      status: 'idle',
-      performance: 92,
-      taskCount: 0,
-      lastActivity: new Date(Date.now() - 300000)
-    },
-    {
-      id: 'webcontainer-1',
-      name: 'Web Container',
-      type: 'webcontainer',
-      status: 'active',
-      performance: 78,
-      taskCount: 2,
-      lastActivity: new Date()
-    }
-  ]);
-
-  const [resourceMetrics, setResourceMetrics] = useState<ResourceMetrics>({
-    cpuUsage: 0,
-    memoryUsage: 0,
-    networkLatency: 0,
-    taskQueue: 0
+  const [agentService] = useState(() => new AgentSService());
+  const [engines, setEngines] = useState<AgentEngine[]>([]);
+  const [selectedEngine, setSelectedEngine] = useState<string>('');
+  const [systemStats, setSystemStats] = useState({
+    totalEngines: 0,
+    onlineEngines: 0,
+    busyEngines: 0,
+    queuedTasks: 0,
+    runningTasks: 0,
+    systemLoad: 0
   });
 
-  const [adaptiveMode, setAdaptiveMode] = useState(true);
-  const memoryContext = useMemoryContext('AgentS-Orchestrator');
-
   useEffect(() => {
-    // Simulation des métriques en temps réel
-    const interval = setInterval(() => {
-      setResourceMetrics({
-        cpuUsage: Math.random() * 100,
-        memoryUsage: Math.random() * 100,
-        networkLatency: Math.random() * 200,
-        taskQueue: Math.floor(Math.random() * 10)
-      });
+    // Initialize and update engines
+    const updateEngines = () => {
+      const availableEngines = agentService.getAvailableEngines();
+      setEngines(availableEngines);
+      
+      const stats = agentService.getSystemStats();
+      setSystemStats(stats);
+    };
 
-      // Mise à jour des performances des moteurs
-      setEngines(prev => prev.map(engine => ({
-        ...engine,
-        performance: Math.max(50, Math.min(100, engine.performance + (Math.random() - 0.5) * 10)),
-        status: engine.performance > 80 ? 'active' : engine.performance > 60 ? 'idle' : 'overloaded'
-      })));
-    }, 2000);
-
+    updateEngines();
+    const interval = setInterval(updateEngines, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [agentService]);
 
-  const optimizeEngineDistribution = async () => {
-    // Algorithme d'optimisation adaptative
-    const sortedEngines = [...engines].sort((a, b) => b.performance - a.performance);
-    const bestEngine = sortedEngines[0];
-
-    await memoryContext.addContextualMemory(
-      `Agent S optimisation: Moteur ${bestEngine.name} sélectionné (performance: ${bestEngine.performance.toFixed(1)}%)`,
-      'context',
-      8,
-      ['agents', 'optimization', 'performance']
-    );
-
-    onEngineSelect(bestEngine.id);
-  };
-
-  const handleAdaptiveModeToggle = async () => {
-    setAdaptiveMode(!adaptiveMode);
-    await memoryContext.addContextualMemory(
-      `Agent S mode adaptatif ${!adaptiveMode ? 'activé' : 'désactivé'}`,
-      'context',
-      7,
-      ['agents', 'configuration']
-    );
-  };
-
-  const getEngineIcon = (type: ExecutionEngine['type']) => {
-    switch (type) {
-      case 'subprocess': return <Cpu className="h-4 w-4" />;
-      case 'pyexecjs': return <Zap className="h-4 w-4" />;
-      case 'webcontainer': return <Globe className="h-4 w-4" />;
-      case 'supabase': return <Database className="h-4 w-4" />;
-      case 'netlify': return <Activity className="h-4 w-4" />;
+  const handleEngineSelect = (engineId: string) => {
+    setSelectedEngine(engineId);
+    if (onEngineSelect) {
+      onEngineSelect(engineId);
     }
   };
 
-  const getStatusColor = (status: ExecutionEngine['status']) => {
+  const handleTaskDistribute = async (taskType: string) => {
+    const mockTask = {
+      id: Date.now().toString(),
+      type: taskType,
+      description: `Task: ${taskType}`,
+      complexity: Math.ceil(Math.random() * 3),
+      priority: Math.ceil(Math.random() * 5)
+    };
+
+    const success = await agentService.distributeTask(mockTask, selectedEngine || undefined);
+    
+    if (success && onTaskDistribute) {
+      onTaskDistribute(mockTask, selectedEngine || 'auto-selected');
+    }
+  };
+
+  const getEngineStatusIcon = (status: AgentEngine['status']) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'idle': return 'bg-blue-100 text-blue-800';
-      case 'overloaded': return 'bg-yellow-100 text-yellow-800';
-      case 'error': return 'bg-red-100 text-red-800';
+      case 'online': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'busy': return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'offline': return <AlertCircle className="h-4 w-4 text-red-500" />;
     }
+  };
+
+  const getLoadColor = (load: number, maxConcurrency: number) => {
+    const percentage = (load / maxConcurrency) * 100;
+    if (percentage < 50) return 'text-green-600';
+    if (percentage < 80) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center">
-          <Settings className="h-5 w-5 mr-2 text-purple-600" />
-          Agent S - Orchestrateur Multi-Moteurs
+          <Cpu className="h-5 w-5 mr-2 text-blue-600" />
+          Agent S - Orchestrateur Multi-Moteurs (Fonctionnel)
         </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Métriques de ressources */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>CPU</span>
-              <span>{resourceMetrics.cpuUsage.toFixed(1)}%</span>
-            </div>
-            <Progress value={resourceMetrics.cpuUsage} className="h-2" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2">
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-blue-600">{systemStats.onlineEngines}</div>
+            <div className="text-xs text-muted-foreground">Moteurs En Ligne</div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Mémoire</span>
-              <span>{resourceMetrics.memoryUsage.toFixed(1)}%</span>
-            </div>
-            <Progress value={resourceMetrics.memoryUsage} className="h-2" />
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-green-600">{systemStats.runningTasks}</div>
+            <div className="text-xs text-muted-foreground">Tâches Actives</div>
+          </div>
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-yellow-600">{systemStats.queuedTasks}</div>
+            <div className="text-xs text-muted-foreground">File d'Attente</div>
+          </div>
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-purple-600">{(systemStats.systemLoad * 100).toFixed(0)}%</div>
+            <div className="text-xs text-muted-foreground">Charge Système</div>
+          </div>
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-cyan-600">{systemStats.busyEngines}</div>
+            <div className="text-xs text-muted-foreground">Moteurs Occupés</div>
           </div>
         </div>
+      </CardHeader>
 
-        {/* Moteurs d'exécution */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Moteurs d'Exécution</span>
-            <div className="flex gap-2">
-              <Button
-                onClick={handleAdaptiveModeToggle}
-                size="sm"
-                variant={adaptiveMode ? "default" : "outline"}
-              >
-                Mode Adaptatif
-              </Button>
-              <Button onClick={optimizeEngineDistribution} size="sm" variant="outline">
-                Optimiser
-              </Button>
-            </div>
-          </div>
+      <CardContent className="space-y-4">
+        {/* Engine Selection */}
+        <div className="space-y-3">
+          <h3 className="font-medium flex items-center">
+            <Activity className="h-4 w-4 mr-2" />
+            Moteurs Disponibles
+          </h3>
           <ScrollArea className="h-48">
             <div className="space-y-2">
               {engines.map((engine) => (
-                <div key={engine.id} className="p-3 border rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
+                <div
+                  key={engine.id}
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    selectedEngine === engine.id ? 'border-blue-500 bg-blue-50' : 'hover:bg-muted/50'
+                  }`}
+                  onClick={() => handleEngineSelect(engine.id)}
+                >
+                  <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center gap-2">
-                      {getEngineIcon(engine.type)}
-                      <span className="text-sm font-medium">{engine.name}</span>
-                      <Badge className={getStatusColor(engine.status)}>
-                        {engine.status}
+                      {getEngineStatusIcon(engine.status)}
+                      <span className="font-medium text-sm">{engine.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {engine.type}
                       </Badge>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {engine.taskCount} tâches
-                    </span>
+                    <div className={`text-xs font-medium ${getLoadColor(engine.currentLoad, engine.maxConcurrency)}`}>
+                      {engine.currentLoad}/{engine.maxConcurrency}
+                    </div>
                   </div>
                   
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span>Performance</span>
-                      <span>{engine.performance.toFixed(1)}%</span>
+                      <span>{engine.performance}%</span>
                     </div>
                     <Progress value={engine.performance} className="h-1" />
+                    
+                    <div className="flex justify-between text-xs">
+                      <span>Charge</span>
+                      <span>{Math.round((engine.currentLoad / engine.maxConcurrency) * 100)}%</span>
+                    </div>
+                    <Progress value={(engine.currentLoad / engine.maxConcurrency) * 100} className="h-1" />
+                    
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Spécialisations: {engine.specialization.join(', ')}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -213,20 +166,52 @@ const AgentSOrchestrator: React.FC<AgentSOrchestratorProps> = ({
           </ScrollArea>
         </div>
 
-        {/* Statistiques */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="text-center">
-            <div className="font-medium">{resourceMetrics.networkLatency.toFixed(0)}ms</div>
-            <div className="text-muted-foreground">Latence</div>
+        {/* Task Distribution */}
+        <div className="space-y-3">
+          <h3 className="font-medium flex items-center">
+            <Zap className="h-4 w-4 mr-2" />
+            Distribution de Tâches
+          </h3>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => handleTaskDistribute('reasoning')}
+              size="sm"
+              variant="outline"
+              disabled={engines.length === 0}
+            >
+              Tâche Raisonnement
+            </Button>
+            <Button
+              onClick={() => handleTaskDistribute('analysis')}
+              size="sm"
+              variant="outline"
+              disabled={engines.length === 0}
+            >
+              Tâche Analyse
+            </Button>
+            <Button
+              onClick={() => handleTaskDistribute('coding')}
+              size="sm"
+              variant="outline"
+              disabled={engines.length === 0}
+            >
+              Tâche Codage
+            </Button>
+            <Button
+              onClick={() => handleTaskDistribute('optimization')}
+              size="sm"
+              variant="outline"
+              disabled={engines.length === 0}
+            >
+              Optimisation
+            </Button>
           </div>
-          <div className="text-center">
-            <div className="font-medium">{resourceMetrics.taskQueue}</div>
-            <div className="text-muted-foreground">File d'attente</div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">{engines.filter(e => e.status === 'active').length}</div>
-            <div className="text-muted-foreground">Moteurs actifs</div>
-          </div>
+        </div>
+
+        {/* Status */}
+        <div className="text-xs text-muted-foreground border-t pt-3">
+          Moteur sélectionné: {selectedEngine || 'Auto-sélection'} • 
+          Dernière mise à jour: {new Date().toLocaleTimeString()}
         </div>
       </CardContent>
     </Card>

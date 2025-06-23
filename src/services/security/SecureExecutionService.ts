@@ -174,12 +174,13 @@ export class SecureExecutionService {
       `;
       
       const blob = new Blob([workerCode], { type: 'application/javascript' });
-      const worker = new Worker(URL.createObjectURL(blob));
+      const workerUrl = URL.createObjectURL(blob);
+      const worker = new Worker(workerUrl);
       
       worker.onmessage = (e) => {
         const result = e.data;
         worker.terminate();
-        URL.revokeObjectURL(blob);
+        URL.revokeObjectURL(workerUrl);
         
         if (result.error) {
           reject(new Error(result.error));
@@ -194,7 +195,7 @@ export class SecureExecutionService {
       
       worker.onerror = (error) => {
         worker.terminate();
-        URL.revokeObjectURL(blob);
+        URL.revokeObjectURL(workerUrl);
         reject(new Error(`Worker error: ${error.message}`));
       };
       

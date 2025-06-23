@@ -1,296 +1,222 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowRightLeft, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useMemoryContext } from '@/hooks/useMemoryContext';
-
-interface FeedbackEvent {
-  id: string;
-  source: 'azr' | 'agents';
-  target: 'azr' | 'agents';
-  type: 'performance' | 'optimization' | 'error' | 'success';
-  message: string;
-  impact: number; // 0-10
-  timestamp: Date;
-  processed: boolean;
-}
-
-interface SystemMetrics {
-  azrPerformance: number;
-  agentSEfficiency: number;
-  taskSuccessRate: number;
-  resourceOptimization: number;
-  overallHealth: number;
-}
+import { TrendingUp, Lightbulb, CheckCircle, Clock, AlertCircle, Play } from 'lucide-react';
+import { SystemFeedbackService, OptimizationSuggestion, FeedbackMetrics } from '../../services/feedback/SystemFeedbackService';
 
 interface SystemFeedbackManagerProps {
-  azrActive: boolean;
-  agentSActive: boolean;
-  executionResults: any[];
-  onOptimizationApplied: (optimization: string) => void;
+  azrActive?: boolean;
+  agentSActive?: boolean;
+  executionResults?: any[];
+  onOptimizationApplied?: (optimization: string) => void;
 }
 
 const SystemFeedbackManager: React.FC<SystemFeedbackManagerProps> = ({
-  azrActive,
-  agentSActive,
-  executionResults,
+  azrActive = false,
+  agentSActive = false,
+  executionResults = [],
   onOptimizationApplied
 }) => {
-  const [feedbackEvents, setFeedbackEvents] = useState<FeedbackEvent[]>([]);
-  const [metrics, setMetrics] = useState<SystemMetrics>({
-    azrPerformance: 85,
-    agentSEfficiency: 92,
-    taskSuccessRate: 78,
-    resourceOptimization: 88,
-    overallHealth: 85
-  });
-  const [autoOptimization, setAutoOptimization] = useState(true);
-
-  const memoryContext = useMemoryContext('SystemFeedback');
+  const [feedbackService] = useState(() => new SystemFeedbackService());
+  const [optimizations, setOptimizations] = useState<OptimizationSuggestion[]>([]);
+  const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
+  const [healthTrend, setHealthTrend] = useState<number>(0);
 
   useEffect(() => {
-    // Génération de feedback automatique basé sur les performances
-    if (azrActive && agentSActive) {
-      generatePerformanceFeedback();
-    }
-  }, [executionResults.length, azrActive, agentSActive]);
-
-  useEffect(() => {
-    // Traitement automatique des événements de feedback
-    if (autoOptimization) {
-      processHighImpactFeedback();
-    }
-  }, [feedbackEvents, autoOptimization]);
-
-  const generatePerformanceFeedback = () => {
-    const recentResults = executionResults.slice(-5);
-    const successRate = recentResults.length > 0 
-      ? (recentResults.filter(r => r.success).length / recentResults.length) * 100 
-      : 0;
-
-    // Feedback d'AZR vers Agent S
-    if (successRate < 70) {
-      addFeedbackEvent({
-        source: 'azr',
-        target: 'agents',
-        type: 'optimization',
-        message: `Taux de succès faible (${successRate.toFixed(1)}%). Suggestion: optimiser la sélection des moteurs d'exécution`,
-        impact: 8
-      });
-    }
-
-    // Feedback d'Agent S vers AZR
-    if (metrics.agentSEfficiency > 90) {
-      addFeedbackEvent({
-        source: 'agents',
-        target: 'azr',
-        type: 'performance',
-        message: `Moteurs optimisés. Augmentation recommandée de la complexité des tâches générées`,
-        impact: 6
-      });
-    }
-
-    // Mise à jour des métriques
-    setMetrics(prev => ({
-      ...prev,
-      taskSuccessRate: successRate,
-      azrPerformance: Math.max(50, Math.min(100, prev.azrPerformance + (Math.random() - 0.5) * 10)),
-      agentSEfficiency: Math.max(60, Math.min(100, prev.agentSEfficiency + (Math.random() - 0.5) * 5)),
-      overallHealth: (prev.azrPerformance + prev.agentSEfficiency + successRate) / 3
-    }));
-  };
-
-  const addFeedbackEvent = async (event: Omit<FeedbackEvent, 'id' | 'timestamp' | 'processed'>) => {
-    const newEvent: FeedbackEvent = {
-      ...event,
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      processed: false
+    const updateFeedback = () => {
+      const currentOptimizations = feedbackService.getOptimizations();
+      setOptimizations(currentOptimizations);
+      
+      const currentMetrics = feedbackService.getCurrentMetrics();
+      setMetrics(currentMetrics);
+      
+      const trend = feedbackService.getSystemHealthTrend();
+      setHealthTrend(trend);
     };
 
-    setFeedbackEvents(prev => [newEvent, ...prev.slice(0, 19)]); // Garder les 20 derniers
+    updateFeedback();
+    const interval = setInterval(updateFeedback, 5000);
+    return () => clearInterval(interval);
+  }, [feedbackService]);
 
-    await memoryContext.addContextualMemory(
-      `Feedback système: ${event.source} → ${event.target}: ${event.message}`,
-      'context',
-      event.impact,
-      ['feedback', 'system-optimization', event.type]
+  const handleApplyOptimization = async (optimizationId: string) => {
+    const optimization = optimizations.find(o => o.id === optimizationId);
+    if (!optimization) return;
+
+    const success = await feedbackService.applyOptimization(optimizationId);
+    if (success && onOptimizationApplied) {
+      onOptimizationApplied(optimization.title);
+    }
+  };
+
+  const getPriorityColor = (priority: OptimizationSuggestion['priority']) => {
+    switch (priority) {
+      case 'critical': return 'bg-red-100 text-red-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-blue-100 text-blue-800';
+    }
+  };
+
+  const getStatusIcon = (status: OptimizationSuggestion['status']) => {
+    switch (status) {
+      case 'pending': return <Clock className="h-3 w-3 text-gray-500" />;
+      case 'implementing': return <Play className="h-3 w-3 text-blue-500 animate-pulse" />;
+      case 'completed': return <CheckCircle className="h-3 w-3 text-green-500" />;
+      case 'failed': return <AlertCircle className="h-3 w-3 text-red-500" />;
+    }
+  };
+
+  const getEffortBadge = (effort: OptimizationSuggestion['implementation']['effort']) => {
+    const colors = {
+      minimal: 'bg-green-100 text-green-800',
+      moderate: 'bg-yellow-100 text-yellow-800',
+      significant: 'bg-red-100 text-red-800'
+    };
+    return colors[effort];
+  };
+
+  if (!metrics) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center">
+          <div className="animate-pulse">Initialisation du système de feedback...</div>
+        </CardContent>
+      </Card>
     );
-  };
-
-  const processHighImpactFeedback = () => {
-    const unprocessedHighImpact = feedbackEvents.filter(
-      e => !e.processed && e.impact >= 7
-    );
-
-    unprocessedHighImpact.forEach(async (event) => {
-      // Traitement automatique des optimisations à fort impact
-      if (event.type === 'optimization') {
-        await applyOptimization(event);
-      }
-      
-      // Marquer comme traité
-      setFeedbackEvents(prev => 
-        prev.map(e => e.id === event.id ? { ...e, processed: true } : e)
-      );
-    });
-  };
-
-  const applyOptimization = async (event: FeedbackEvent) => {
-    let optimizationMessage = '';
-
-    if (event.source === 'azr' && event.target === 'agents') {
-      // AZR suggère des optimisations à Agent S
-      optimizationMessage = 'Agent S: Redistribution des tâches vers les moteurs les plus performants';
-      setMetrics(prev => ({ ...prev, agentSEfficiency: Math.min(100, prev.agentSEfficiency + 5) }));
-    } else if (event.source === 'agents' && event.target === 'azr') {
-      // Agent S suggère des optimisations à AZR
-      optimizationMessage = 'AZR: Ajustement de la complexité des tâches générées';
-      setMetrics(prev => ({ ...prev, azrPerformance: Math.min(100, prev.azrPerformance + 5) }));
-    }
-
-    onOptimizationApplied(optimizationMessage);
-
-    await memoryContext.addContextualMemory(
-      `Optimisation appliquée: ${optimizationMessage}`,
-      'knowledge',
-      8,
-      ['optimization', 'auto-improvement', 'system-adaptation']
-    );
-  };
-
-  const manuallyProcessFeedback = async (eventId: string) => {
-    const event = feedbackEvents.find(e => e.id === eventId);
-    if (event && !event.processed) {
-      await applyOptimization(event);
-      setFeedbackEvents(prev => 
-        prev.map(e => e.id === eventId ? { ...e, processed: true } : e)
-      );
-    }
-  };
-
-  const getEventIcon = (type: FeedbackEvent['type']) => {
-    switch (type) {
-      case 'performance': return <TrendingUp className="h-4 w-4" />;
-      case 'optimization': return <ArrowRightLeft className="h-4 w-4" />;
-      case 'error': return <AlertTriangle className="h-4 w-4" />;
-      case 'success': return <CheckCircle className="h-4 w-4" />;
-    }
-  };
-
-  const getEventColor = (type: FeedbackEvent['type']) => {
-    switch (type) {
-      case 'performance': return 'bg-blue-100 text-blue-800';
-      case 'optimization': return 'bg-purple-100 text-purple-800';
-      case 'error': return 'bg-red-100 text-red-800';
-      case 'success': return 'bg-green-100 text-green-800';
-    }
-  };
+  }
 
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center">
-          <ArrowRightLeft className="h-5 w-5 mr-2 text-orange-600" />
-          Gestionnaire de Feedback Système
+          <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+          Feedback & Auto-Amélioration (Fonctionnel)
         </CardTitle>
+        <div className="grid grid-cols-3 gap-2 mt-2">
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-green-600">{metrics.systemHealth.toFixed(0)}%</div>
+            <div className="text-xs text-muted-foreground">Santé Système</div>
+          </div>
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className="text-lg font-bold text-blue-600">{metrics.performanceScore.toFixed(0)}%</div>
+            <div className="text-xs text-muted-foreground">Performance</div>
+          </div>
+          <div className="text-center p-2 bg-muted/50 rounded">
+            <div className={`text-lg font-bold ${healthTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {healthTrend >= 0 ? '+' : ''}{healthTrend.toFixed(1)}
+            </div>
+            <div className="text-xs text-muted-foreground">Tendance</div>
+          </div>
+        </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
-        {/* Métriques système */}
+        {/* System Metrics */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Performance AZR</span>
-              <span>{metrics.azrPerformance.toFixed(1)}%</span>
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span>Satisfaction Utilisateur</span>
+              <span>{metrics.userSatisfaction.toFixed(0)}%</span>
             </div>
-            <Progress value={metrics.azrPerformance} className="h-2" />
+            <Progress value={metrics.userSatisfaction} className="h-2" />
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Efficacité Agent S</span>
-              <span>{metrics.agentSEfficiency.toFixed(1)}%</span>
+          
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span>Utilisation Ressources</span>
+              <span>{metrics.resourceUtilization.toFixed(0)}%</span>
             </div>
-            <Progress value={metrics.agentSEfficiency} className="h-2" />
+            <Progress value={metrics.resourceUtilization} className="h-2" />
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Taux de succès</span>
-              <span>{metrics.taskSuccessRate.toFixed(1)}%</span>
+          
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span>Index Stabilité</span>
+              <span>{metrics.stabilityIndex.toFixed(0)}%</span>
             </div>
-            <Progress value={metrics.taskSuccessRate} className="h-2" />
+            <Progress value={metrics.stabilityIndex} className="h-2" />
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Santé globale</span>
-              <span>{metrics.overallHealth.toFixed(1)}%</span>
+          
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs">
+              <span>Score Global</span>
+              <span>{((metrics.systemHealth + metrics.performanceScore) / 2).toFixed(0)}%</span>
             </div>
-            <Progress value={metrics.overallHealth} className="h-2" />
+            <Progress value={(metrics.systemHealth + metrics.performanceScore) / 2} className="h-2" />
           </div>
         </div>
 
-        {/* Contrôles */}
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">Événements de Feedback</span>
-          <Button
-            onClick={() => setAutoOptimization(!autoOptimization)}
-            size="sm"
-            variant={autoOptimization ? "default" : "outline"}
-          >
-            Auto-Optimisation {autoOptimization ? "ON" : "OFF"}
-          </Button>
-        </div>
-
-        {/* Liste des événements de feedback */}
-        <ScrollArea className="h-48">
-          <div className="space-y-2">
-            {feedbackEvents.map((event) => (
-              <div key={event.id} className="p-3 border rounded-lg">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex items-center gap-2">
-                    {getEventIcon(event.type)}
-                    <Badge className={getEventColor(event.type)}>
-                      {event.type}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {event.source} → {event.target}
+        {/* Optimizations */}
+        <div className="space-y-2">
+          <h3 className="font-medium text-sm flex items-center">
+            <Lightbulb className="h-4 w-4 mr-2" />
+            Optimisations Automatiques ({optimizations.filter(o => o.status === 'pending').length} en attente)
+          </h3>
+          <ScrollArea className="h-48">
+            <div className="space-y-2">
+              {optimizations.map((optimization) => (
+                <div key={optimization.id} className="p-3 border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(optimization.status)}
+                      <span className="text-sm font-medium">{optimization.title}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Badge className={getPriorityColor(optimization.priority)}>
+                        {optimization.priority}
+                      </Badge>
+                      <Badge className={getEffortBadge(optimization.implementation.effort)}>
+                        {optimization.implementation.effort}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {optimization.description}
+                  </p>
+                  
+                  <div className="text-xs mb-2">
+                    <strong>Impact:</strong> {optimization.impact}
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs">
+                    <span>
+                      {optimization.metrics.currentValue.toFixed(1)} → {optimization.metrics.targetValue.toFixed(1)} {optimization.metrics.unit}
+                    </span>
+                    <span className="text-muted-foreground">
+                      Temps estimé: {optimization.implementation.timeEstimate}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs">Impact: {event.impact}/10</span>
-                    {event.processed && <CheckCircle className="h-3 w-3 text-green-500" />}
-                  </div>
-                </div>
-                
-                <p className="text-sm mb-2">{event.message}</p>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {event.timestamp.toLocaleTimeString()}
-                  </span>
-                  {!event.processed && event.impact >= 7 && (
+                  
+                  {optimization.status === 'pending' && (
                     <Button
-                      onClick={() => manuallyProcessFeedback(event.id)}
+                      onClick={() => handleApplyOptimization(optimization.id)}
                       size="sm"
-                      variant="outline"
+                      className="w-full mt-2 text-xs"
                     >
-                      Appliquer
+                      <Play className="h-3 w-3 mr-1" />
+                      Appliquer Optimisation
                     </Button>
                   )}
                 </div>
-              </div>
-            ))}
-            
-            {feedbackEvents.length === 0 && (
-              <div className="text-center text-muted-foreground py-4 text-sm">
-                Aucun événement de feedback
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {/* Status */}
+        <div className="text-xs text-muted-foreground border-t pt-2 flex justify-between">
+          <span>
+            AZR: {azrActive ? 'Actif' : 'Inactif'} • 
+            Agent S: {agentSActive ? 'Actif' : 'Inactif'}
+          </span>
+          <span>MAJ: {new Date().toLocaleTimeString()}</span>
+        </div>
       </CardContent>
     </Card>
   );
