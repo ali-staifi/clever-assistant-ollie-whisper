@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { Shield, Lock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { Shield, Lock, AlertTriangle, CheckCircle, XCircle, Play, Code } from 'lucide-react';
+import { SecureExecutionService } from '../../services/security/SecureExecutionService';
 
 interface ExecutionEnvironment {
   id: string;
@@ -21,14 +23,24 @@ interface ExecutionEnvironment {
 }
 
 interface ExecutionSandboxProps {
-  onExecute: (code: string, environmentId: string) => Promise<any>;
-  onQuarantine: (environmentId: string) => void;
+  onExecute?: (code: string, environmentId: string) => Promise<any>;
+  onQuarantine?: (environmentId: string) => void;
 }
 
 const ExecutionSandbox: React.FC<ExecutionSandboxProps> = ({
   onExecute,
   onQuarantine
 }) => {
+  const [executionService] = useState(() => new SecureExecutionService());
+  const [testCode, setTestCode] = useState(`// Test JavaScript code
+const numbers = [1, 2, 3, 4, 5];
+const sum = numbers.reduce((a, b) => a + b, 0);
+console.log('Sum:', sum);
+return sum;`);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<string>('sandbox-1');
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<string>('');
+
   const [environments, setEnvironments] = useState<ExecutionEnvironment[]>([
     {
       id: 'sandbox-1',
@@ -79,17 +91,17 @@ const ExecutionSandbox: React.FC<ExecutionSandboxProps> = ({
     // Surveillance continue des environnements
     const securityMonitor = setInterval(() => {
       setEnvironments(prev => prev.map(env => {
-        // Simulation de métriques de sécurité
-        const errorRate = env.executionCount > 0 ? env.errorCount / env.executionCount : 0;
+        const stats = executionService.getExecutionStats(env.id);
+        const errorRate = stats.errorRate;
         
         let newStatus = env.status;
         let newSecurityLevel = env.securityLevel;
         
-        // Détection automatique de menaces
-        if (errorRate > 0.3) {
+        // Détection automatique de menaces basée sur les vraies métriques
+        if (errorRate > 30) {
           newStatus = 'quarantined';
           newSecurityLevel = Math.max(50, env.securityLevel - 20);
-        } else if (errorRate > 0.1) {
+        } else if (errorRate > 10) {
           newSecurityLevel = Math.max(70, env.securityLevel - 10);
         }
 
@@ -97,8 +109,11 @@ const ExecutionSandbox: React.FC<ExecutionSandboxProps> = ({
           ...env,
           status: newStatus,
           securityLevel: newSecurityLevel,
-          memoryUsage: Math.max(5, env.memoryUsage + (Math.random() - 0.5) * 10),
-          cpuUsage: Math.max(1, env.cpuUsage + (Math.random() - 0.5) * 15)
+          executionCount: stats.executions,
+          errorCount: stats.errors,
+          memoryUsage: Math.max(5, env.memoryUsage + (Math.random() - 0.5) * 5),
+          cpuUsage: Math.max(1, env.cpuUsage + (Math.random() - 0.5) * 10),
+          lastActivity: stats.executions > env.executionCount ? new Date() : env.lastActivity
         };
       }));
 
@@ -115,51 +130,61 @@ const ExecutionSandbox: React.FC<ExecutionSandboxProps> = ({
     }, 3000);
 
     return () => clearInterval(securityMonitor);
-  }, [environments]);
+  }, [executionService, environments]);
 
-  const executeInSandbox = async (environmentId: string, code: string) => {
-    const env = environments.find(e => e.id === environmentId);
+  const executeCode = async () => {
+    if (!testCode.trim() || isExecuting) return;
+    
+    const env = environments.find(e => e.id === selectedEnvironment);
     if (!env || env.status === 'quarantined') {
-      throw new Error('Environnement non disponible ou en quarantaine');
+      setExecutionResult('❌ Environnement non disponible ou en quarantaine');
+      return;
     }
 
-    // Mise à jour des compteurs d'exécution
-    setEnvironments(prev => prev.map(e => 
-      e.id === environmentId 
-        ? { ...e, executionCount: e.executionCount + 1, lastActivity: new Date() }
-        : e
-    ));
+    setIsExecuting(true);
+    setExecutionResult('🔄 Exécution en cours...');
 
     try {
-      const result = await onExecute(code, environmentId);
-      return result;
+      const result = await executionService.executeCode(testCode, env.type, env.id);
+      
+      if (result.success) {
+        setExecutionResult(`✅ Succès:\n${result.output}\n\n📊 Métriques:\n- Temps: ${result.executionTime.toFixed(2)}ms\n- Mémoire: ${result.memoryUsed} bytes\n- Violations: ${result.securityViolations.length}`);
+      } else {
+        setExecutionResult(`❌ Erreur:\n${result.error}\n\n📊 Métriques:\n- Temps: ${result.executionTime.toFixed(2)}ms`);
+      }
+      
+      // Call external handler if provided
+      if (onExecute) {
+        await onExecute(testCode, selectedEnvironment);
+      }
     } catch (error) {
-      // Comptage des erreurs pour surveillance
-      setEnvironments(prev => prev.map(e => 
-        e.id === environmentId 
-          ? { ...e, errorCount: e.errorCount + 1 }
-          : e
-      ));
-      throw error;
+      setExecutionResult(`💥 Erreur système: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
+    } finally {
+      setIsExecuting(false);
     }
   };
 
   const quarantineEnvironment = (environmentId: string) => {
+    executionService.quarantineEnvironment(environmentId);
     setEnvironments(prev => prev.map(e => 
       e.id === environmentId 
         ? { ...e, status: 'quarantined' as const }
         : e
     ));
-    onQuarantine(environmentId);
+    if (onQuarantine) {
+      onQuarantine(environmentId);
+    }
   };
 
   const restoreEnvironment = (environmentId: string) => {
+    executionService.resetEnvironment(environmentId);
     setEnvironments(prev => prev.map(e => 
       e.id === environmentId 
         ? { 
             ...e, 
             status: 'idle' as const, 
             errorCount: 0, 
+            executionCount: 0,
             securityLevel: e.type === 'isolated' ? 99 : e.type === 'sandbox' ? 95 : 85 
           }
         : e
@@ -197,10 +222,56 @@ const ExecutionSandbox: React.FC<ExecutionSandboxProps> = ({
       <CardHeader className="pb-2">
         <CardTitle className="text-lg flex items-center">
           <Shield className="h-5 w-5 mr-2 text-green-600" />
-          Environnements d'Exécution Sécurisés
+          Environnements d'Exécution Sécurisés - Fonctionnel
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Code execution interface */}
+        <div className="p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-2 mb-2">
+            <Code className="h-4 w-4 text-blue-500" />
+            <span className="font-medium">Test d'Exécution Sécurisée</span>
+          </div>
+          
+          <div className="space-y-2">
+            <select 
+              value={selectedEnvironment}
+              onChange={(e) => setSelectedEnvironment(e.target.value)}
+              className="px-3 py-2 border rounded w-full"
+            >
+              {environments.map(env => (
+                <option key={env.id} value={env.id} disabled={env.status === 'quarantined'}>
+                  {env.name} ({env.type}) {env.status === 'quarantined' ? '- QUARANTAINE' : ''}
+                </option>
+              ))}
+            </select>
+            
+            <Textarea
+              value={testCode}
+              onChange={(e) => setTestCode(e.target.value)}
+              placeholder="Entrez votre code JavaScript à tester..."
+              className="min-h-[100px] font-mono text-sm"
+            />
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={executeCode}
+                disabled={isExecuting || !testCode.trim()}
+                size="sm"
+              >
+                <Play className="h-4 w-4 mr-1" />
+                {isExecuting ? 'Exécution...' : 'Exécuter Code'}
+              </Button>
+            </div>
+            
+            {executionResult && (
+              <div className="p-3 bg-gray-100 rounded border font-mono text-sm whitespace-pre-wrap">
+                {executionResult}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Métriques de sécurité globales */}
         <div className="grid grid-cols-2 gap-3 p-3 bg-muted/50 rounded-lg">
           <div className="space-y-1">
@@ -294,8 +365,8 @@ const ExecutionSandbox: React.FC<ExecutionSandboxProps> = ({
         {/* Actions de sécurité */}
         <div className="flex justify-between items-center pt-2 border-t">
           <div className="text-sm">
-            <AlertTriangle className="h-4 w-4 inline mr-1 text-yellow-500" />
-            Surveillance automatique active
+            <AlertTriangle className="h-4 w-4 inline mr-1 text-green-500" />
+            Surveillance active - Exécution réelle
           </div>
           <div className="text-xs text-muted-foreground">
             Dernière vérification: {new Date().toLocaleTimeString()}
