@@ -6,7 +6,7 @@ import { ChatHeader } from './chat/ChatHeader';
 import { ChatMessages } from './chat/ChatMessages';
 import { QuickActions } from './chat/QuickActions';
 import { ChatInput } from './chat/ChatInput';
-import { useMCPAgentChat } from '../../hooks/mcp/useMCPAgentChat';
+import { useMCPAgentChat } from '../../../hooks/mcp/useMCPAgentChat';
 
 export const MCPAgentChat: React.FC = () => {
   const {
