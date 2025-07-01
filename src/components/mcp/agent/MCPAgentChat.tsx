@@ -18,7 +18,14 @@ export const MCPAgentChat: React.FC = () => {
     speechService,
     globalVoiceSettings,
     isSpeaking,
-    toggleSpeaking
+    toggleSpeaking,
+    ollamaUrl,
+    ollamaModel,
+    connectionStatus,
+    availableModels,
+    handleOllamaUrlChange,
+    handleOllamaModelChange,
+    checkOllamaConnection,
   } = useMCPAgentChat();
 
   return (
@@ -27,6 +34,13 @@ export const MCPAgentChat: React.FC = () => {
         isSpeaking={isSpeaking}
         globalVoiceSettings={globalVoiceSettings}
         toggleSpeaking={toggleSpeaking}
+        ollamaUrl={ollamaUrl}
+        ollamaModel={ollamaModel}
+        connectionStatus={connectionStatus}
+        availableModels={availableModels}
+        onOllamaUrlChange={handleOllamaUrlChange}
+        onOllamaModelChange={handleOllamaModelChange}
+        onCheckConnection={checkOllamaConnection}
       />
 
       <CardContent className="flex-1 flex flex-col p-4 space-y-4">

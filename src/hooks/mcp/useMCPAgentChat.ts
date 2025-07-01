@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { MCPAgentChatService, ChatMessage } from '../../services/mcp/agent/MCPAgentChatService';
+import { MCPAgentChatService, ChatMessage, OllamaConnectionStatus } from '../../services/mcp/agent/MCPAgentChatService';
 import { useJarvisServices } from '../useJarvisServices';
 
 export const useMCPAgentChat = () => {
@@ -82,6 +82,19 @@ export const useMCPAgentChat = () => {
     }
   };
 
+  // Ollama management functions
+  const handleOllamaUrlChange = (url: string) => {
+    chatService.setOllamaUrl(url);
+  };
+
+  const handleOllamaModelChange = (model: string) => {
+    chatService.setOllamaModel(model);
+  };
+
+  const checkOllamaConnection = async () => {
+    return await chatService.checkConnection();
+  };
+
   return {
     messages,
     currentMessage,
@@ -91,6 +104,14 @@ export const useMCPAgentChat = () => {
     speechService,
     globalVoiceSettings,
     isSpeaking,
-    toggleSpeaking
+    toggleSpeaking,
+    // Ollama settings
+    ollamaUrl: chatService.getOllamaUrl(),
+    ollamaModel: chatService.getOllamaModel(),
+    connectionStatus: chatService.getConnectionStatus(),
+    availableModels: chatService.getAvailableModels(),
+    handleOllamaUrlChange,
+    handleOllamaModelChange,
+    checkOllamaConnection,
   };
 };

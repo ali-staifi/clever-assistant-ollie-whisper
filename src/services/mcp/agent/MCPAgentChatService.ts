@@ -42,10 +42,16 @@ export interface AgentRecommendation {
   status: 'pending' | 'in_progress' | 'completed' | 'failed';
 }
 
+export type OllamaConnectionStatus = 'idle' | 'connecting' | 'connected' | 'error';
+
 export class MCPAgentChatService {
   private mcpServer: MCPServer;
   private chatService?: ChatOllamaService;
   private systemContext: string;
+  private ollamaUrl: string = 'http://localhost:11434';
+  private ollamaModel: string = 'gemma:7b';
+  private connectionStatus: OllamaConnectionStatus = 'idle';
+  private availableModels: string[] = [];
 
   constructor() {
     this.mcpServer = new MCPServer();
@@ -78,15 +84,63 @@ STYLE DE COMMUNICATION:
 
   private async initializeChatService(): Promise<void> {
     try {
-      this.chatService = new ChatOllamaService('http://localhost:11434', 'gemma:7b');
-      // Fix: Call testConnection with proper signature - use the instance method that returns a promise
-      const connectionResult = await this.chatService.testConnection();
-      if (!connectionResult.success) {
-        console.warn('Ollama connection test failed:', connectionResult.error);
-      }
+      this.chatService = new ChatOllamaService(this.ollamaUrl, this.ollamaModel);
+      await this.checkConnection();
     } catch (error) {
       console.warn('Ollama not available, using fallback mode');
+      this.connectionStatus = 'error';
     }
+  }
+
+  async checkConnection(): Promise<boolean> {
+    if (!this.chatService) return false;
+    
+    this.connectionStatus = 'connecting';
+    try {
+      const result = await this.chatService.testConnection();
+      if (result.success) {
+        this.connectionStatus = 'connected';
+        // Fetch available models
+        this.availableModels = await this.chatService.listAvailableModels();
+        return true;
+      } else {
+        this.connectionStatus = 'error';
+        return false;
+      }
+    } catch (error) {
+      this.connectionStatus = 'error';
+      return false;
+    }
+  }
+
+  setOllamaUrl(url: string): void {
+    this.ollamaUrl = url;
+    if (this.chatService) {
+      this.chatService.setBaseUrl(url);
+    }
+  }
+
+  setOllamaModel(model: string): void {
+    this.ollamaModel = model;
+    if (this.chatService) {
+      this.chatService.setModel(model);
+    }
+  }
+
+  getOllamaUrl(): string {
+    return this.ollamaUrl;
+  }
+
+  getOllamaModel(): string {
+    return this.ollamaModel;
+  }
+
+  getConnectionStatus(): OllamaConnectionStatus {
+    return this.connectionStatus;
+  }
+
+  getAvailableModels(): string[] {
+    return this.availableModels;
   }
 
   async processMessage(
