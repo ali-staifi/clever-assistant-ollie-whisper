@@ -23,22 +23,27 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
 }) => {
   const connections = React.useMemo(() => {
     try {
+      console.log('Getting connections...', { getActiveConnections });
       if (!getActiveConnections || typeof getActiveConnections !== 'function') {
+        console.log('getActiveConnections is not a function, returning empty array');
         return [];
       }
       const result = getActiveConnections();
+      console.log('Raw connections result:', result);
       if (!Array.isArray(result)) {
+        console.log('Connections result is not an array:', typeof result);
         return [];
       }
-      return result.filter(conn => 
-        conn && 
-        Array.isArray(conn.start) && 
-        Array.isArray(conn.end) &&
-        conn.start.length === 3 && 
-        conn.end.length === 3 &&
-        conn.start.every(n => typeof n === 'number' && !isNaN(n)) &&
-        conn.end.every(n => typeof n === 'number' && !isNaN(n))
-      );
+      const validConnections = result.filter(conn => {
+        if (!conn) return false;
+        if (!Array.isArray(conn.start) || !Array.isArray(conn.end)) return false;
+        if (conn.start.length !== 3 || conn.end.length !== 3) return false;
+        if (!conn.start.every(n => typeof n === 'number' && !isNaN(n))) return false;
+        if (!conn.end.every(n => typeof n === 'number' && !isNaN(n))) return false;
+        return true;
+      });
+      console.log('Valid connections:', validConnections);
+      return validConnections;
     } catch (error) {
       console.error('Erreur lors de la récupération des connexions:', error);
       return [];
@@ -46,16 +51,26 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
   }, [getActiveConnections]);
 
   const validProcessNodes = React.useMemo(() => {
-    if (!Array.isArray(processNodes)) {
+    try {
+      console.log('Processing nodes...', processNodes);
+      if (!Array.isArray(processNodes)) {
+        console.log('processNodes is not an array:', typeof processNodes);
+        return [];
+      }
+      const validNodes = processNodes.filter(node => {
+        if (!node) return false;
+        if (!node.id) return false;
+        if (!Array.isArray(node.position)) return false;
+        if (node.position.length !== 3) return false;
+        if (!node.position.every(n => typeof n === 'number' && !isNaN(n))) return false;
+        return true;
+      });
+      console.log('Valid nodes:', validNodes);
+      return validNodes;
+    } catch (error) {
+      console.error('Erreur lors du traitement des nœuds:', error);
       return [];
     }
-    return processNodes.filter(node => 
-      node && 
-      node.id && 
-      Array.isArray(node.position) && 
-      node.position.length === 3 &&
-      node.position.every(n => typeof n === 'number' && !isNaN(n))
-    );
   }, [processNodes]);
 
   return (

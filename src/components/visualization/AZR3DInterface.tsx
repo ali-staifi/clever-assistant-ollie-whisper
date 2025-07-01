@@ -105,28 +105,44 @@ const AZR3DInterface: React.FC<AZR3DInterfaceProps> = ({
     setSelectedNode(nodeId);
   };
 
-  const getActiveConnections = () => {
-    if (!azrActive) return [];
-    return processNodes.flatMap(node => {
-      const connections = node.connections || [];
-      return connections.map(connId => {
-        const targetNode = processNodes.find(n => n.id === connId);
-        if (!targetNode) return null;
-        
-        return {
-          start: node.position,
-          end: targetNode.position,
-          active: node.status === 'processing' || node.status === 'active',
-          secure: node.securityLevel === 'safe' && targetNode.securityLevel === 'safe'
-        };
-      }).filter(Boolean) as Array<{
+  const getActiveConnections = React.useCallback(() => {
+    try {
+      console.log('getActiveConnections called with azrActive:', azrActive);
+      if (!azrActive) {
+        console.log('AZR not active, returning empty connections');
+        return [];
+      }
+      
+      const connections: Array<{
         start: [number, number, number];
         end: [number, number, number];
         active: boolean;
         secure: boolean;
-      }>;
-    });
-  };
+      }> = [];
+
+      processNodes.forEach(node => {
+        if (!node.connections || !Array.isArray(node.connections)) return;
+        
+        node.connections.forEach(connId => {
+          const targetNode = processNodes.find(n => n.id === connId);
+          if (!targetNode) return;
+          
+          connections.push({
+            start: node.position as [number, number, number],
+            end: targetNode.position as [number, number, number],
+            active: node.status === 'processing' || node.status === 'active',
+            secure: node.securityLevel === 'safe' && targetNode.securityLevel === 'safe'
+          });
+        });
+      });
+      
+      console.log('Generated connections:', connections);
+      return connections;
+    } catch (error) {
+      console.error('Error in getActiveConnections:', error);
+      return [];
+    }
+  }, [azrActive, processNodes]);
 
   return (
     <Card>
