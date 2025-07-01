@@ -35,7 +35,9 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
         Array.isArray(conn.start) && 
         Array.isArray(conn.end) &&
         conn.start.length === 3 && 
-        conn.end.length === 3
+        conn.end.length === 3 &&
+        conn.start.every(n => typeof n === 'number' && !isNaN(n)) &&
+        conn.end.every(n => typeof n === 'number' && !isNaN(n))
       );
     } catch (error) {
       console.error('Erreur lors de la récupération des connexions:', error);
@@ -52,9 +54,7 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
       node.id && 
       Array.isArray(node.position) && 
       node.position.length === 3 &&
-      typeof node.position[0] === 'number' &&
-      typeof node.position[1] === 'number' &&
-      typeof node.position[2] === 'number'
+      node.position.every(n => typeof n === 'number' && !isNaN(n))
     );
   }, [processNodes]);
 
@@ -62,6 +62,7 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
     <div className="h-64 w-full border rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 to-black">
       <Canvas 
         camera={{ position: [0, 0, 8], fov: 60 }}
+        gl={{ antialias: true, alpha: true }}
         onCreated={({ gl }) => {
           try {
             gl.setClearColor('#000000');
