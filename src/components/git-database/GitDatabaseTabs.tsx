@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ErrorBoundary } from '@/components/error/ErrorBoundary';
+import { Card, CardContent } from "@/components/ui/card";
 import ExecutionSandbox from '@/components/security/ExecutionSandbox';
 import AlgorithmicDriftMonitor from '@/components/monitoring/AlgorithmicDriftMonitor';
 import AgentSOrchestrator from '@/components/agents/AgentSOrchestrator';
@@ -43,6 +45,25 @@ const GitDatabaseTabs: React.FC<GitDatabaseTabsProps> = ({
   isGenerating,
   handlers
 }) => {
+  const SafeAZR3DInterface = () => (
+    <ErrorBoundary fallback={
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-sm text-muted-foreground text-center">
+            Interface 3D temporairement indisponible
+          </p>
+        </CardContent>
+      </Card>
+    }>
+      <AZR3DInterface
+        azrActive={isActive}
+        agentSActive={agentSActive}
+        processes={tasks}
+        executionResults={executionResults}
+      />
+    </ErrorBoundary>
+  );
+
   return (
     <Tabs defaultValue="security" className="space-y-2">
       <TabsList className="grid w-full grid-cols-10">
@@ -75,18 +96,15 @@ const GitDatabaseTabs: React.FC<GitDatabaseTabsProps> = ({
 
       <TabsContent value="overview" className="space-y-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <AZR3DInterface
-            azrActive={isActive}
-            agentSActive={agentSActive}
-            processes={tasks}
-            executionResults={executionResults}
-          />
-          <SystemFeedbackManager
-            azrActive={isActive}
-            agentSActive={agentSActive}
-            executionResults={executionResults}
-            onOptimizationApplied={handlers.handleOptimizationApplied}
-          />
+          <SafeAZR3DInterface />
+          <ErrorBoundary>
+            <SystemFeedbackManager
+              azrActive={isActive}
+              agentSActive={agentSActive}
+              executionResults={executionResults}
+              onOptimizationApplied={handlers.handleOptimizationApplied}
+            />
+          </ErrorBoundary>
         </div>
       </TabsContent>
 
@@ -98,12 +116,7 @@ const GitDatabaseTabs: React.FC<GitDatabaseTabsProps> = ({
       </TabsContent>
 
       <TabsContent value="visualization">
-        <AZR3DInterface
-          azrActive={isActive}
-          agentSActive={agentSActive}
-          processes={tasks}
-          executionResults={executionResults}
-        />
+        <SafeAZR3DInterface />
       </TabsContent>
 
       <TabsContent value="command">
@@ -120,12 +133,14 @@ const GitDatabaseTabs: React.FC<GitDatabaseTabsProps> = ({
       </TabsContent>
 
       <TabsContent value="feedback">
-        <SystemFeedbackManager
-          azrActive={isActive}
-          agentSActive={agentSActive}
-          executionResults={executionResults}
-          onOptimizationApplied={handlers.handleOptimizationApplied}
-        />
+        <ErrorBoundary>
+          <SystemFeedbackManager
+            azrActive={isActive}
+            agentSActive={agentSActive}
+            executionResults={executionResults}
+            onOptimizationApplied={handlers.handleOptimizationApplied}
+          />
+        </ErrorBoundary>
       </TabsContent>
 
       <TabsContent value="creation">
