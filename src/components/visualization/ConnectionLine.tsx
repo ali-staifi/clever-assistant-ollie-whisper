@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Line } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface ConnectionLineProps {
@@ -19,19 +18,21 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({ start, end, active, sec
     }
   }, [active, secure]);
 
-  const points = React.useMemo(() => [
-    new THREE.Vector3(start[0], start[1], start[2]),
-    new THREE.Vector3(end[0], end[1], end[2])
-  ], [start, end]);
+  const geometry = React.useMemo(() => {
+    const points = [
+      new THREE.Vector3(start[0], start[1], start[2]),
+      new THREE.Vector3(end[0], end[1], end[2])
+    ];
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    return geometry;
+  }, [start, end]);
 
   return (
-    <Line
-      points={points}
-      color={lineColor}
-      lineWidth={active ? 3 : 2}
-      transparent
-      opacity={active ? 0.8 : 0.5}
-    />
+    <primitive object={new THREE.Line(geometry, new THREE.LineBasicMaterial({ 
+      color: lineColor,
+      opacity: active ? 0.8 : 0.5,
+      transparent: true
+    }))} />
   );
 };
 
