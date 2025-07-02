@@ -1,6 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
-import { Sphere, Text } from '@react-three/drei';
+import React, { useRef, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 
 interface ProcessNode {
@@ -61,49 +60,41 @@ const ProcessSphere: React.FC<ProcessSphereProps> = ({ node, onClick }) => {
     return '#44ff44';
   };
 
+  // Create native Three.js objects
+  const sphereGeometry = useMemo(() => new THREE.SphereGeometry(0.5, 16, 16), []);
+  const sphereMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: getColor(),
+    transparent: true,
+    opacity: getOpacity(),
+    emissive: node.status === 'processing' ? getColor() : '#000000',
+    emissiveIntensity: node.status === 'processing' ? 0.2 : 0
+  }), [node.status, node.type]);
+
+  const sphereMesh = useMemo(() => {
+    const mesh = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    mesh.position.set(...node.position);
+    mesh.userData = { onClick };
+    return mesh;
+  }, [sphereGeometry, sphereMaterial, node.position, onClick]);
+
+  const ringGeometry = useMemo(() => new THREE.TorusGeometry(0.7, 0.05, 8, 16), []);
+  const ringMaterial = useMemo(() => new THREE.MeshBasicMaterial({
+    color: getSecurityRing(),
+    transparent: true,
+    opacity: 0.7
+  }), [node.securityLevel]);
+
+  const ringMesh = useMemo(() => {
+    const mesh = new THREE.Mesh(ringGeometry, ringMaterial);
+    mesh.position.set(...node.position);
+    mesh.rotation.set(Math.PI / 2, 0, 0);
+    return mesh;
+  }, [ringGeometry, ringMaterial, node.position]);
+
   return (
     <group position={node.position}>
-      <Sphere
-        ref={meshRef}
-        args={[0.5, 16, 16]}
-        onClick={onClick}
-      >
-        <meshStandardMaterial
-          color={getColor()}
-          transparent={true}
-          opacity={getOpacity()}
-          emissive={node.status === 'processing' ? getColor() : '#000000'}
-          emissiveIntensity={node.status === 'processing' ? 0.2 : 0}
-        />
-      </Sphere>
-      
-      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.7, 0.05, 8, 16]} />
-        <meshBasicMaterial 
-          color={getSecurityRing()} 
-          transparent={true} 
-          opacity={0.7} 
-        />
-      </mesh>
-      
-      <Text
-        position={[0, 0.8, 0]}
-        fontSize={0.15}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {node.type.toUpperCase()}
-      </Text>
-      <Text
-        position={[0, -0.8, 0]}
-        fontSize={0.1}
-        color={getSecurityRing()}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {node.securityLevel.toUpperCase()}
-      </Text>
+      <primitive ref={meshRef} object={sphereMesh} onClick={onClick} />
+      <primitive ref={ringRef} object={ringMesh} />
     </group>
   );
 };

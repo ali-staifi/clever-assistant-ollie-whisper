@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
 import ProcessSphere, { ProcessNode } from './ProcessSphere';
 import ConnectionLine from './ConnectionLine';
+import { Card, CardContent } from "@/components/ui/card";
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 interface AZR3DSceneProps {
   processNodes: ProcessNode[];
@@ -21,6 +23,24 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
   onNodeClick, 
   getActiveConnections 
 }) => {
+  const [webglError, setWebglError] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleWebGLContextLost = useCallback(() => {
+    console.warn('WebGL context lost');
+    setWebglError(true);
+  }, []);
+
+  const handleWebGLContextRestored = useCallback(() => {
+    console.log('WebGL context restored');
+    setWebglError(false);
+  }, []);
+
+  const handleRetry = useCallback(() => {
+    setIsRetrying(true);
+    setWebglError(false);
+    setTimeout(() => setIsRetrying(false), 1000);
+  }, []);
   const connections = React.useMemo(() => {
     try {
       console.log('Getting connections...', { getActiveConnections });
@@ -73,18 +93,57 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
     }
   }, [processNodes]);
 
+  // Native camera controls
+  const handleWheel = useCallback((event: WheelEvent) => {
+    event.preventDefault();
+  }, []);
+
+  if (webglError) {
+    return (
+      <Card className="h-64 w-full border-red-200">
+        <CardContent className="flex flex-col items-center justify-center h-full space-y-4">
+          <AlertTriangle className="h-8 w-8 text-red-500" />
+          <p className="text-sm text-center text-muted-foreground">
+            Interface 3D temporairement indisponible
+          </p>
+          <Button size="sm" onClick={handleRetry} disabled={isRetrying}>
+            <RefreshCw className={`h-3 w-3 mr-1 ${isRetrying ? 'animate-spin' : ''}`} />
+            Réessayer
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="h-64 w-full border rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 to-black">
       <Canvas 
         camera={{ position: [0, 0, 8], fov: 60 }}
-        gl={{ antialias: true, alpha: true }}
+        gl={{ 
+          antialias: true, 
+          alpha: true,
+          preserveDrawingBuffer: true,
+          powerPreference: "default"
+        }}
         onCreated={({ gl }) => {
           try {
             gl.setClearColor('#000000');
+            gl.domElement.addEventListener('webglcontextlost', handleWebGLContextLost);
+            gl.domElement.addEventListener('webglcontextrestored', handleWebGLContextRestored);
           } catch (error) {
-            console.warn('Impossible de définir la couleur de fond du canvas:', error);
+            console.warn('Erreur lors de l\'initialisation WebGL:', error);
+            setWebglError(true);
           }
         }}
+        fallback={
+          <Card className="h-full w-full">
+            <CardContent className="flex items-center justify-center h-full">
+              <p className="text-sm text-muted-foreground">
+                Chargement de l'interface 3D...
+              </p>
+            </CardContent>
+          </Card>
+        }
       >
         <ambientLight intensity={0.3} />
         <pointLight position={[10, 10, 10]} intensity={0.8} />
@@ -121,14 +180,6 @@ const AZR3DScene: React.FC<AZR3DSceneProps> = ({
             return null;
           }
         })}
-        
-        <OrbitControls 
-          enableZoom={true}
-          enablePan={true}
-          enableRotate={true}
-          maxDistance={15}
-          minDistance={3}
-        />
       </Canvas>
     </div>
   );
