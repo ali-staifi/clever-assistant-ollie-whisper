@@ -47,7 +47,8 @@ const JarvisInterface = () => {
     changeResponseLanguage,
     // Paramètres vocaux globaux
     globalVoiceSettings,
-    updateGlobalVoiceSettings
+    updateGlobalVoiceSettings,
+    speechService
   } = useJarvisServices();
   
   // Intégration des paramètres vocaux avancés
@@ -137,6 +138,7 @@ const JarvisInterface = () => {
           <LanguageControls
             currentLanguage={responseLanguage}
             onLanguageChange={changeResponseLanguage}
+            speechService={speechService}
           />
         </div>
         

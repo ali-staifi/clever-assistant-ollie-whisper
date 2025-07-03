@@ -12,6 +12,13 @@ export const useLanguageSettings = (setLanguageFunction?: (lang: string) => void
       if (setLanguageFunction) {
         setLanguageFunction(savedLanguage);
       }
+    } else {
+      // Forcer le français par défaut si aucune sauvegarde
+      setResponseLanguage('fr-FR');
+      localStorage.setItem('jarvis-response-language', 'fr-FR');
+      if (setLanguageFunction) {
+        setLanguageFunction('fr-FR');
+      }
     }
   }, [setLanguageFunction]);
   

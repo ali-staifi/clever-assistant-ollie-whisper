@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import BioMCPPanel from '../components/mcp/BioMCPPanel';
 import ApifyMCPPanel from '../components/mcp/apify/ApifyMCPPanel';
 import MCPAgentAssistant from '../components/mcp/MCPAgentAssistant';
+import MCPCachePanel from '../components/mcp/cache/MCPCachePanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -60,10 +61,11 @@ const MCPPage: React.FC = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
-        <TabsList className="grid grid-cols-3 mb-4 w-full md:w-[600px]">
+        <TabsList className="grid grid-cols-4 mb-4 w-full md:w-[800px]">
           <TabsTrigger value="agent">Agent AI</TabsTrigger>
           <TabsTrigger value="bio">BioMCP</TabsTrigger>
           <TabsTrigger value="apify">ApifyMCP</TabsTrigger>
+          <TabsTrigger value="cache">Cache</TabsTrigger>
         </TabsList>
         
         <div className="mb-20">
@@ -137,6 +139,10 @@ const MCPPage: React.FC = () => {
                 
                 <ApifyMCPPanel />
               </div>
+            </TabsContent>
+            
+            <TabsContent value="cache" className="mt-0">
+              <MCPCachePanel />
             </TabsContent>
           </ScrollArea>
         </div>

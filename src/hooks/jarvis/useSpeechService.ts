@@ -52,14 +52,24 @@ export const useSpeechService = () => {
     getAvailableVoices
   } = useSpeechSynthesis(speechService);
   
-  // Fonction pour sélectionner automatiquement une voix selon le genre
-  const selectVoiceByGender = (gender: 'male' | 'female' | 'neutral') => {
+  // Fonction pour sélectionner automatiquement une voix selon le genre ET la langue française
+  const selectVoiceByGender = (gender: 'male' | 'female' | 'neutral', preferredLanguage: string = 'fr-FR') => {
     const voices = getAvailableVoices();
+    
+    // Filtrer d'abord par langue préférée (français par défaut)
+    let languageVoices = voices.filter(voice => 
+      voice.lang.startsWith(preferredLanguage.split('-')[0])
+    );
+    
+    // Si pas de voix française, utiliser toutes les voix
+    if (languageVoices.length === 0) {
+      languageVoices = voices;
+    }
     
     let filteredVoices: SpeechSynthesisVoice[] = [];
     
     if (gender === 'female') {
-      filteredVoices = voices.filter(voice => {
+      filteredVoices = languageVoices.filter(voice => {
         const name = voice.name.toLowerCase();
         return name.includes('female') || 
                name.includes('lisa') || 
@@ -69,14 +79,15 @@ export const useSpeechService = () => {
                name.includes('samantha') ||
                name.includes('amélie') ||
                name.includes('marie') ||
-               name.includes('amina') ||
-               name.includes('hoda') ||
+               name.includes('hortense') ||
+               name.includes('céline') ||
+               name.includes('julie') ||
                name.includes('zira') ||
                name.includes('eva') ||
                name.includes('catherine');
       });
     } else if (gender === 'male') {
-      filteredVoices = voices.filter(voice => {
+      filteredVoices = languageVoices.filter(voice => {
         const name = voice.name.toLowerCase();
         return name.includes('male') || 
                name.includes('david') || 
@@ -86,19 +97,20 @@ export const useSpeechService = () => {
                name.includes('eric') || 
                name.includes('roger') ||
                name.includes('paul') ||
-               name.includes('ismael') ||
+               name.includes('claude') ||
+               name.includes('guillaume') ||
                name.includes('mark') ||
                name.includes('james') ||
                name.includes('antoine');
       });
     }
     
-    // Si aucune voix spécifique trouvée, utiliser toutes les voix disponibles
+    // Si aucune voix spécifique trouvée pour le genre, utiliser les voix de la langue
     if (filteredVoices.length === 0) {
-      filteredVoices = voices;
+      filteredVoices = languageVoices;
     }
     
-    // Sélectionner la première voix disponible
+    // Sélectionner la première voix française disponible
     if (filteredVoices.length > 0) {
       setVoice(filteredVoices[0].name);
       console.log(`Voix ${gender} sélectionnée: ${filteredVoices[0].name}`);
@@ -127,9 +139,9 @@ export const useSpeechService = () => {
       speechService.setVolume(newSettings.volume);
       speechService.setRoboticEffect(newSettings.roboticEffect);
       
-      // Si le genre de voix a changé, sélectionner une nouvelle voix
+      // Si le genre de voix a changé, sélectionner une nouvelle voix française
       if (settings.voiceGender && settings.voiceGender !== prev.voiceGender) {
-        selectVoiceByGender(newSettings.voiceGender);
+        selectVoiceByGender(newSettings.voiceGender, 'fr-FR');
       }
       
       return newSettings;
@@ -143,9 +155,9 @@ export const useSpeechService = () => {
         const voices = getAvailableVoices();
         setAvailableVoices(voices);
         
-        // Sélectionner automatiquement une voix selon le genre par défaut
+        // Sélectionner automatiquement une voix française selon le genre par défaut
         if (voices.length > 0) {
-          selectVoiceByGender(globalVoiceSettings.voiceGender);
+          selectVoiceByGender(globalVoiceSettings.voiceGender, 'fr-FR');
         }
       };
       
