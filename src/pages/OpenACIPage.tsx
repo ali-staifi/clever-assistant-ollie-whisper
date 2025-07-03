@@ -187,6 +187,33 @@ const OpenACIPage: React.FC = () => {
     });
   };
 
+  const addKnowledgeFromSource = async (concept: string, description: string, source: KnowledgeEntry['source']) => {
+    const newEntry: KnowledgeEntry = {
+      id: Date.now().toString(),
+      concept,
+      description,
+      relations: [],
+      examples: [],
+      timestamp: new Date(),
+      source
+    };
+
+    setKnowledgeBase(prev => [newEntry, ...prev]);
+    
+    // Store knowledge in memory
+    await memoryContext.addContextualMemory(
+      `Nouveau concept ajouté depuis ${source?.type}: ${concept} - ${description.substring(0, 100)}...`,
+      'knowledge',
+      9,
+      ['knowledge-base', 'concept', source?.type || 'unknown']
+    );
+    
+    toast({
+      title: "Connaissance ajoutée",
+      description: `Concept intégré depuis ${source?.type === 'file' ? 'fichier' : source?.type === 'url' ? 'lien web' : source?.type}`,
+    });
+  };
+
   const deleteSession = (sessionId: string) => {
     setSessions(prev => prev.filter(session => session.id !== sessionId));
     toast({
@@ -240,6 +267,7 @@ const OpenACIPage: React.FC = () => {
             onNewConceptChange={setNewConcept}
             onConceptDescriptionChange={setConceptDescription}
             onAddKnowledge={addKnowledgeEntry}
+            onAddKnowledgeFromSource={addKnowledgeFromSource}
           />
         </TabsContent>
 
