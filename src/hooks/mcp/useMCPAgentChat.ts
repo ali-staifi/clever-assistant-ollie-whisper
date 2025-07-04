@@ -38,7 +38,6 @@ export const useMCPAgentChat = () => {
     setIsProcessing(true);
 
     try {
-      let assistantResponse = '';
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -52,21 +51,25 @@ export const useMCPAgentChat = () => {
         userMessage.content,
         messages,
         (token) => {
-          assistantResponse += token;
           setMessages(prev => 
             prev.map(msg => 
               msg.id === assistantMessage.id 
-                ? { ...msg, content: assistantResponse }
+                ? { ...msg, content: msg.content + token }
                 : msg
             )
           );
         }
       );
 
-      // Synthèse vocale automatique avec paramètres globaux
-      if (speechService && globalVoiceSettings && assistantResponse) {
-        speechService.speak(assistantResponse);
-      }
+      // Synthèse vocale automatique avec le contenu final
+      setMessages(prev => {
+        const finalMessages = prev.map(msg => msg);
+        const finalAssistantMessage = finalMessages.find(msg => msg.id === assistantMessage.id);
+        if (speechService && globalVoiceSettings && finalAssistantMessage?.content) {
+          setTimeout(() => speechService.speak(finalAssistantMessage.content), 100);
+        }
+        return finalMessages;
+      });
 
     } catch (error) {
       console.error('Erreur envoi message:', error);
