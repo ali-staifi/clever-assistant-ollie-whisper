@@ -62,14 +62,16 @@ export const useMCPAgentChat = () => {
       );
 
       // Synthèse vocale automatique avec le contenu final
-      setMessages(prev => {
-        const finalMessages = prev.map(msg => msg);
-        const finalAssistantMessage = finalMessages.find(msg => msg.id === assistantMessage.id);
-        if (speechService && globalVoiceSettings && finalAssistantMessage?.content) {
-          setTimeout(() => speechService.speak(finalAssistantMessage.content), 100);
-        }
-        return finalMessages;
-      });
+      setTimeout(() => {
+        setMessages(prev => {
+          const finalAssistantMessage = prev.find(msg => msg.id === assistantMessage.id);
+          if (speechService && finalAssistantMessage?.content && finalAssistantMessage.content.trim()) {
+            console.log('Déclenchement synthèse vocale MCP:', finalAssistantMessage.content.substring(0, 50) + '...');
+            speechService.speak(finalAssistantMessage.content);
+          }
+          return prev;
+        });
+      }, 500);
 
     } catch (error) {
       console.error('Erreur envoi message:', error);
