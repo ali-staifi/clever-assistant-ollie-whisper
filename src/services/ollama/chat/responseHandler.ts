@@ -41,7 +41,7 @@ export async function handleStreamedResponse(
             const parsedToken = parseStreamedResponse(line, isQwenModel);
             if (parsedToken) {
               partialResponse += parsedToken;
-              onProgress(partialResponse);
+              onProgress(parsedToken);
             }
           } catch (e) {
             console.error('Error parsing response line:', e);
