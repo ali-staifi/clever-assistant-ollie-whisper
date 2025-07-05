@@ -46,29 +46,16 @@ class OllamaSetup {
   }
 
   getStartCommand() {
-    const envVars = {
-      'OLLAMA_ORIGINS': '*',
-      'OLLAMA_HOST': '0.0.0.0:11434'
-    };
-
     if (this.isWindows) {
-      const envString = Object.entries(envVars)
-        .map(([key, value]) => `$env:${key}="${value}"`)
-        .join('; ');
-      
       return {
-        command: 'powershell',
-        args: ['-Command', `${envString}; ollama serve`],
+        command: 'cmd',
+        args: ['/c', 'set OLLAMA_ORIGINS=* && set OLLAMA_HOST=0.0.0.0:11434 && ollama serve'],
         shell: true
       };
     } else {
-      const envString = Object.entries(envVars)
-        .map(([key, value]) => `${key}="${value}"`)
-        .join(' ');
-      
       return {
-        command: 'sh',
-        args: ['-c', `${envString} ollama serve`],
+        command: 'bash',
+        args: ['-c', 'OLLAMA_ORIGINS="*" OLLAMA_HOST="0.0.0.0:11434" ollama serve'],
         shell: false
       };
     }
@@ -149,11 +136,10 @@ class OllamaSetup {
     this.log('Variables d\'environnement configurées:', 'info');
     this.log('  OLLAMA_ORIGINS="*"', 'success');
     this.log('  OLLAMA_HOST="0.0.0.0:11434"', 'success');
-    this.log('\nOllama est maintenant accessible depuis:', 'info');
-    this.log('  - http://localhost:11434', 'success');
-    this.log('  - http://0.0.0.0:11434', 'success');
-    this.log('  - Toutes les origines CORS autorisées', 'success');
+    this.log('\nTestez la connexion dans votre navigateur:', 'info');
+    this.log('  - http://localhost:11434/api/tags', 'success');
     this.log('\nPour arrêter Ollama, utilisez Ctrl+C', 'warning');
+    this.log('\nSi vous avez des erreurs CORS, vérifiez que les variables sont bien définies', 'info');
   }
 
   async run() {
