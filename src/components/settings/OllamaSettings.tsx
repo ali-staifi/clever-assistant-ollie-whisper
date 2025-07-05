@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { AlertCircle, Info, Save, Database } from "lucide-react";
+import OllamaAutoConfig from "./OllamaAutoConfig";
 
 interface OllamaSettingsProps {
   ollamaUrl: string;
@@ -75,6 +77,15 @@ const OllamaSettings: React.FC<OllamaSettingsProps> = ({
 
   return (
     <>
+      {/* Auto Configuration Section */}
+      <OllamaAutoConfig onConfigurationChange={(configured) => {
+        if (configured) {
+          checkConnection();
+        }
+      }} />
+      
+      <Separator className="my-6" />
+      
       <div className="space-y-2">
         <Label htmlFor="ollama-url">URL de l'API Ollama</Label>
         <div className="flex gap-2">
