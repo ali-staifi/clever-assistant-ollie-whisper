@@ -102,13 +102,10 @@ export class OllamaConfigService {
     switch (platform) {
       case 'windows':
         return `
-Ouvrez CMD ou PowerShell et exécutez:
-set OLLAMA_ORIGINS=* && set OLLAMA_HOST=0.0.0.0:11434 && ollama serve
-
-Ou en PowerShell:
+Ouvrez PowerShell en tant qu'administrateur et exécutez:
 $env:OLLAMA_ORIGINS="*"; $env:OLLAMA_HOST="0.0.0.0:11434"; ollama serve
 
-Ou utilisez le script automatique:
+Ou utilisez le script fourni:
 npm run setup-ollama
         `.trim();
       
@@ -118,7 +115,7 @@ npm run setup-ollama
 Ouvrez un terminal et exécutez:
 OLLAMA_ORIGINS="*" OLLAMA_HOST="0.0.0.0:11434" ollama serve
 
-Ou utilisez le script automatique:
+Ou utilisez le script fourni:
 npm run setup-ollama
         `.trim();
       
