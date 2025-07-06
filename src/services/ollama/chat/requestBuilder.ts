@@ -32,18 +32,13 @@ export function buildRequestBody(
       options: options
     });
   } else {
-    const systemMessage = createSystemMessage(prompt);
-    
+    // Le prompt est déjà inclus dans les messages, pas besoin de l'ajouter
     requestBody = JSON.stringify({
       model: model,
-      messages: [
-        { role: 'system', content: systemMessage },
-        ...messages.map(msg => ({
-          role: msg.role,
-          content: msg.content
-        })),
-        { role: 'user', content: prompt }
-      ],
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      })),
       stream: true,
       options: options
     });
