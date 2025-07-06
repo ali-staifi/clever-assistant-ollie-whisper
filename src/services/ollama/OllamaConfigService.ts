@@ -41,17 +41,15 @@ export class OllamaConfigService {
       if (response.ok) {
         status.isRunning = true;
         
-        // Test CORS
-        const corsResponse = await fetch('http://localhost:11434/api/tags', {
-          method: 'OPTIONS',
-          headers: {
-            'Origin': window.location.origin,
-            'Access-Control-Request-Method': 'GET'
-          }
-        });
-        
-        const corsHeaders = corsResponse.headers.get('Access-Control-Allow-Origin');
-        status.corsEnabled = corsHeaders === '*' || corsHeaders === window.location.origin;
+        // Test CORS - si on peut faire une requête GET, CORS fonctionne
+        try {
+          // Si on arrive jusqu'ici avec une requête depuis le navigateur, CORS est OK
+          status.corsEnabled = true;
+          console.log('CORS enabled: connexion réussie depuis le navigateur');
+        } catch (corsError) {
+          console.log('CORS test failed:', corsError);
+          status.corsEnabled = false;
+        }
         
         // Test host configuration (assumé si accessible depuis localhost)
         status.hostConfigured = true;
