@@ -8,6 +8,7 @@ import VisionPage from './pages/VisionPage';
 import MCPPage from './pages/MCPPage';
 import OpenACIPage from './pages/OpenACIPage';
 import GitDatabasePage from './pages/GitDatabasePage';
+import { CoachPage } from './pages/CoachPage';
 import NotFound from './pages/NotFound';
 
 import Navigation from './components/Navigation';
@@ -76,6 +77,10 @@ const router = createBrowserRouter([
       {
         path: 'git-database',
         element: <GitDatabasePage />,
+      },
+      {
+        path: 'coach',
+        element: <CoachPage />,
       },
       {
         path: '*',

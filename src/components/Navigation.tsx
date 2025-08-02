@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor, Heart } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
@@ -46,6 +46,13 @@ const Navigation = () => {
         <Link to="/chat">
           <div className={`${activeItem === '/chat' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
             <MessageSquareText size={24} />
+          </div>
+        </Link>
+        
+        {/* Coach */}
+        <Link to="/coach">
+          <div className={`${activeItem === '/coach' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <Heart size={24} />
           </div>
         </Link>
         
