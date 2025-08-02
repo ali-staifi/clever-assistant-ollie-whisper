@@ -1,13 +1,20 @@
-import React, { useEffect } from 'react';
-import { AlexAvatarVisualizer } from '../components/avatar/AlexAvatarVisualizer';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAlexAvatar } from '../hooks/useAlexAvatar';
+import { AlexHumanAvatar } from '../components/avatar/AlexHumanAvatar';
+import { DIDConfigDialog } from '../components/dialogs/DIDConfigDialog';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Mic, MicOff, RotateCcw, MessageCircle } from 'lucide-react';
-import { Badge } from '../components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
 import { ScrollArea } from '../components/ui/scroll-area';
+import { Badge } from '../components/ui/badge';
+import { Mic, MicOff, RotateCcw, MessageCircle, Heart, Zap, Brain, Settings } from 'lucide-react';
 
 export const CoachPage = () => {
+  const [showDIDConfig, setShowDIDConfig] = useState(false);
+  const [currentSpeakingText, setCurrentSpeakingText] = useState('');
+  const [userInput, setUserInput] = useState('');
+  
   const {
     isListening,
     isSpeaking,
@@ -31,13 +38,17 @@ export const CoachPage = () => {
     return () => clearTimeout(timer);
   }, [speakGreeting]);
 
-  const handleTextInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      const input = e.currentTarget;
-      if (input.value.trim()) {
-        handleUserInput(input.value);
-        input.value = '';
-      }
+  const handleQuickAction = async (message: string) => {
+    setCurrentSpeakingText(message);
+    await handleUserInput(message);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userInput.trim()) {
+      setCurrentSpeakingText(userInput);
+      await handleUserInput(userInput);
+      setUserInput('');
     }
   };
 
@@ -50,7 +61,7 @@ export const CoachPage = () => {
             Votre Coach Bien-être
           </h1>
           <p className="text-lg text-muted-foreground">
-            Rencontrez Alex, votre accompagnateur personnel pour un mieux-être au quotidien
+            Rencontrez Alex, votre accompagnateur personnel avec animation faciale réaliste
           </p>
         </div>
 
@@ -59,21 +70,32 @@ export const CoachPage = () => {
           <Card className="bg-card/50 backdrop-blur-sm border-border/50">
             <CardHeader className="text-center">
               <CardTitle className="flex items-center justify-center gap-2">
-                <span>Alex - Coach Bien-être</span>
+                <span>Alex - Coach Humain</span>
                 <Badge variant={emotionalState === 'neutral' ? 'secondary' : 'default'}>
                   {emotionalState === 'neutral' ? 'Calme' : 
                    emotionalState === 'encouraging' ? 'Encourageant' :
                    emotionalState === 'supportive' ? 'Bienveillant' : 'Énergique'}
                 </Badge>
               </CardTitle>
+              <CardDescription>
+                Avatar avec animation faciale D-ID en temps réel
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-6">
-              <AlexAvatarVisualizer
-                isListening={isListening}
-                isSpeaking={isSpeaking}
-                emotionalState={emotionalState}
-                micVolume={micVolume}
-              />
+              {/* Avatar Alex Humain */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <AlexHumanAvatar
+                  isListening={isListening}
+                  isSpeaking={isSpeaking}
+                  emotionalState={emotionalState}
+                  currentText={currentSpeakingText}
+                  onConfigureDID={() => setShowDIDConfig(true)}
+                />
+              </motion.div>
 
               {/* Controls */}
               <div className="flex gap-4">
@@ -97,18 +119,29 @@ export const CoachPage = () => {
                   <RotateCcw className="w-5 h-5" />
                   Reset
                 </Button>
+
+                <Button
+                  onClick={() => setShowDIDConfig(true)}
+                  variant="outline"
+                  size="lg"
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="w-5 h-5" />
+                  D-ID
+                </Button>
               </div>
 
               {/* Text Input */}
-              <div className="w-full">
-                <input
+              <form onSubmit={handleSubmit} className="w-full">
+                <Input
                   type="text"
-                  placeholder="Ou écrivez votre message ici et appuyez sur Entrée..."
-                  className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  onKeyPress={handleTextInput}
+                  placeholder="Écrivez votre message à Alex..."
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
                   disabled={isSpeaking}
+                  className="w-full"
                 />
-              </div>
+              </form>
 
               {/* Live Transcript */}
               {transcript && (
@@ -136,12 +169,14 @@ export const CoachPage = () => {
                   {conversation.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
                       <p>La conversation va apparaître ici...</p>
-                      <p className="text-sm mt-2">Alex vous écoute et vous accompagne</p>
+                      <p className="text-sm mt-2">Alex vous écoute avec son visage animé</p>
                     </div>
                   ) : (
                     conversation.map((message, index) => (
-                      <div
+                      <motion.div
                         key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
@@ -156,7 +191,7 @@ export const CoachPage = () => {
                           </p>
                           <p>{message.content}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))
                   )}
                 </div>
@@ -168,53 +203,68 @@ export const CoachPage = () => {
         {/* Quick Actions */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader>
-            <CardTitle>Actions Rapides</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              Actions Rapides avec Alex
+            </CardTitle>
+            <CardDescription>
+              Démarrez rapidement une conversation sur ces sujets bien-être
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Button
                 variant="outline"
-                onClick={() => handleUserInput("Je me sens stressé aujourd'hui")}
+                onClick={() => handleQuickAction("Je me sens stressé aujourd'hui")}
                 disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2"
+                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
               >
-                <span className="text-2xl">😰</span>
-                <span className="text-sm">Gestion du stress</span>
+                <Heart className="w-6 h-6 text-red-500" />
+                <span className="text-sm font-medium">Gestion du stress</span>
               </Button>
               
               <Button
                 variant="outline"
-                onClick={() => handleUserInput("J'aimerais faire de la méditation")}
+                onClick={() => handleQuickAction("J'aimerais faire de la méditation")}
                 disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2"
+                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
               >
-                <span className="text-2xl">🧘</span>
-                <span className="text-sm">Méditation</span>
+                <Brain className="w-6 h-6 text-purple-500" />
+                <span className="text-sm font-medium">Méditation</span>
               </Button>
               
               <Button
                 variant="outline"
-                onClick={() => handleUserInput("Comment avoir plus confiance en moi ?")}
+                onClick={() => handleQuickAction("Comment avoir plus confiance en moi ?")}
                 disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2"
+                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
               >
-                <span className="text-2xl">💪</span>
-                <span className="text-sm">Confiance en soi</span>
+                <Zap className="w-6 h-6 text-yellow-500" />
+                <span className="text-sm font-medium">Confiance en soi</span>
               </Button>
               
               <Button
                 variant="outline"
-                onClick={() => handleUserInput("J'ai besoin de motivation pour faire du sport")}
+                onClick={() => handleQuickAction("J'ai besoin de motivation pour faire du sport")}
                 disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2"
+                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
               >
-                <span className="text-2xl">🏃</span>
-                <span className="text-sm">Motivation sportive</span>
+                <Heart className="w-6 h-6 text-green-500" />
+                <span className="text-sm font-medium">Motivation sportive</span>
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog de configuration D-ID */}
+      <DIDConfigDialog
+        isOpen={showDIDConfig}
+        onClose={() => setShowDIDConfig(false)}
+        onConfigured={() => {
+          console.log('D-ID configuré avec succès');
+        }}
+      />
     </div>
   );
 };

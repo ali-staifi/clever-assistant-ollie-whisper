@@ -67,7 +67,7 @@ export const useAlexAvatar = () => {
       // Réponses d'exemple d'Alex selon l'émotion
       const sampleResponses = {
         encouraging: "C'est fantastique que tu veuilles progresser ! Je vois que tu as la motivation, c'est déjà un grand pas. Dis-moi, quel est ton objectif principal en ce moment ?",
-        supportive: "Je comprends que ce soit difficile pour toi. C'est tout à fait normal de ressentir cela. Tu n'es pas seul(e) dans cette situation. Veux-tu qu'on explore ensemble ce qui te pèse le plus ?",
+        supportive: "Je comprends que ce soit difficile pour toi. C'est tout à fait normal de ressentir cela. Tu n'es pas seul dans cette situation. Veux-tu qu'on explore ensemble ce qui te pèse le plus ?",
         energetic: "J'adore ton énergie ! Bouger, c'est l'une des meilleures choses qu'on puisse faire pour notre bien-être. Quel type d'activité te fait le plus envie en ce moment ?",
         neutral: "Merci de partager cela avec moi. Je suis là pour t'accompagner dans ton parcours bien-être. Comment te sens-tu aujourd'hui ?"
       };
@@ -75,7 +75,8 @@ export const useAlexAvatar = () => {
       const response = sampleResponses[detectedEmotion];
 
       // Ajouter la réponse à la conversation
-      setConversation([...newConversation, { role: 'assistant', content: response }]);
+      const finalConversation = [...newConversation, { role: 'assistant' as const, content: response }];
+      setConversation(finalConversation);
 
       // Faire parler Alex avec l'émotion appropriée
       await avatarVoiceService.current.speakAsAvatar(response, detectedEmotion, () => {
