@@ -12,7 +12,6 @@ import { Mic, MicOff, RotateCcw, MessageCircle, Heart, Zap, Brain, Settings } fr
 
 export const CoachPage = () => {
   const [showDIDConfig, setShowDIDConfig] = useState(false);
-  const [currentSpeakingText, setCurrentSpeakingText] = useState('');
   const [userInput, setUserInput] = useState('');
   
   const {
@@ -20,6 +19,7 @@ export const CoachPage = () => {
     isSpeaking,
     emotionalState,
     micVolume,
+    currentSpeakingText,
     conversation,
     transcript,
     startListening,
@@ -39,14 +39,12 @@ export const CoachPage = () => {
   }, [speakGreeting]);
 
   const handleQuickAction = async (message: string) => {
-    setCurrentSpeakingText(message);
     await handleUserInput(message);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (userInput.trim()) {
-      setCurrentSpeakingText(userInput);
       await handleUserInput(userInput);
       setUserInput('');
     }

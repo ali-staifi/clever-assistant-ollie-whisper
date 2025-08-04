@@ -8,6 +8,7 @@ export const useAlexAvatar = () => {
   const [conversation, setConversation] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const [transcript, setTranscript] = useState('');
   const [micVolume, setMicVolume] = useState(0);
+  const [currentSpeakingText, setCurrentSpeakingText] = useState('');
   
   const avatarVoiceService = useRef(new AvatarVoiceService(AlexPersonality));
 
@@ -79,18 +80,24 @@ export const useAlexAvatar = () => {
       setConversation(finalConversation);
 
       // Faire parler Alex avec l'émotion appropriée
+      setCurrentSpeakingText(response);
       await avatarVoiceService.current.speakAsAvatar(response, detectedEmotion, () => {
         setIsSpeaking(false);
+        setCurrentSpeakingText('');
       });
 
     } catch (error) {
       console.error('Erreur lors de la génération de réponse:', error);
       setIsSpeaking(false);
       
+      setCurrentSpeakingText("Désolé, j'ai eu un petit problème technique. Peux-tu répéter s'il te plaît ?");
       await avatarVoiceService.current.speakAsAvatar(
         "Désolé, j'ai eu un petit problème technique. Peux-tu répéter s'il te plaît ?",
         'supportive',
-        () => setIsSpeaking(false)
+        () => {
+          setIsSpeaking(false);
+          setCurrentSpeakingText('');
+        }
       );
     }
   }, [conversation, emotionalState]);
@@ -110,6 +117,7 @@ export const useAlexAvatar = () => {
   const resetConversation = useCallback(() => {
     setConversation([]);
     setEmotionalState('neutral');
+    setCurrentSpeakingText('');
     avatarVoiceService.current.stopSpeaking();
     setIsSpeaking(false);
   }, []);
@@ -124,9 +132,11 @@ export const useAlexAvatar = () => {
     const randomGreeting = greetings[Math.floor(Math.random() * greetings.length)];
     setEmotionalState('encouraging');
     setIsSpeaking(true);
+    setCurrentSpeakingText(randomGreeting);
     
     await avatarVoiceService.current.speakAsAvatar(randomGreeting, 'encouraging', () => {
       setIsSpeaking(false);
+      setCurrentSpeakingText('');
     });
   }, []);
 
@@ -136,6 +146,7 @@ export const useAlexAvatar = () => {
     isSpeaking,
     emotionalState,
     micVolume,
+    currentSpeakingText,
     
     // Conversation
     conversation,

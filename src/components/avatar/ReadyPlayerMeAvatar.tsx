@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Engine, Scene, FreeCamera, Vector3, HemisphericLight, SceneLoader, MorphTargetManager, Sound, Analyser } from '@babylonjs/core';
+import { Engine, Scene, FreeCamera, Vector3, HemisphericLight, SceneLoader } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 import { motion } from 'framer-motion';
 
@@ -8,24 +8,22 @@ interface ReadyPlayerMeAvatarProps {
   isSpeaking: boolean;
   emotionalState: 'neutral' | 'encouraging' | 'supportive' | 'energetic';
   currentText?: string;
-  audioUrl?: string;
 }
 
 export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
   isListening,
   isSpeaking,
   emotionalState,
-  currentText,
-  audioUrl
+  currentText
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<Engine | null>(null);
   const sceneRef = useRef<Scene | null>(null);
   const avatarRef = useRef<any>(null);
-  const analyserRef = useRef<Analyser | null>(null);
-  const soundRef = useRef<Sound | null>(null);
+  const animationRef = useRef<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [morphTargetsFound, setMorphTargetsFound] = useState(0);
 
   // Avatar Ready Player Me URL
   const avatarUrl = "https://models.readyplayer.me/689129bfdebb07631bc0ba6e.glb";
@@ -35,6 +33,8 @@ export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
 
     const initBabylon = async () => {
       try {
+        console.log("🚀 Initialisation de Babylon.js...");
+        
         // Créer l'engine et la scène
         const engine = new Engine(canvasRef.current!, true);
         const scene = new Scene(engine);
@@ -51,20 +51,44 @@ export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
         const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
         light.intensity = 0.8;
 
+        console.log("🌐 Chargement de l'avatar depuis:", avatarUrl);
+        
         // Charger l'avatar
         const result = await SceneLoader.ImportMeshAsync("", "", avatarUrl, scene);
         
         if (result.meshes.length > 0) {
+          console.log("✅ Avatar chargé avec", result.meshes.length, "meshes");
           avatarRef.current = result.meshes[0];
           
           // Chercher les morph targets pour l'animation de la bouche
-          result.meshes.forEach(mesh => {
+          let totalMorphTargets = 0;
+          result.meshes.forEach((mesh, index) => {
+            console.log(`Mesh ${index}:`, mesh.name, "MorphTargets:", !!mesh.morphTargetManager);
             if (mesh.morphTargetManager) {
-              console.log("Morph targets trouvés:", mesh.morphTargetManager.numTargets);
+              const numTargets = mesh.morphTargetManager.numTargets;
+              totalMorphTargets += numTargets;
+              console.log(`  - ${numTargets} morph targets trouvés dans ${mesh.name}`);
+              
+              // Lister tous les morph targets
+              for (let i = 0; i < numTargets; i++) {
+                const target = mesh.morphTargetManager.getTarget(i);
+                console.log(`    Target ${i}: ${target.name}`);
+              }
             }
           });
           
+          setMorphTargetsFound(totalMorphTargets);
+          
+          if (totalMorphTargets === 0) {
+            console.warn("⚠️ Aucun morph target trouvé dans l'avatar");
+          } else {
+            console.log(`✅ Total de ${totalMorphTargets} morph targets disponibles`);
+          }
+          
           setIsLoading(false);
+        } else {
+          console.error("❌ Aucun mesh trouvé dans l'avatar");
+          setError("Avatar chargé mais aucun mesh trouvé");
         }
 
         // Boucle de rendu
@@ -87,105 +111,130 @@ export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
     initBabylon();
 
     return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
       if (engineRef.current) {
         engineRef.current.dispose();
       }
     };
   }, []);
 
-  // Effet pour la synchronisation audio/morph targets
+  // Effet pour l'animation des lèvres
   useEffect(() => {
-    if (!sceneRef.current || !avatarRef.current || !audioUrl || !isSpeaking) return;
-
-    const playAudioWithMorphTargets = async () => {
-      try {
-        // Créer le son
-        const sound = new Sound("voice", audioUrl, sceneRef.current!, null, {
-          loop: false,
-          autoplay: true,
-          volume: 1.0
-        });
-
-        soundRef.current = sound;
-
-        // Créer l'analyseur audio
-        const analyser = new Analyser(sceneRef.current!);
-        analyser.SMOOTHING = 0.8;
-        analyser.FFT_SIZE = 512;
-        analyserRef.current = analyser;
-
-        // Connecter l'analyseur au son (utiliser l'API Web Audio directement)
-        if ((sound as any).spatialSound) {
-          analyser.connectAudioNodes((sound as any).spatialSound, (sound as any).spatialSound);
-        }
-
-        // Animation des morph targets basée sur l'analyse audio
-        const animateMouthFromAudio = () => {
-          if (!analyserRef.current || !avatarRef.current) return;
-
-          const dataArray = analyserRef.current.getByteFrequencyData();
-          
-          // Calculer l'amplitude moyenne
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i];
+    console.log("🎵 Effet animation déclenché:", { 
+      hasScene: !!sceneRef.current, 
+      hasAvatar: !!avatarRef.current, 
+      isSpeaking,
+      morphTargetsFound
+    });
+    
+    if (!sceneRef.current || !avatarRef.current || !isSpeaking) {
+      console.log("❌ Conditions non remplies pour l'animation");
+      // Arrêter l'animation et remettre à zéro
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      
+      // Remettre les morph targets à zéro
+      if (avatarRef.current) {
+        avatarRef.current.getChildMeshes().forEach((mesh: any) => {
+          if (mesh.morphTargetManager) {
+            const manager = mesh.morphTargetManager;
+            for (let i = 0; i < manager.numTargets; i++) {
+              const target = manager.getTarget(i);
+              target.influence = 0;
+            }
           }
-          const average = sum / dataArray.length;
-          
-          // Normaliser entre 0 et 1
-          const normalizedAmplitude = Math.min(average / 100, 1);
+        });
+        console.log("🔄 Morph targets remis à zéro");
+      }
+      return;
+    }
 
-          // Animer les morph targets de la bouche
-          avatarRef.current.getChildMeshes().forEach((mesh: any) => {
-            if (mesh.morphTargetManager) {
-              const manager = mesh.morphTargetManager as MorphTargetManager;
+    console.log("🔊 Animation des lèvres démarrée");
+    
+    // Animation simple basée sur des oscillations pendant la synthèse vocale
+    const startTime = Date.now();
+    
+    const animateMouth = () => {
+      if (!avatarRef.current || !isSpeaking) {
+        console.log("⏹️ Animation arrêtée");
+        return;
+      }
+      
+      const elapsed = Date.now() - startTime;
+      const amplitude = (Math.sin(elapsed * 0.008) + 1) * 0.5; // Oscillation entre 0 et 1
+      const frequency = 0.2 + Math.sin(elapsed * 0.005) * 0.1; // Variation de fréquence
+      
+      // Log moins fréquent pour éviter le spam
+      if (elapsed % 1000 < 50) {
+        console.log("💋 Animation amplitude:", amplitude.toFixed(2));
+      }
+      
+      // Animer tous les morph targets liés à la bouche
+      avatarRef.current.getChildMeshes().forEach((mesh: any) => {
+        if (mesh.morphTargetManager) {
+          const manager = mesh.morphTargetManager;
+          
+          for (let i = 0; i < manager.numTargets; i++) {
+            const target = manager.getTarget(i);
+            const targetName = target.name.toLowerCase();
+            
+            // Chercher les morph targets liés à la parole
+            if (targetName.includes('mouth') || 
+                targetName.includes('jaw') || 
+                targetName.includes('lips') ||
+                targetName.includes('open') ||
+                targetName.includes('close') ||
+                targetName.includes('smile') ||
+                targetName.includes('viseme') ||
+                targetName.includes('aa') ||
+                targetName.includes('ee') ||
+                targetName.includes('ih') ||
+                targetName.includes('oh') ||
+                targetName.includes('ou')) {
               
-              // Chercher les morph targets liés à la bouche
-              for (let i = 0; i < manager.numTargets; i++) {
-                const target = manager.getTarget(i);
-                const targetName = target.name.toLowerCase();
-                
-                if (targetName.includes('mouth') || targetName.includes('jaw') || targetName.includes('lips')) {
-                  // Animer en fonction de l'amplitude audio
-                  target.influence = normalizedAmplitude * 0.6; // Facteur d'atténuation
-                }
+              // Différents types d'animation selon le nom du morph target
+              let influence = 0;
+              if (targetName.includes('open') || targetName.includes('jaw') || targetName.includes('aa')) {
+                influence = amplitude * frequency * 0.8;
+              } else if (targetName.includes('smile')) {
+                influence = amplitude * 0.2; // Sourire subtil
+              } else if (targetName.includes('oh') || targetName.includes('ou')) {
+                influence = amplitude * frequency * 0.6;
+              } else {
+                influence = amplitude * frequency * 0.5;
+              }
+              
+              target.influence = Math.min(Math.max(influence, 0), 1);
+              
+              // Log occasionnel pour debug
+              if (elapsed % 2000 < 50 && target.influence > 0.1) {
+                console.log(`👄 ${targetName}: ${target.influence.toFixed(2)}`);
               }
             }
-          });
-
-          if (sound.isPlaying) {
-            requestAnimationFrame(animateMouthFromAudio);
           }
-        };
-
-        // Démarrer l'animation quand le son commence
-        sound.onEndedObservable.add(() => {
-          // Remettre les morph targets à zéro
-          avatarRef.current?.getChildMeshes().forEach((mesh: any) => {
-            if (mesh.morphTargetManager) {
-              const manager = mesh.morphTargetManager as MorphTargetManager;
-              for (let i = 0; i < manager.numTargets; i++) {
-                manager.getTarget(i).influence = 0;
-              }
-            }
-          });
-        });
-
-        animateMouthFromAudio();
-
-      } catch (err) {
-        console.error("Erreur lors de la lecture audio:", err);
+        }
+      });
+      
+      if (isSpeaking) {
+        animationRef.current = requestAnimationFrame(animateMouth);
       }
     };
-
-    playAudioWithMorphTargets();
-
+    
+    animateMouth();
+    
+    // Cleanup
     return () => {
-      if (soundRef.current) {
-        soundRef.current.dispose();
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
-  }, [audioUrl, isSpeaking]);
+    
+  }, [isSpeaking, morphTargetsFound]);
 
   const getEmotionColor = () => {
     switch (emotionalState) {
@@ -269,6 +318,13 @@ export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
             ))}
           </div>
         )}
+
+        {/* Indicateur de morph targets */}
+        {!isLoading && morphTargetsFound > 0 && (
+          <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+            {morphTargetsFound} Morph Targets
+          </div>
+        )}
       </motion.div>
 
       {/* Indicateur d'état émotionnel */}
@@ -294,6 +350,7 @@ export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
       >
         <p className="text-sm font-medium text-muted-foreground">
           {isLoading ? "Alex se prépare..." :
+           error ? "Erreur de chargement" :
            isSpeaking ? "Alex vous parle..." :
            isListening ? "Alex vous écoute..." :
            "Alex est prêt à vous aider"}
