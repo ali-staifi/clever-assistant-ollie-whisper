@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAlexAvatar } from '../hooks/useAlexAvatar';
-import { AlexHumanAvatar } from '../components/avatar/AlexHumanAvatar';
+import { ReadyPlayerMeAvatar } from '../components/avatar/ReadyPlayerMeAvatar';
 import { DIDConfigDialog } from '../components/dialogs/DIDConfigDialog';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -88,12 +88,11 @@ export const CoachPage = () => {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.5 }}
               >
-                <AlexHumanAvatar
+                <ReadyPlayerMeAvatar
                   isListening={isListening}
                   isSpeaking={isSpeaking}
                   emotionalState={emotionalState}
                   currentText={currentSpeakingText}
-                  onConfigureDID={() => setShowDIDConfig(true)}
                 />
               </motion.div>
 
