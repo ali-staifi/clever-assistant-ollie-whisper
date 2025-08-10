@@ -1,267 +1,184 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useAlexAvatar } from '../hooks/useAlexAvatar';
-import { ReadyPlayerMeAvatar } from '../components/avatar/ReadyPlayerMeAvatar';
-import { DIDConfigDialog } from '../components/dialogs/DIDConfigDialog';
-import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { ScrollArea } from '../components/ui/scroll-area';
-import { Badge } from '../components/ui/badge';
-import { Mic, MicOff, RotateCcw, MessageCircle, Heart, Zap, Brain, Settings } from 'lucide-react';
 
-export const CoachPage = () => {
-  const [showDIDConfig, setShowDIDConfig] = useState(false);
+import React, { useState } from 'react';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Settings, MessageCircle, Trash2 } from "lucide-react";
+import { useAlexAvatar } from '@/hooks/useAlexAvatar';
+import ReadyPlayerMeAvatar from '@/components/avatar/ReadyPlayerMeAvatar';
+import OpenRouterSettings from '@/components/settings/OpenRouterSettings';
+
+const CoachPage = () => {
   const [userInput, setUserInput] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
   
   const {
-    isListening,
     isSpeaking,
-    emotionalState,
-    micVolume,
     currentSpeakingText,
     conversation,
-    transcript,
-    startListening,
-    stopListening,
+    apiKey,
+    model,
+    connectionStatus,
+    availableModels,
+    updateApiKey,
+    updateModel,
+    checkConnection,
     handleUserInput,
-    resetConversation,
-    speakGreeting
+    clearConversation
   } = useAlexAvatar();
-
-  useEffect(() => {
-    // Saluer l'utilisateur au chargement de la page
-    const timer = setTimeout(() => {
-      speakGreeting();
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [speakGreeting]);
-
-  const handleQuickAction = async (message: string) => {
-    await handleUserInput(message);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (userInput.trim()) {
-      await handleUserInput(userInput);
-      setUserInput('');
-    }
+    if (!userInput.trim()) return;
+    
+    await handleUserInput(userInput.trim());
+    setUserInput('');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center py-6">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            Votre Coach Bien-être
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Rencontrez Alex, votre accompagnateur personnel avec animation faciale réaliste
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Avatar Section */}
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2">
-                <span>Alex - Coach Humain</span>
-                <Badge variant={emotionalState === 'neutral' ? 'secondary' : 'default'}>
-                  {emotionalState === 'neutral' ? 'Calme' : 
-                   emotionalState === 'encouraging' ? 'Encourageant' :
-                   emotionalState === 'supportive' ? 'Bienveillant' : 'Énergique'}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                Avatar avec animation faciale D-ID en temps réel
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-6">
-              {/* Avatar Alex Humain */}
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.5 }}
-              >
-                <ReadyPlayerMeAvatar
-                  isListening={isListening}
-                  isSpeaking={isSpeaking}
-                  emotionalState={emotionalState}
-                  currentText={currentSpeakingText}
-                />
-              </motion.div>
-
-              {/* Controls */}
-              <div className="flex gap-4">
-                <Button
-                  onClick={isListening ? stopListening : startListening}
-                  variant={isListening ? "destructive" : "default"}
-                  size="lg"
-                  disabled={isSpeaking}
-                  className="flex items-center gap-2"
-                >
-                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-                  {isListening ? 'Arrêter' : 'Parler à Alex'}
-                </Button>
-
-                <Button
-                  onClick={resetConversation}
-                  variant="outline"
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                  Reset
-                </Button>
-
-                <Button
-                  onClick={() => setShowDIDConfig(true)}
-                  variant="outline"
-                  size="lg"
-                  className="flex items-center gap-2"
-                >
-                  <Settings className="w-5 h-5" />
-                  D-ID
-                </Button>
-              </div>
-
-              {/* Text Input */}
-              <form onSubmit={handleSubmit} className="w-full">
-                <Input
-                  type="text"
-                  placeholder="Écrivez votre message à Alex..."
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  disabled={isSpeaking}
-                  className="w-full"
-                />
-              </form>
-
-              {/* Live Transcript */}
-              {transcript && (
-                <Card className="w-full bg-muted/50">
-                  <CardContent className="p-4">
-                    <p className="text-sm text-muted-foreground mb-1">Vous dites :</p>
-                    <p className="text-foreground">{transcript}</p>
-                  </CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Conversation History */}
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                Conversation avec Alex
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-96">
-                <div className="space-y-4">
-                  {conversation.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      <p>La conversation va apparaître ici...</p>
-                      <p className="text-sm mt-2">Alex vous écoute avec son visage animé</p>
-                    </div>
-                  ) : (
-                    conversation.map((message, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.role === 'user'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
-                          }`}
-                        >
-                          <p className="text-sm font-medium mb-1">
-                            {message.role === 'user' ? 'Vous' : 'Alex'}
-                          </p>
-                          <p>{message.content}</p>
-                        </div>
-                      </motion.div>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Actions Rapides avec Alex
-            </CardTitle>
-            <CardDescription>
-              Démarrez rapidement une conversation sur ces sujets bien-être
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button
-                variant="outline"
-                onClick={() => handleQuickAction("Je me sens stressé aujourd'hui")}
-                disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
-              >
-                <Heart className="w-6 h-6 text-red-500" />
-                <span className="text-sm font-medium">Gestion du stress</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => handleQuickAction("J'aimerais faire de la méditation")}
-                disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
-              >
-                <Brain className="w-6 h-6 text-purple-500" />
-                <span className="text-sm font-medium">Méditation</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => handleQuickAction("Comment avoir plus confiance en moi ?")}
-                disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
-              >
-                <Zap className="w-6 h-6 text-yellow-500" />
-                <span className="text-sm font-medium">Confiance en soi</span>
-              </Button>
-              
-              <Button
-                variant="outline"
-                onClick={() => handleQuickAction("J'ai besoin de motivation pour faire du sport")}
-                disabled={isSpeaking}
-                className="h-auto p-4 flex flex-col items-center gap-2 hover:scale-105 transition-transform"
-              >
-                <Heart className="w-6 h-6 text-green-500" />
-                <span className="text-sm font-medium">Motivation sportive</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="container mx-auto py-6 space-y-6 max-w-4xl">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold text-jarvis-blue">Alex - Coach Personnel IA</h1>
+        <p className="text-muted-foreground">
+          Votre assistant personnel alimenté par OpenRouter et les meilleurs modèles LLM gratuits
+        </p>
       </div>
 
-      {/* Dialog de configuration D-ID */}
-      <DIDConfigDialog
-        isOpen={showDIDConfig}
-        onClose={() => setShowDIDConfig(false)}
-        onConfigured={() => {
-          console.log('D-ID configuré avec succès');
-        }}
-      />
+      {/* Configuration OpenRouter */}
+      {(!apiKey || showSettings) && (
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings className="h-5 w-5 text-jarvis-blue" />
+            <h2 className="text-lg font-semibold">Configuration OpenRouter</h2>
+          </div>
+          <OpenRouterSettings
+            apiKey={apiKey}
+            model={model}
+            onApiKeyChange={updateApiKey}
+            onModelChange={updateModel}
+            checkConnection={checkConnection}
+            connectionStatus={connectionStatus}
+            availableModels={availableModels}
+          />
+          {apiKey && (
+            <div className="mt-4 flex justify-end">
+              <Button onClick={() => setShowSettings(false)} variant="outline">
+                Fermer la configuration
+              </Button>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Main Interface */}
+      {apiKey && connectionStatus === 'connected' && (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Avatar */}
+          <Card className="p-6">
+            <div className="text-center space-y-4">
+              <h2 className="text-xl font-semibold">Alex</h2>
+              <div className="h-96 flex items-center justify-center">
+                <ReadyPlayerMeAvatar
+                  isSpeaking={isSpeaking}
+                  currentSpeakingText={currentSpeakingText}
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {isSpeaking ? (
+                  <p className="text-green-600">🎤 Alex parle...</p>
+                ) : (
+                  <p>💤 Alex écoute...</p>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* Chat Interface */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <MessageCircle className="h-5 w-5 text-jarvis-blue" />
+                Conversation
+              </h2>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSettings(true)}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearConversation}
+                  disabled={conversation.length === 0}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="space-y-4 mb-4 max-h-80 overflow-y-auto">
+              {conversation.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <p>Commencez une conversation avec Alex!</p>
+                  <p className="text-sm mt-2">Modèle actuel: {model}</p>
+                </div>
+              ) : (
+                conversation.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-lg ${
+                      message.role === 'user'
+                        ? 'bg-jarvis-blue text-white ml-8'
+                        : 'bg-muted mr-8'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <Separator className="my-4" />
+
+            {/* Input */}
+            <form onSubmit={handleSubmit} className="space-y-2">
+              <Input
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Tapez votre message pour Alex..."
+                disabled={isSpeaking}
+              />
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={!userInput.trim() || isSpeaking}
+              >
+                {isSpeaking ? 'Alex répond...' : 'Envoyer'}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Connection Status */}
+      {apiKey && connectionStatus !== 'connected' && (
+        <Card className="p-6 text-center">
+          <p className="text-muted-foreground">
+            {connectionStatus === 'connecting' ? 'Connexion à OpenRouter...' : 'Connexion requise'}
+          </p>
+          <Button onClick={checkConnection} className="mt-2">
+            Tester la connexion
+          </Button>
+        </Card>
+      )}
     </div>
   );
 };
+
+export default CoachPage;
