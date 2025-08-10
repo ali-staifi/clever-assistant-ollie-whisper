@@ -1,26 +1,34 @@
 
 import { useState, useEffect } from 'react';
-import { useOllamaService } from './jarvis/useOllamaService';
+import { useOpenRouter } from './useOpenRouter';
 import { useSpeechService } from './jarvis/useSpeechService';
 import { useConversation } from './jarvis/useConversation';
 import { useLanguageSettings } from './jarvis/useLanguageSettings';
-import { useMessageProcessing } from './jarvis/useMessageProcessing';
 import { useInputHandling } from './jarvis/useInputHandling';
+import { useMessageProcessingOpenRouter } from './jarvis/useMessageProcessingOpenRouter';
 
 export const useJarvisServices = () => {
   const [showSettings, setShowSettings] = useState(false);
   
-  // Set up Ollama service
+  // OpenRouter as LLM provider
   const {
-    ollamaUrl,
-    ollamaModel,
-    ollamaStatus,
+    apiKey,
+    model,
+    connectionStatus,
     availableModels,
-    ollamaService,
-    handleOllamaUrlChange,
-    handleOllamaModelChange,
-    checkOllamaConnection
-  } = useOllamaService();
+    service,
+    updateApiKey,
+    updateModel,
+    checkConnection
+  } = useOpenRouter();
+
+  // Map to legacy naming used across Jarvis components
+  const ollamaUrl = 'https://openrouter.ai';
+  const ollamaModel = model;
+  const ollamaStatus = connectionStatus;
+  const handleOllamaUrlChange = (_url: string) => {};
+  const handleOllamaModelChange = (m: string) => updateModel(m);
+  const checkOllamaConnection = () => checkConnection();
 
   // Set up speech service avec paramètres vocaux avancés
   const {
@@ -68,10 +76,9 @@ export const useJarvisServices = () => {
     changeResponseLanguage
   } = useLanguageSettings(setLanguage);
 
-  // Set up message processing
   const {
     processOllamaResponse
-  } = useMessageProcessing(ollamaService, messages, addAssistantMessage, speak);
+  } = useMessageProcessingOpenRouter(service || null, messages, addAssistantMessage, speak);
 
   // Set up input handling
   const {
