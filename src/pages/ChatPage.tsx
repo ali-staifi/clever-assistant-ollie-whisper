@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { useChatOpenRouter } from '@/hooks/useChatOpenRouter';
-import ChatInterface from '@/components/chatbot/ChatInterface';
 import OpenRouterConnectionSetup from '@/components/chatbot/OpenRouterConnectionSetup';
+import OpenRouterChat from '@/components/chatbot/OpenRouterChat';
 
 const ChatPage = () => {
   const {
@@ -41,7 +41,13 @@ const ChatPage = () => {
       />
 
       {apiKey && connectionStatus === 'connected' && (
-          <ChatInterface />
+          <OpenRouterChat
+            messages={messages}
+            isGenerating={isGenerating}
+            partialResponse={partialResponse}
+            onSendMessage={sendMessage}
+            onClearMessages={clearMessages}
+          />
       )}
     </div>
   );
