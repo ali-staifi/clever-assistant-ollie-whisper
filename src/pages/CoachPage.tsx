@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Settings, MessageCircle, Trash2 } from "lucide-react";
 import { useAlexAvatar } from '@/hooks/useAlexAvatar';
-import ReadyPlayerMeAvatar from '@/components/avatar/ReadyPlayerMeAvatar';
+import { ReadyPlayerMeAvatar } from '@/components/avatar/ReadyPlayerMeAvatar';
 import OpenRouterSettings from '@/components/settings/OpenRouterSettings';
 
 const CoachPage = () => {
@@ -81,8 +81,10 @@ const CoachPage = () => {
               <h2 className="text-xl font-semibold">Alex</h2>
               <div className="h-96 flex items-center justify-center">
                 <ReadyPlayerMeAvatar
+                  isListening={false}
                   isSpeaking={isSpeaking}
-                  currentSpeakingText={currentSpeakingText}
+                  emotionalState="neutral"
+                  currentText={currentSpeakingText}
                 />
               </div>
               <div className="text-sm text-muted-foreground">
