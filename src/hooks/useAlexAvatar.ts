@@ -21,7 +21,7 @@ export const useAlexAvatar = () => {
     checkConnection 
   } = useOpenRouter();
   
-  const { speak, stop: stopSpeaking } = useSpeechSynthesis();
+  const { speak, stopSpeaking } = useSpeechSynthesis();
   const { toast } = useToast();
 
   const handleUserInput = useCallback(async (userMessage: string) => {
@@ -52,20 +52,14 @@ export const useAlexAvatar = () => {
       // Add assistant response to conversation
       setConversation(prev => [...prev, { role: 'assistant', content: response }]);
       
-      // Speak the response
       setCurrentSpeakingText(response);
       setIsSpeaking(true);
-      
-      speak(response, {
-        onEnd: () => {
-          setIsSpeaking(false);
-          setCurrentSpeakingText('');
-        },
-        onError: () => {
-          setIsSpeaking(false);
-          setCurrentSpeakingText('');
-        }
-      });
+      try {
+        await speak(response);
+      } finally {
+        setIsSpeaking(false);
+        setCurrentSpeakingText('');
+      }
       
     } catch (error) {
       toast({

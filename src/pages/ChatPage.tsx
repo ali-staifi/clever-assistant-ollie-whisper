@@ -41,13 +41,7 @@ const ChatPage = () => {
       />
 
       {apiKey && connectionStatus === 'connected' && (
-        <ChatInterface
-          messages={messages}
-          isGenerating={isGenerating}
-          partialResponse={partialResponse}
-          onSendMessage={sendMessage}
-          onClearMessages={clearMessages}
-        />
+        <ChatInterface />
       )}
     </div>
   );
