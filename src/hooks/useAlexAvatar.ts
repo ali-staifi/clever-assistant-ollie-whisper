@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { useOpenRouter } from './useOpenRouter';
+import { useOllamaConnection } from './useOllamaConnection';
 import { useSpeechSynthesis } from './jarvis/useSpeechSynthesis';
 import { useToast } from './use-toast';
 
@@ -11,24 +11,24 @@ export const useAlexAvatar = () => {
   const [conversation, setConversation] = useState<Array<{role: string, content: string}>>([]);
   
   const { 
-    apiKey, 
-    model, 
-    connectionStatus, 
-    availableModels, 
-    service,
-    updateApiKey,
-    updateModel,
+    ollamaUrl,
+    ollamaModel,
+    connectionStatus,
+    availableModels,
+    ollamaService,
+    setOllamaUrl,
+    setOllamaModel,
     checkConnection 
-  } = useOpenRouter();
+  } = useOllamaConnection();
   
   const { speak, stopSpeaking } = useSpeechSynthesis();
   const { toast } = useToast();
 
   const handleUserInput = useCallback(async (userMessage: string) => {
-    if (!service || !apiKey) {
+    if (!ollamaService) {
       toast({
         title: "Configuration requise",
-        description: "Veuillez configurer votre clé API OpenRouter",
+        description: "Veuillez configurer Ollama (URL et modèle) puis tester la connexion.",
         variant: "destructive",
       });
       return;
@@ -40,28 +40,36 @@ export const useAlexAvatar = () => {
     }
 
     try {
-      // Add user message to conversation
+      // Ajouter le message utilisateur à la conversation
       setConversation(prev => [...prev, { role: 'user', content: userMessage }]);
-      
-      // Generate response
-      const response = await service.generateResponse(
+
+      // Génération en streaming
+      let accumulated = '';
+      setCurrentSpeakingText('');
+      setIsSpeaking(true);
+
+      await ollamaService.generateResponse(
         userMessage,
-        conversation.map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content }))
+        conversation.map(msg => ({ role: msg.role as 'user' | 'assistant', content: msg.content })),
+        (token: string) => {
+          accumulated += token;
+          setCurrentSpeakingText(prev => prev + token);
+        }
       );
 
-      // Add assistant response to conversation
-      setConversation(prev => [...prev, { role: 'assistant', content: response }]);
-      
-      setCurrentSpeakingText(response);
-      setIsSpeaking(true);
+      // Ajouter la réponse complète de l'assistant
+      setConversation(prev => [...prev, { role: 'assistant', content: accumulated }]);
+
       try {
-        await speak(response);
+        await speak(accumulated);
       } finally {
         setIsSpeaking(false);
         setCurrentSpeakingText('');
       }
-      
+
     } catch (error) {
+      setIsSpeaking(false);
+      setCurrentSpeakingText('');
       toast({
         title: "Erreur",
         description: "Impossible de générer une réponse",
@@ -69,7 +77,7 @@ export const useAlexAvatar = () => {
       });
       console.error('Error generating response:', error);
     }
-  }, [service, apiKey, connectionStatus, conversation, checkConnection, speak, toast]);
+  }, [ollamaService, connectionStatus, conversation, checkConnection, speak, toast]);
 
   const clearConversation = useCallback(() => {
     setConversation([]);
@@ -83,12 +91,12 @@ export const useAlexAvatar = () => {
     isSpeaking,
     currentSpeakingText,
     conversation,
-    apiKey,
-    model,
+    ollamaUrl,
+    ollamaModel,
     connectionStatus,
     availableModels,
-    updateApiKey,
-    updateModel,
+    updateOllamaUrl: setOllamaUrl,
+    updateOllamaModel: setOllamaModel,
     checkConnection,
     handleUserInput,
     clearConversation,

@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Settings, MessageCircle, Trash2 } from "lucide-react";
 import { useAlexAvatar } from '@/hooks/useAlexAvatar';
 import { ReadyPlayerMeAvatar } from '@/components/avatar/ReadyPlayerMeAvatar';
-import OpenRouterSettings from '@/components/settings/OpenRouterSettings';
+import OllamaSettings from '@/components/settings/OllamaSettings';
 
 const CoachPage = () => {
   const [userInput, setUserInput] = useState('');
@@ -18,12 +18,12 @@ const CoachPage = () => {
     isSpeaking,
     currentSpeakingText,
     conversation,
-    apiKey,
-    model,
+    ollamaUrl,
+    ollamaModel,
     connectionStatus,
     availableModels,
-    updateApiKey,
-    updateModel,
+    updateOllamaUrl,
+    updateOllamaModel,
     checkConnection,
     handleUserInput,
     clearConversation
@@ -43,27 +43,27 @@ const CoachPage = () => {
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold text-jarvis-blue">Alex - Coach Personnel IA</h1>
         <p className="text-muted-foreground">
-          Votre assistant personnel alimenté par OpenRouter et les meilleurs modèles LLM gratuits
+          Votre assistant personnel alimenté par Ollama (local) et vos modèles installés
         </p>
       </div>
 
-      {/* Configuration OpenRouter */}
-      {(!apiKey || showSettings) && (
+      {/* Configuration Ollama */}
+      {(showSettings || connectionStatus !== 'connected') && (
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
             <Settings className="h-5 w-5 text-jarvis-blue" />
-            <h2 className="text-lg font-semibold">Configuration OpenRouter</h2>
+            <h2 className="text-lg font-semibold">Configuration Ollama</h2>
           </div>
-          <OpenRouterSettings
-            apiKey={apiKey}
-            model={model}
-            onApiKeyChange={updateApiKey}
-            onModelChange={updateModel}
+          <OllamaSettings
+            ollamaUrl={ollamaUrl}
+            ollamaModel={ollamaModel}
+            onOllamaUrlChange={updateOllamaUrl}
+            onOllamaModelChange={updateOllamaModel}
             checkConnection={checkConnection}
-            connectionStatus={connectionStatus}
+            ollamaStatus={connectionStatus as any}
             availableModels={availableModels}
           />
-          {apiKey && (
+          {connectionStatus === 'connected' && (
             <div className="mt-4 flex justify-end">
               <Button onClick={() => setShowSettings(false)} variant="outline">
                 Fermer la configuration
@@ -73,8 +73,8 @@ const CoachPage = () => {
         </Card>
       )}
 
-      {/* Main Interface */}
-      {apiKey && connectionStatus === 'connected' && (
+      {/* Interface principale */}
+      {connectionStatus === 'connected' && (
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Avatar */}
           <Card className="p-6">
@@ -129,7 +129,7 @@ const CoachPage = () => {
               {conversation.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <p>Commencez une conversation avec Alex!</p>
-                  <p className="text-sm mt-2">Modèle actuel: {model}</p>
+                  <p className="text-sm mt-2">Modèle actuel: {ollamaModel}</p>
                 </div>
               ) : (
                 conversation.map((message, index) => (
@@ -169,11 +169,11 @@ const CoachPage = () => {
         </div>
       )}
 
-      {/* Connection Status */}
-      {apiKey && connectionStatus !== 'connected' && (
+      {/* État de connexion */}
+      {connectionStatus !== 'connected' && (
         <Card className="p-6 text-center">
           <p className="text-muted-foreground">
-            {connectionStatus === 'connecting' ? 'Connexion à OpenRouter...' : 'Connexion requise'}
+            {connectionStatus === 'connecting' ? 'Connexion à Ollama...' : 'Connexion requise'}
           </p>
           <Button onClick={checkConnection} className="mt-2">
             Tester la connexion
