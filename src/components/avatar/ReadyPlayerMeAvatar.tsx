@@ -372,3 +372,5 @@ export const ReadyPlayerMeAvatar: React.FC<ReadyPlayerMeAvatarProps> = ({
     </div>
   );
 };
+
+export default ReadyPlayerMeAvatar;
