@@ -49,12 +49,6 @@ const Navigation = () => {
           </div>
         </Link>
         
-        {/* Coach */}
-        <Link to="/coach">
-          <div className={`${activeItem === '/coach' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
-            <Heart size={24} />
-          </div>
-        </Link>
         
         {/* Vision */}
         <Link to="/vision">
