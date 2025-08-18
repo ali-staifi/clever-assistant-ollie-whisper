@@ -50,6 +50,13 @@ const Navigation = () => {
         </Link>
         
         
+        {/* Innovations */}
+        <Link to="/innovations">
+          <div className={`${activeItem === '/innovations' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
+            <Zap size={24} />
+          </div>
+        </Link>
+
         {/* Vision */}
         <Link to="/vision">
           <div className={`${activeItem === '/vision' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>

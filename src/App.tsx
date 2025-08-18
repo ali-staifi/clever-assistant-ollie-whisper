@@ -8,6 +8,7 @@ import VisionPage from './pages/VisionPage';
 import MCPPage from './pages/MCPPage';
 import OpenACIPage from './pages/OpenACIPage';
 import GitDatabasePage from './pages/GitDatabasePage';
+import InnovationsPage from './pages/InnovationsPage';
 
 import NotFound from './pages/NotFound';
 
@@ -77,6 +78,10 @@ const router = createBrowserRouter([
       {
         path: 'git-database',
         element: <GitDatabasePage />,
+      },
+      {
+        path: 'innovations',
+        element: <InnovationsPage />,
       },
       {
         path: '*',
