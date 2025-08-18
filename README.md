@@ -1,5 +1,65 @@
 
-# Welcome to your Lovable project
+# 🎙️ Clever Assistant – Ollie Whisper
+
+> Un assistant vocal intelligent basé sur [OpenAI Whisper](https://github.com/openai/whisper) et une interface React moderne.  
+Reconnaissance vocale, transcription en temps réel, et intégration avec des commandes intelligentes.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![React](https://img.shields.io/badge/React-18-blue?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![Tailwind](https://img.shields.io/badge/TailwindCSS-3-38B2AC?logo=tailwindcss)
+
+---
+
+## 🚀 Démo
+
+👉 [Essayer l'application en ligne](https://lovable.dev/projects/12c80bc8-b236-4bd5-a493-05fc33b982f0)  
+*(projet publié)*
+
+---
+
+## ✨ Fonctionnalités
+
+- 🎤 **Reconnaissance vocale** avec Whisper
+- 📝 **Transcription en temps réel** de l'audio
+- 🌍 **Support multilingue**
+- 🎨 **Interface moderne** (React + Tailwind + shadcn/ui)
+- ⚡ **Performance optimisée** avec Vite
+
+---
+
+## 🛠️ Installation
+
+Prérequis : [Node.js](https://nodejs.org/) + npm ou [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+```bash
+# 1. Cloner le projet
+git clone https://github.com/ali-staifi/clever-assistant-ollie-whisper.git
+
+# 2. Aller dans le dossier
+cd clever-assistant-ollie-whisper
+
+# 3. Installer les dépendances
+npm install
+
+# 4. Lancer le serveur de dev
+npm run dev
+```
+
+---
+
+## 📂 Structure du Projet
+
+```
+src/
+├── components/         # Composants React réutilisables
+├── hooks/             # Hooks personnalisés
+├── services/          # Services (API, Whisper, etc.)
+├── pages/             # Pages principales
+└── assets/            # Ressources statiques
+```
+
+---
 
 ## Project info
 
