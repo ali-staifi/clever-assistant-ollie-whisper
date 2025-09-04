@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor, Heart, Zap } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor, Heart, Sparkles } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
@@ -53,7 +53,7 @@ const Navigation = () => {
         {/* Innovations */}
         <Link to="/innovations">
           <div className={`${activeItem === '/innovations' ? 'text-blue-500' : 'hover:text-white'} p-2 rounded-lg transition-colors`}>
-            <Zap size={24} />
+            <Sparkles size={24} />
           </div>
         </Link>
 
