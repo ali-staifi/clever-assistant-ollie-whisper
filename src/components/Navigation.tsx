@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor, Heart } from 'lucide-react';
+import { HomeIcon, Settings, ServerIcon, MessageSquareText, ImageIcon, NetworkIcon, Database, Monitor, Heart, Zap } from 'lucide-react';
 
 const Navigation = () => {
   const [activeItem, setActiveItem] = useState('/');
